@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/controller/logincontroller.dart';
+import 'package:sidi/presentation/homescreen.dart';
 import 'package:sidi/presentation/signupscreen.dart';
 import 'package:sidi/presentation/widgets/animationtilke.dart';
 
@@ -59,6 +60,17 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     if (!mounted) {
+      return;
+    }
+
+    if (result.isSuccess) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result.message)));
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
       return;
     }
 
