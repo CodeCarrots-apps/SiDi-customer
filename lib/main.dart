@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-// import 'package:sidi/presentation/homescreen.dart';
 import 'package:sidi/presentation/loginscreen.dart';
+// import 'package:sidi/view/splashscreen.dart';
 
 void main() {
   runApp(const MainApp());
@@ -11,9 +11,8 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: "SIDI App",
       home: LoginScreen(),
     );
   }

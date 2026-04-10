@@ -1,9 +1,92 @@
 import 'package:flutter/material.dart';
 import 'package:sidi/constant/constants.dart';
+import 'package:sidi/controller/signupcontroller.dart';
 import 'package:sidi/presentation/loginscreen.dart';
 
-class SignUpScreen extends StatelessWidget {
+class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
+
+  @override
+  State<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+  final RegisterController _registerController = RegisterController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+
+  bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSignUpTap() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (name.isEmpty ||
+        email.isEmpty ||
+        phone.isEmpty ||
+        password.isEmpty ||
+        confirmPassword.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fill in all fields before signing up.')),
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Passwords do not match.')));
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    _registerController.name = name;
+    _registerController.email = email;
+    _registerController.phone = phone;
+    _registerController.password = password;
+    _registerController.confirmPassword = confirmPassword;
+
+    final result = await _registerController.register();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = false;
+    });
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(result.message)));
+
+    if (result.isSuccess) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +96,10 @@ class SignUpScreen extends StatelessWidget {
         child: Stack(
           children: [
             SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: kHorizontalPadding, vertical: kVerticalPadding),
+              padding: const EdgeInsets.symmetric(
+                horizontal: kHorizontalPadding,
+                vertical: kVerticalPadding,
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -43,12 +129,24 @@ class SignUpScreen extends StatelessWidget {
             color: kEspressoColor.withOpacity(0.05),
             shape: BoxShape.circle,
           ),
-          child: Icon(Icons.spa, color: kEspressoColor.withOpacity(0.4), size: 24),
+          child: Icon(
+            Icons.spa,
+            color: kEspressoColor.withOpacity(0.4),
+            size: 24,
+          ),
         ),
         const SizedBox(height: 16),
-        Text('Create Account', style: kHeaderStyle, textAlign: TextAlign.center),
+        Text(
+          'Create Account',
+          style: kHeaderStyle,
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: 4),
-        Text('Join Our Private Circle', style: kSubHeaderStyle, textAlign: TextAlign.center),
+        Text(
+          'Join Our Private Circle',
+          style: kSubHeaderStyle,
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }
@@ -56,24 +154,61 @@ class SignUpScreen extends StatelessWidget {
   Widget _buildForm() {
     return Column(
       children: [
-        _buildInputField('Full Name', 'Julianne Moore'),
+        _buildInputField(
+          'Full Name',
+          'Julianne Moore',
+          controller: _nameController,
+        ),
         const SizedBox(height: 16),
-        _buildInputField('Email', 'name@domain.com', inputType: TextInputType.emailAddress),
+        _buildInputField(
+          'Email',
+          'name@domain.com',
+          inputType: TextInputType.emailAddress,
+          controller: _emailController,
+        ),
         const SizedBox(height: 16),
-        _buildInputField('Password', '••••••••', obscureText: true),
-        const SizedBox(height: 24),
+        _buildInputField(
+          'Phone',
+          '123-456-7890',
+          inputType: TextInputType.phone,
+          controller: _phoneController,
+        ),
+        const SizedBox(height: 16),
+        _buildInputField(
+          'Password',
+          '••••••••',
+          obscureText: true,
+          controller: _passwordController,
+        ),
+        const SizedBox(height: 16),
+        _buildInputField(
+          'Confirm Password',
+          '••••••••',
+          obscureText: true,
+          controller: _confirmPasswordController,
+        ),
+        const SizedBox(height: 22),
         SizedBox(
           width: double.infinity,
           height: kInputFieldHeight,
           child: ElevatedButton(
-            onPressed: () {},
+            onPressed: _isSubmitting ? null : _handleSignUpTap,
             style: ElevatedButton.styleFrom(
               backgroundColor: kEspressoColor,
               foregroundColor: kIvoryColor,
               shape: RoundedRectangleBorder(borderRadius: kFullBorderRadius),
               textStyle: kButtonTextStyle,
             ),
-            child: const Text('SIGN UP'),
+            child: _isSubmitting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(kIvoryColor),
+                    ),
+                  )
+                : const Text('SIGN UP'),
           ),
         ),
         const SizedBox(height: 16),
@@ -97,20 +232,31 @@ class SignUpScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInputField(String label, String placeholder, {TextInputType inputType = TextInputType.text, bool obscureText = false}) {
+  Widget _buildInputField(
+    String label,
+    String placeholder, {
+    TextInputType inputType = TextInputType.text,
+    bool obscureText = false,
+    TextEditingController? controller,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label.toUpperCase(), style: kLabelTextStyle),
         const SizedBox(height: 4),
         TextField(
+          controller: controller,
           keyboardType: inputType,
           obscureText: obscureText,
           decoration: InputDecoration(
             hintText: placeholder,
             hintStyle: kInputHintStyle,
-            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: kEspressoColor.withOpacity(0.1))),
-            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: kEspressoColor.withOpacity(0.4))),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: kEspressoColor.withOpacity(0.1)),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: kEspressoColor.withOpacity(0.4)),
+            ),
             contentPadding: const EdgeInsets.symmetric(vertical: 12),
           ),
         ),
@@ -127,7 +273,10 @@ class SignUpScreen extends StatelessWidget {
             Text('Already have an account?', style: kFooterTextStyle),
             TextButton(
               onPressed: () {
-                Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
               },
               style: TextButton.styleFrom(
                 padding: EdgeInsets.zero,

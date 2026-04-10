@@ -6,13 +6,19 @@ class AnimatedInputField extends StatefulWidget {
   final String placeholder;
   final bool obscureText;
   final TextInputType inputType;
+  final TextEditingController? controller;
+  final ValueChanged<String>? onChanged;
 
-  const AnimatedInputField(String s, String e, {
+  const AnimatedInputField(
+    String s,
+    String e, {
     super.key,
     required this.label,
     required this.placeholder,
     this.obscureText = false,
     this.inputType = TextInputType.text,
+    this.controller,
+    this.onChanged,
   });
 
   @override
@@ -51,15 +57,19 @@ class _AnimatedInputFieldState extends State<AnimatedInputField> {
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
-                color: _isFocused ? opacity(kEspressoColor, 0.4) : opacity(kEspressoColor, 0.1),
+                color: _isFocused
+                    ? opacity(kEspressoColor, 0.4)
+                    : opacity(kEspressoColor, 0.1),
                 width: 1.5,
               ),
             ),
           ),
           child: TextField(
+            controller: widget.controller,
             focusNode: _focusNode,
             keyboardType: widget.inputType,
             obscureText: widget.obscureText,
+            onChanged: widget.onChanged,
             decoration: InputDecoration(
               hintText: widget.placeholder,
               hintStyle: kInputHintStyle,
