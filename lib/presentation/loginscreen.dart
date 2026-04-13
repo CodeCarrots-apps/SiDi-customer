@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/controller/logincontroller.dart';
-import 'package:sidi/presentation/homescreen.dart';
+import 'package:sidi/presentation/mainscreen.dart';
 import 'package:sidi/presentation/signupscreen.dart';
 import 'package:sidi/presentation/widgets/animationtilke.dart';
 
@@ -69,7 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ).showSnackBar(SnackBar(content: Text(result.message)));
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => const MainScreen()),
       );
       return;
     }
@@ -83,10 +83,27 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kIvoryColor,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            SingleChildScrollView(
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            pinned: true,
+            floating: true,
+            snap: true,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            backgroundColor: kIvoryColor,
+            surfaceTintColor: kIvoryColor,
+            centerTitle: true,
+            title: Text(
+              'SIGN IN',
+              style: kSubHeaderStyle.copyWith(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: kHorizontalPadding,
                 vertical: kVerticalPadding,
@@ -94,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 16),
                   _buildHeader(),
                   const SizedBox(height: 40),
                   _buildForm(context),
@@ -103,9 +120,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
             ),
-            _buildTopGradient(),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -218,7 +234,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 16),
         Divider(
-          color: kEspressoColor.withOpacity(0.1),
+          color: kEspressoColor.withValues(alpha: 0.1),
           thickness: 1,
           indent: 60,
           endIndent: 60,
@@ -230,26 +246,6 @@ class _LoginScreenState extends State<LoginScreen> {
           style: kFooterTextStyle.copyWith(fontSize: 9, letterSpacing: 2),
         ),
       ],
-    );
-  }
-
-  Widget _buildTopGradient() {
-    return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
-      height: 128,
-      child: IgnorePointer(
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [kEspressoColor.withOpacity(0.02), Colors.transparent],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

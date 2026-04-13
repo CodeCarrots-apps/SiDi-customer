@@ -92,10 +92,27 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kIvoryColor,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            SingleChildScrollView(
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            pinned: true,
+            floating: true,
+            snap: true,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            backgroundColor: kIvoryColor,
+            surfaceTintColor: kIvoryColor,
+            centerTitle: true,
+            title: Text(
+              'SIGN UP',
+              style: kSubHeaderStyle.copyWith(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: kHorizontalPadding,
                 vertical: kVerticalPadding,
@@ -103,7 +120,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 16),
                   _buildHeader(),
                   const SizedBox(height: 32),
                   _buildForm(),
@@ -112,9 +129,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ],
               ),
             ),
-            _buildTopGradient(),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -126,12 +142,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: kEspressoColor.withOpacity(0.05),
+            color: kEspressoColor.withValues(alpha: 0.05),
             shape: BoxShape.circle,
           ),
           child: Icon(
             Icons.spa,
-            color: kEspressoColor.withOpacity(0.4),
+            color: kEspressoColor.withValues(alpha: 0.4),
             size: 24,
           ),
         ),
@@ -252,10 +268,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
             hintText: placeholder,
             hintStyle: kInputHintStyle,
             enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: kEspressoColor.withOpacity(0.1)),
+              borderSide: BorderSide(
+                color: kEspressoColor.withValues(alpha: 0.1),
+              ),
             ),
             focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: kEspressoColor.withOpacity(0.4)),
+              borderSide: BorderSide(
+                color: kEspressoColor.withValues(alpha: 0.4),
+              ),
             ),
             contentPadding: const EdgeInsets.symmetric(vertical: 12),
           ),
@@ -288,26 +308,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildTopGradient() {
-    return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
-      height: 192,
-      child: IgnorePointer(
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [kEspressoColor.withOpacity(0.03), Colors.transparent],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

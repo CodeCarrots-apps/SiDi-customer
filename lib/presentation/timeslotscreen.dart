@@ -6,8 +6,7 @@ class SelectTimeSlotScreen extends StatefulWidget {
   const SelectTimeSlotScreen({super.key});
 
   @override
-  State<SelectTimeSlotScreen> createState() =>
-      _SelectTimeSlotScreenState();
+  State<SelectTimeSlotScreen> createState() => _SelectTimeSlotScreenState();
 }
 
 class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
@@ -35,53 +34,46 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundLight,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 200),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildServicePreview(),
-                    _buildEnhanceButton(),
-                    _buildCalendar(),
-                    _buildTimeSlots(),
-                  ],
-                ),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            pinned: true,
+            floating: true,
+            snap: true,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            backgroundColor: backgroundLight,
+            surfaceTintColor: backgroundLight,
+            automaticallyImplyLeading: false,
+            leading: IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.arrow_back_ios, size: 22),
+            ),
+            centerTitle: true,
+            title: Text(
+              "Select Time Slot",
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 24,
+                fontStyle: FontStyle.italic,
               ),
             ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: _buildBottomSection(),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Padding(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: const Icon(Icons.arrow_back_ios, size: 22),
+            actions: const [SizedBox(width: 48)],
           ),
-          const Spacer(),
-          Text(
-            "Select Time Slot",
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 24,
-              fontStyle: FontStyle.italic,
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildServicePreview(),
+                _buildEnhanceButton(),
+                _buildCalendar(),
+                _buildTimeSlots(),
+                const SizedBox(height: 200),
+              ],
             ),
           ),
-          const Spacer(),
-          const SizedBox(width: 24),
         ],
       ),
+      bottomNavigationBar: _buildBottomSection(),
     );
   }
 
@@ -107,14 +99,11 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
             children: [
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       "Signature Blowout",
-                      style: GoogleFonts.playfairDisplay(
-                        fontSize: 24,
-                      ),
+                      style: GoogleFonts.playfairDisplay(fontSize: 24),
                     ),
                     const SizedBox(height: 6),
                     Text(
@@ -136,7 +125,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                 ),
               ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -144,17 +133,13 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
 
   Widget _buildEnhanceButton() {
     return Padding(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 32, vertical: 30),
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 30),
       child: OutlinedButton.icon(
         onPressed: () {},
         icon: const Icon(Icons.auto_awesome, size: 18),
         label: Text(
           "Enhance your session",
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
+          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
         ),
         style: OutlinedButton.styleFrom(
           foregroundColor: espresso,
@@ -162,8 +147,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(50),
           ),
-          padding:
-              const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
         ),
       ),
     );
@@ -188,8 +172,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: days.length,
-            gridDelegate:
-                const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
@@ -199,15 +182,11 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
               final isSelected = selectedDay == day;
 
               return GestureDetector(
-                onTap: () =>
-                    setState(() => selectedDay = day),
+                onTap: () => setState(() => selectedDay = day),
                 child: Container(
                   alignment: Alignment.center,
                   decoration: isSelected
-                      ? BoxDecoration(
-                          color: champagne,
-                          shape: BoxShape.circle,
-                        )
+                      ? BoxDecoration(color: champagne, shape: BoxShape.circle)
                       : null,
                   child: Text(
                     "$day",
@@ -230,8 +209,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
 
   Widget _buildTimeSlots() {
     return Padding(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -248,8 +226,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: timeSlots.length,
-            gridDelegate:
-                const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               mainAxisSpacing: 16,
               crossAxisSpacing: 16,
@@ -260,26 +237,21 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
               final isSelected = selectedTime == time;
 
               return GestureDetector(
-                onTap: () =>
-                    setState(() => selectedTime = time),
+                onTap: () => setState(() => selectedTime = time),
                 child: Container(
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? champagne
-                        : Colors.white,
+                    color: isSelected ? champagne : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isSelected
-                          ? mutedGold
-                          : Colors.grey.shade200,
+                      color: isSelected ? mutedGold : Colors.grey.shade200,
                     ),
                     boxShadow: [
                       if (!isSelected)
                         BoxShadow(
                           color: opacity(Colors.black, 0.02),
                           blurRadius: 12,
-                        )
+                        ),
                     ],
                   ),
                   child: Text(
@@ -303,13 +275,10 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
 
   Widget _buildBottomSection() {
     return Container(
-      padding:
-          const EdgeInsets.fromLTRB(32, 20, 32, 30),
+      padding: const EdgeInsets.fromLTRB(32, 20, 32, 30),
       decoration: BoxDecoration(
         color: opacity(backgroundLight, 0.95),
-        border: Border(
-          top: BorderSide(color: Colors.grey.shade200),
-        ),
+        border: Border(top: BorderSide(color: Colors.grey.shade200)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -322,9 +291,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                 borderRadius: BorderRadius.circular(50),
               ),
             ),
-            onPressed: selectedTime.isEmpty
-                ? null
-                : () {},
+            onPressed: selectedTime.isEmpty ? null : () {},
             child: Text(
               "CONTINUE TO PAYMENT",
               style: GoogleFonts.inter(

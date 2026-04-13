@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sidi/presentation/homescreen.dart';
+import 'package:sidi/presentation/splashscreen.dart';
 // import 'package:sidi/presentation/mainscreen.dart';
 // import 'package:sidi/view/splashscreen.dart';
 
@@ -14,7 +14,7 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: HomeScreen(),
+      home: SplashScreen(),
     );
   }
 }

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:sidi/presentation/homescreen.dart';
+import 'package:sidi/presentation/notificationsscreen.dart';
+import 'package:sidi/presentation/profilescreen.dart';
 
 final List<Widget> _tabs = <Widget>[
   const HomeScreen(),
-  const _TabPlaceholder(title: 'Favorites'),
-  const _TabPlaceholder(title: 'Add'),
-  const _TabPlaceholder(title: 'Search'),
-  const _TabPlaceholder(title: 'Profile'),
+  const _TabPlaceholder(title: 'Book'),
+  const NotificationsScreen(),
+  const ProfileScreen(),
 ];
 
 class MainScreen extends StatefulWidget {
@@ -28,25 +29,41 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final compactNav = screenWidth < 400;
+
     return Scaffold(
       extendBody: true,
       body: _tabs[_selectedTab],
-      bottomNavigationBar: GNav(
-        selectedIndex: _selectedTab,
-        onTabChange: _handleIndexChanged,
-        gap: 8,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        backgroundColor: Colors.black.withOpacity(0.5),
-        color: Colors.white70,
-        activeColor: Colors.white,
-        tabBackgroundColor: Colors.black.withOpacity(0.2),
-        tabs: const [
-          GButton(icon: Icons.home, text: 'Home'),
-          GButton(icon: Icons.favorite, text: 'Favorites'),
-          GButton(icon: Icons.add, text: 'Add'),
-          GButton(icon: Icons.search, text: 'Search'),
-          GButton(icon: Icons.person, text: 'Profile'),
-        ],
+      bottomNavigationBar: SafeArea(
+        minimum: EdgeInsets.fromLTRB(
+          compactNav ? 6 : 12,
+          0,
+          compactNav ? 6 : 12,
+          10,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: GNav(
+            selectedIndex: _selectedTab,
+            onTabChange: _handleIndexChanged,
+            gap: compactNav ? 4 : 8,
+            padding: EdgeInsets.symmetric(
+              horizontal: compactNav ? 12 : 20,
+              vertical: compactNav ? 14 : 16,
+            ),
+            backgroundColor: Colors.black.withValues(alpha: 0.5),
+            color: Colors.white70,
+            activeColor: Colors.white,
+            tabBackgroundColor: Colors.black.withValues(alpha: 0.2),
+            tabs: const [
+              GButton(icon: Icons.home, text: 'Home'),
+              GButton(icon: Icons.calendar_today, text: 'Book'),
+              GButton(icon: Icons.chat_bubble_outline, text: 'Inbox'),
+              GButton(icon: Icons.person, text: 'Profile'),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -13,88 +13,178 @@ class DetailedServiceScreen extends StatefulWidget {
 
 class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
   int _selectedFilterIndex = 0;
+  int _selectedSubFilterIndex = 0;
 
   // Colors are provided by lib/constant/constants.dart
 
-  final List<String> filters = [
-    "All Nails",
-    "Manicure",
-    "Pedicure",
-    "Nail Art",
-  ];
+  final List<String> filters = ["All Services", "Hair", "Nails", "Facials"];
 
   final List<Map<String, String>> services = [
     {
+      "category": "Hair",
+      "subCategory": "Styling",
+      "title": "Signature Blowout",
+      "price": "\$85",
+      "duration": "60 mins",
+      "image":
+          "https://lh3.googleusercontent.com/aida-public/AB6AXuDhwtGGswF8f6oTbJt2kPjLH2OE_akDqZF5tTdlemziRZa77tptBWoFGbY7Ye2mQJ4LvbpdRvmqt4ICTx9hvIpfO1L2MiY_TAM3lRf1oDavv95dUHldy4Sm88cSbvjYys7JOzthV1BW8Mn1fMQBMdnK3c8rg-mZIC2JuWW_UNm-pa_-S_r-7ryJ1bE8m_15thFYV_PmFtWGR5EINnVMm59lJj9zAj1LLTjuwX6MEV-hngrVkotbtwMAZkjEzsbqaJdPCPsNyi4vs6M",
+    },
+    {
+      "category": "Hair",
+      "subCategory": "Treatment",
+      "title": "Silk Press & Finish",
+      "price": "\$95",
+      "duration": "70 mins",
+      "image":
+          "https://lh3.googleusercontent.com/aida-public/AB6AXuAhaWq1M13518DNZyCPQ9g4KOQRTAht8dZj5D874IbfzvkqszpLXlucjRhYezVs-_lJLiWAVHI9qI03t19Y8J7k2BgdDzQWlEngeqMMV1VLwhE0APclHMHm1VZCRX1lb-FVx6KM61B6XsFJZN8ft8CwzFZVTZo2xGzdp0GlXvaPbhZFTDVh_MfrckXWfO8Ahzcqi-KhgaMct57N4TmBn7L22sCcgVACr_9Mgi9SS8GgHQGRIjPFSj_MzAUg7B25s1FLULVBmrCCIcg",
+    },
+    {
+      "category": "Nails",
+      "subCategory": "Manicure",
       "title": "Signature Silk Manicure",
       "price": "\$85",
       "duration": "60 mins",
       "image":
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuBBYEO4G9e9SXUHhmUpFTOV3PWtGQs3jD24uVhrTk9zjIG1f1ubaugSCBH32kItXCAlNa9K1asoJoRe5TWj714hzf7UDOt-Bnnx8l5j4MFVz515ceZGByzqOjjhClsxjTZ9J9_uV33TJ8VYDDRot4IOQ4Azx9W_oOJT3XickZxxNfJG69MnRQfMDYYHnSAgRgqfNqPPWvt1v4Hi1fNfOIzF1VsumU8wvA_vrl0Atna8qrWl-CFGzCdndtBqy-7fYCwa_LNs-xT8Z78"
+          "https://lh3.googleusercontent.com/aida-public/AB6AXuBBYEO4G9e9SXUHhmUpFTOV3PWtGQs3jD24uVhrTk9zjIG1f1ubaugSCBH32kItXCAlNa9K1asoJoRe5TWj714hzf7UDOt-Bnnx8l5j4MFVz515ceZGByzqOjjhClsxjTZ9J9_uV33TJ8VYDDRot4IOQ4Azx9W_oOJT3XickZxxNfJG69MnRQfMDYYHnSAgRgqfNqPPWvt1v4Hi1fNfOIzF1VsumU8wvA_vrl0Atna8qrWl-CFGzCdndtBqy-7fYCwa_LNs-xT8Z78",
     },
     {
+      "category": "Nails",
+      "subCategory": "Pedicure",
       "title": "Luxury Spa Pedicure",
       "price": "\$110",
       "duration": "75 mins",
       "image":
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuDOnlzfJ5hytmdW4ELdw6Ok_SOYRYxWdVOdaPEBl2PZIl8csFiA9YcMkfFd6F_-4QYpyIIq1vJZra5ZX9AsrbPX6CfJdS7nHLizeUa6oY3Roh3FgwfnKeurxbc3kl9hV-Mif5hRf9qsLgSXKhtvZpWQfQzKUo2Rk5lxo-V2-tSZcnqNgoCOLm24oZdjHaXhpNaLvRo9qMzOoCLIwbicwmcX-YlSmQ3FbSv4iD8ZzAvPZSgl0arTWqYC7o5SwnwKEfQJEhy0lDN0JEM"
+          "https://lh3.googleusercontent.com/aida-public/AB6AXuDOnlzfJ5hytmdW4ELdw6Ok_SOYRYxWdVOdaPEBl2PZIl8csFiA9YcMkfFd6F_-4QYpyIIq1vJZra5ZX9AsrbPX6CfJdS7nHLizeUa6oY3Roh3FgwfnKeurxbc3kl9hV-Mif5hRf9qsLgSXKhtvZpWQfQzKUo2Rk5lxo-V2-tSZcnqNgoCOLm24oZdjHaXhpNaLvRo9qMzOoCLIwbicwmcX-YlSmQ3FbSv4iD8ZzAvPZSgl0arTWqYC7o5SwnwKEfQJEhy0lDN0JEM",
     },
     {
+      "category": "Nails",
+      "subCategory": "Nail Art",
       "title": "Editorial Nail Art",
       "price": "\$130",
       "duration": "90 mins",
       "image":
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuCtJWLbhrrHtqz2qPSquBG_yi6xBKYNNV4Q21-bQ0EWvtOvKQHxfqb1oH9z483HzXLIrbB-QW723AXgVOQHeaNpCLiTlw9HgMOFR2Be1W0uxOCBrUUZt00SOAAMUFhYh3IQjuBGdQHHTkIEcOHZ4aNaiusM1aavDSfafktZ-KripjaeGSG4Uy4V0PIpXIXzBM-4cIXIS9jO_m4twy3Gc3RQcsNKQ6WdoRUf6wR4c0rP_K54o5hCE7hYPM7fyjWR5S1bpGiexO8nSBA"
+          "https://lh3.googleusercontent.com/aida-public/AB6AXuCtJWLbhrrHtqz2qPSquBG_yi6xBKYNNV4Q21-bQ0EWvtOvKQHxfqb1oH9z483HzXLIrbB-QW723AXgVOQHeaNpCLiTlw9HgMOFR2Be1W0uxOCBrUUZt00SOAAMUFhYh3IQjuBGdQHHTkIEcOHZ4aNaiusM1aavDSfafktZ-KripjaeGSG4Uy4V0PIpXIXzBM-4cIXIS9jO_m4twy3Gc3RQcsNKQ6WdoRUf6wR4c0rP_K54o5hCE7hYPM7fyjWR5S1bpGiexO8nSBA",
+    },
+    {
+      "category": "Facials",
+      "subCategory": "Glow",
+      "title": "Morning Glow Facial",
+      "price": "\$120",
+      "duration": "75 mins",
+      "image":
+          "https://lh3.googleusercontent.com/aida-public/AB6AXuCjD3Idcb9NwaKXy001FZBgWYb-DgyMVlYrDj7uZOEaJj6AVbNvATlq8Ivohs072AF9MuIquo9xyLLPMepeVLRbrZvshrVePIJ9vLLfQH7eghBjNqedHkwCNgascLhoJ0i5xGz2gmkT1wpCSGgp1J9U12Dk_DldmNTzrPfoHXqNHWurJJr0v2ARZF3ujQDcunGu3OJI9ib9MUKXg_uCntevkfCLnkbeZxRagDq1yx2F8Lt1qJlk8hZT9Q1NhTYeqrHG6JcDm0JpAUE",
+    },
+    {
+      "category": "Facials",
+      "subCategory": "Therapy",
+      "title": "Deep Sleep Therapy",
+      "price": "\$140",
+      "duration": "90 mins",
+      "image":
+          "https://lh3.googleusercontent.com/aida-public/AB6AXuAak35w8RQZUxL5yYqAE1NHnvj8xEqXP3aTEY38GDI0k3rdA8Kj6zayxBazwKLFmv-Q-HTZ-9_AhtjV0lYkbE6kR5A8N3FLacPhanDY9AFaAdeDYrtwMG9MGoEtX-32zmFpIKa0ShusjITSMVFVd19-L2h6xvTXijda9zXEoPyVOoXlJOjhc8BzBb67kfjY0YE4lqnaGxjxzsnCBfOmtua4cOyXv7ScN_hUh4CwhJ-1J6F2kalpWt1bDKpeu9yJzwHiWweufPhij1A",
     },
   ];
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: kBackgroundLight,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            _buildFilterChips(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  children: services
-                      .map((service) => _buildServiceCard(service))
-                      .toList(),
-                ),
-              ),
-            ),
-          ],
+  List<Map<String, String>> get _categoryServices {
+    if (_selectedFilterIndex == 0) {
+      return services;
+    }
+
+    final selectedCategory = filters[_selectedFilterIndex];
+    return services
+        .where((service) => service['category'] == selectedCategory)
+        .toList();
+  }
+
+  List<String> get _subFilters {
+    final uniqueSubCategories = _categoryServices
+        .map((service) => service['subCategory'] ?? 'Other')
+        .toSet()
+        .toList();
+    uniqueSubCategories.sort();
+    return ['All', ...uniqueSubCategories];
+  }
+
+  List<Map<String, String>> get _filteredServices {
+    final categoryFiltered = _categoryServices;
+    if (_selectedSubFilterIndex == 0) {
+      return categoryFiltered;
+    }
+
+    final selectedSubCategory = _subFilters[_selectedSubFilterIndex];
+    return categoryFiltered
+        .where((service) => service['subCategory'] == selectedSubCategory)
+        .toList();
+  }
+
+  String get _screenTitle {
+    if (_selectedFilterIndex == 0) {
+      return 'OUR SERVICES';
+    }
+    return filters[_selectedFilterIndex].toUpperCase();
+  }
+
+  void _openServiceDetails(Map<String, String> service) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ServiceDetailScreen(
+          title: service['title'] ?? 'Service',
+          price: service['price'] ?? '\$0',
+          duration: service['duration'] ?? 'N/A',
+          imageUrl: service['image'] ?? '',
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-           SizedBox(
-              width: 40,
-              height: 40,
-              child: IconButton(
-                icon: Icon(Icons.arrow_back_ios, size: 20),
-                onPressed: () => Navigator.pop(context),
-              )),
-          Text(
-            "NAIL CARE",
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 2,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: kBackgroundLight,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            pinned: true,
+            floating: true,
+            snap: true,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            backgroundColor: kBackgroundLight,
+            surfaceTintColor: kBackgroundLight,
+            automaticallyImplyLeading: false,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios, size: 20),
+              onPressed: () => Navigator.pop(context),
+            ),
+            centerTitle: true,
+            title: Text(
+              _screenTitle,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.6,
+              ),
+            ),
+            actions: const [
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: Icon(Icons.search, size: 24),
+              ),
+              SizedBox(width: 8),
+            ],
+          ),
+          SliverToBoxAdapter(child: _buildFilterChips()),
+          SliverToBoxAdapter(child: _buildSubFilterChips()),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                return _buildServiceCard(_filteredServices[index]);
+              }, childCount: _filteredServices.length),
             ),
           ),
-          const SizedBox(
-              width: 40, height: 40, child: Icon(Icons.search, size: 24)),
         ],
       ),
     );
@@ -102,30 +192,70 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
 
   Widget _buildFilterChips() {
     return SizedBox(
-      height: 60,
+      height: 52,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,
         itemCount: filters.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        separatorBuilder: (_, index) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
           final selected = _selectedFilterIndex == index;
           return GestureDetector(
-            onTap: () => setState(() => _selectedFilterIndex = index),
+            onTap: () => setState(() {
+              _selectedFilterIndex = index;
+              _selectedSubFilterIndex = 0;
+            }),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: selected ? kEspressoColor : Colors.white,
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: Colors.grey.shade200),
               ),
               child: Text(
                 filters[index].toUpperCase(),
                 style: GoogleFonts.inter(
-                  fontSize: 12,
+                  fontSize: 10,
                   fontWeight: FontWeight.w600,
+                  letterSpacing: 0.8,
                   color: selected ? Colors.white : Colors.black87,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSubFilterChips() {
+    return SizedBox(
+      height: 46,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        scrollDirection: Axis.horizontal,
+        itemCount: _subFilters.length,
+        separatorBuilder: (_, index) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final selected = _selectedSubFilterIndex == index;
+          return GestureDetector(
+            onTap: () => setState(() => _selectedSubFilterIndex = index),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: selected ? kNeutralGoldColor : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Text(
+                _subFilters[index].toUpperCase(),
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.8,
+                  color: selected ? kEspressoColor : Colors.black87,
                 ),
               ),
             ),
@@ -137,79 +267,89 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
 
   Widget _buildServiceCard(Map<String, String> service) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 40),
+      padding: const EdgeInsets.only(bottom: 24),
       child: InkWell(
-        onTap: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const ServiceDetailScreen()));
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: AspectRatio(
-                aspectRatio: 4 / 5,
-                child: Image.network(
-                  service["image"]!,
-                  fit: BoxFit.cover,
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => _openServiceDetails(service),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: kWarmGrey100),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: AspectRatio(
+                  aspectRatio: 16 / 11,
+                  child: Image.network(service["image"]!, fit: BoxFit.cover),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    service["title"]!,
-                    style: GoogleFonts.cormorantGaramond(
-                      fontSize: 30,
-                      fontStyle: FontStyle.italic,
-                      height: 1.2,
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      service["title"]!,
+                      style: GoogleFonts.cormorantGaramond(
+                        fontSize: 24,
+                        fontStyle: FontStyle.italic,
+                        height: 1.1,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ),
-                Text(
-                  service["price"]!,
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Divider(color: Colors.grey.shade200),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  service["duration"]!.toUpperCase(),
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 2,
-                    color: kPrimaryBeige,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {},
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.black,
-                  ),
-                  child: Text(
-                    "VIEW DETAILS",
+                  const SizedBox(width: 12),
+                  Text(
+                    service["price"]!,
                     style: GoogleFonts.inter(
-                      fontSize: 11,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      letterSpacing: 2,
                     ),
                   ),
-                ),
-              ],
-            )
-          ],
+                ],
+              ),
+              const SizedBox(height: 10),
+              Divider(color: Colors.grey.shade200, height: 1),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    service["duration"]!.toUpperCase(),
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.4,
+                      color: kPrimaryBeige,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => _openServiceDetails(service),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: const Size(0, 28),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      "VIEW DETAILS",
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -5,7 +5,18 @@ import 'package:sidi/constant/constants.dart';
 import 'timeslotscreen.dart';
 
 class ServiceDetailScreen extends StatefulWidget {
-  const ServiceDetailScreen({super.key});
+  const ServiceDetailScreen({
+    super.key,
+    required this.title,
+    required this.price,
+    required this.duration,
+    required this.imageUrl,
+  });
+
+  final String title;
+  final String price;
+  final String duration;
+  final String imageUrl;
 
   @override
   State<ServiceDetailScreen> createState() => _ServiceDetailScreenState();
@@ -18,92 +29,75 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBackgroundLight,
-      body: Stack(
-        children: [
-          _buildContent(),
-          _buildTopNav(),
+      body: CustomScrollView(
+        slivers: [
+          _buildHeroSliverAppBar(),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 24),
+                  _buildTitle(),
+                  const SizedBox(height: 20),
+                  _buildInfoRow(),
+                  const SizedBox(height: 28),
+                  _buildDescription(),
+                  const SizedBox(height: 40),
+                  _buildFeatures(),
+                  const SizedBox(height: 220),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: _buildBottomSection(),
     );
   }
 
-  Widget _buildContent() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 220),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHero(),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 24),
-                _buildTitle(),
-                const SizedBox(height: 20),
-                _buildInfoRow(),
-                const SizedBox(height: 28),
-                _buildDescription(),
-                const SizedBox(height: 40),
-                _buildFeatures(),
-              ],
-            ),
-          )
-        ],
-      ),
-    );
-  }
+  Widget _buildHeroSliverAppBar() {
+    final heroHeight = MediaQuery.of(context).size.height * 0.65;
 
-  Widget _buildHero() {
-    return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.65,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.network(
-              "https://lh3.googleusercontent.com/aida-public/AB6AXuDIu4A1o2LUr46ICpukplEa7w6uclRMUDPF0h70Qeh_qGvFDuOVamzD88STF6pIQB0Uq-PogBfNdiZvM5GSLPExGRqHWHvhXi8h0JagLbatalPm_QSkmWKNvTP0wxf6fYYKrZsDuZEcjhZjJHUG5NYgFNXzxQPxcqH58QXnAtciz5tHZkIpAI1hwnbVd6lcJYg44EXaGnH5jKEVQ1d-z7o8XYDzyz7sLUmD3Ykz9t9oTSbHfDrWjxeyd4Y1u1hcnW_M0_GAFgEtKk8",
-              fit: BoxFit.cover,
-            ),
-          ),
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
+    return SliverAppBar(
+      expandedHeight: heroHeight,
+      pinned: true,
+      stretch: true,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      backgroundColor: kBackgroundLight,
+      surfaceTintColor: kBackgroundLight,
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 8),
+        child: _circleButton(
+          Icons.arrow_back_ios_new,
+          onTap: () {
+            Navigator.pop(context);
+          },
+        ),
+      ),
+      actions: [
+        _circleButton(Icons.favorite_border),
+        const SizedBox(width: 12),
+        _circleButton(Icons.share),
+        const SizedBox(width: 16),
+      ],
+      flexibleSpace: FlexibleSpaceBar(
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.network(widget.imageUrl, fit: BoxFit.cover),
+            Container(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    kBackgroundLight,
-                  ],
-                  stops: const [0.6, 1.0],
+                  colors: [Colors.transparent, kBackgroundLight],
+                  stops: [0.6, 1.0],
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTopNav() {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _circleButton(Icons.arrow_back_ios_new, onTap: () {
-              Navigator.pop(context);
-            }),
-            Row(
-              children: [
-                _circleButton(Icons.favorite_border),
-                const SizedBox(width: 12),
-                _circleButton(Icons.share),
-              ],
-            )
           ],
         ),
       ),
@@ -127,7 +121,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
 
   Widget _buildTitle() {
     return Text(
-      "Signature Manicure",
+      widget.title,
       style: GoogleFonts.cormorantGaramond(
         fontSize: 56,
         fontStyle: FontStyle.italic,
@@ -148,14 +142,14 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
       ),
       child: Row(
         children: [
-          _infoColumn("Duration", "90 minutes"),
+          _infoColumn("Duration", widget.duration),
           Container(
             width: 1,
             height: 40,
             margin: const EdgeInsets.symmetric(horizontal: 24),
             color: opacity(kEspressoColor, 0.05),
           ),
-          _infoColumn("Investment", "\$85.00"),
+          _infoColumn("Investment", widget.price),
         ],
       ),
     );
@@ -259,7 +253,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
@@ -270,9 +264,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
       decoration: BoxDecoration(
         color: opacity(kBackgroundLight, 0.95),
-        border: Border(
-          top: BorderSide(color: opacity(kEspressoColor, 0.05)),
-        ),
+        border: Border(top: BorderSide(color: opacity(kEspressoColor, 0.05))),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -287,7 +279,12 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
               ),
             ),
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const SelectTimeSlotScreen()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SelectTimeSlotScreen(),
+                ),
+              );
             },
             icon: const Icon(Icons.calendar_month, size: 20),
             label: Text(
