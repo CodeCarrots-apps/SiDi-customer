@@ -100,16 +100,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
             snap: true,
             elevation: 0,
             scrolledUnderElevation: 0,
-            backgroundColor: kIvoryColor,
-            surfaceTintColor: kIvoryColor,
+            backgroundColor: Colors.transparent,
+            surfaceTintColor: Colors.transparent,
             centerTitle: true,
-            title: Text(
-              'SIGN UP',
-              style: kSubHeaderStyle.copyWith(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
           ),
           SliverToBoxAdapter(
             child: Padding(
@@ -120,7 +113,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 16),
+                  // const SizedBox(height: 6),
                   _buildHeader(),
                   const SizedBox(height: 32),
                   _buildForm(),
@@ -139,17 +132,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return Column(
       children: [
         Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: kEspressoColor.withValues(alpha: 0.05),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            Icons.spa,
-            color: kEspressoColor.withValues(alpha: 0.4),
-            size: 24,
-          ),
+          width: 68,
+          height: 68,
+          child: Image.asset('assets/images/logo.png', width: 24, height: 24),
         ),
         const SizedBox(height: 16),
         Text(

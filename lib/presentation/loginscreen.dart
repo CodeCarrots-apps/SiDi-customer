@@ -94,13 +94,6 @@ class _LoginScreenState extends State<LoginScreen> {
             backgroundColor: kIvoryColor,
             surfaceTintColor: kIvoryColor,
             centerTitle: true,
-            title: Text(
-              'SIGN IN',
-              style: kSubHeaderStyle.copyWith(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
           ),
           SliverToBoxAdapter(
             child: Padding(
