@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sidi/constant/constants.dart';
+import 'package:sidi/controller/logoutcontroller.dart';
+import 'package:sidi/presentation/loginscreen.dart';
+import 'package:sidi/utils/token_storage.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -13,6 +16,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final LogoutController _logoutController = LogoutController();
   final ImagePicker _imagePicker = ImagePicker();
   File? _avatarImage;
 
@@ -98,7 +102,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 110 * scale,
               ),
               child: OutlinedButton(
-                onPressed: () {},
+                onPressed: () async {
+                  final token = await _getToken();
+                  if (token == null || token.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('No token found.')),
+                    );
+                    return;
+                  }
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) =>
+                        const Center(child: CircularProgressIndicator()),
+                  );
+                  final success = await _logoutController.logout(token);
+                  Navigator.of(context).pop(); // Remove loading dialog
+                  if (success) {
+                    // Navigate to splash screen and clear all previous routes
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (route) => false,
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          _logoutController.errorMessage ?? 'Logout failed.',
+                        ),
+                      ),
+                    );
+                  }
+                },
                 style: OutlinedButton.styleFrom(
                   minimumSize: Size.fromHeight(42 * scale),
                   side: BorderSide(color: kWarmGrey200),
@@ -121,6 +156,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
+  }
+
+  Future<String?> _getToken() async {
+    // Retrieve token from shared_preferences
+    return await TokenStorage.getToken();
   }
 
   Widget _buildProfileHeader(double scale) {

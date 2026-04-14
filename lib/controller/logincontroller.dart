@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get_state_manager/get_state_manager.dart';
 import 'package:sidi/utils/app_constants.dart';
+import 'package:sidi/utils/token_storage.dart';
 
 class LoginController extends GetxController {
   LoginController({Dio? dio}) : _dio = dio ?? Dio();
@@ -55,6 +56,8 @@ class LoginController extends GetxController {
         debugPrint(
           '[LoginController] Login successful: user=${result.username}, email=${email.trim()}',
         );
+        // Save token using shared_preferences
+        await TokenStorage.saveToken(result.token);
       }
 
       return result;

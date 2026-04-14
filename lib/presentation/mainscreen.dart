@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
-import 'package:sidi/presentation/appointments_screen.dart';
+// import 'package:sidi/presentation/appointments_screen.dart';
 import 'package:sidi/presentation/bookingscreen.dart';
 import 'package:sidi/presentation/homescreen.dart';
 import 'package:sidi/presentation/profilescreen.dart';
+import 'package:sidi/presentation/stylistlistscreen.dart';
 
 final List<Widget> _tabs = <Widget>[
   const HomeScreen(),
   const BookingScreen(),
-  const AppointmentsScreen(),
+  const StylistListScreen(),
   const ProfileScreen(),
 ];
 
@@ -60,7 +61,7 @@ class _MainScreenState extends State<MainScreen> {
             tabs: const [
               GButton(icon: Icons.home, text: 'Home'),
               GButton(icon: Icons.calendar_today, text: 'Book'),
-              GButton(icon: Icons.cut_outlined, text: 'Appointments'),
+              GButton(icon: Icons.cut_outlined, text: 'Stylists'),
               GButton(icon: Icons.person, text: 'Profile'),
             ],
           ),

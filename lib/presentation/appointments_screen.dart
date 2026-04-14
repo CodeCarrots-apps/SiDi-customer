@@ -1,9 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
+import '../models/booking.dart';
+import '../services/booking_service.dart';
 
-class AppointmentsScreen extends StatelessWidget {
+class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
+
+  @override
+  State<AppointmentsScreen> createState() => _AppointmentsScreenState();
+}
+
+class _AppointmentsScreenState extends State<AppointmentsScreen> {
+  late Future<List<Booking>> _futureBookings;
+
+  @override
+  void initState() {
+    super.initState();
+    _futureBookings = BookingService.fetchBookings();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,74 +47,73 @@ class AppointmentsScreen extends StatelessWidget {
               24 * scale,
             ),
             sliver: SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'YOUR SCHEDULE',
-                    style: GoogleFonts.inter(
-                      fontSize: 9 * scale,
-                      letterSpacing: 1.6,
-                      color: kWarmGrey600,
-                    ),
-                  ),
-                  SizedBox(height: 6 * scale),
-                  Text(
-                    'Appointments',
-                    style: GoogleFonts.cormorantGaramond(
-                      fontSize: 36 * scale,
-                      fontStyle: FontStyle.italic,
-                      color: kCharcoalColor,
-                    ),
-                  ),
-                  SizedBox(height: 22 * scale),
-                  _buildSectionLabel('RECENT', scale),
-                  SizedBox(height: 6 * scale),
-                  Divider(color: kWarmGrey200, height: 1),
-                  SizedBox(height: 12 * scale),
-                  _buildRecentAppointment(
-                    image:
-                        'https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=400&q=80',
-                    title: 'Signature Silk Manicure',
-                    time: 'Thursday, 12 Oct • 14:30',
-                    stylist: 'STYLIST: ELENA ROSSI',
-                    scale: scale,
-                  ),
-                  SizedBox(height: 12 * scale),
-                  _buildRecentAppointment(
-                    image:
-                        'https://images.unsplash.com/photo-1560750588-73207b1ef5b8?auto=format&fit=crop&w=400&q=80',
-                    title: 'Botanical Facial',
-                    time: 'Monday, 16 Oct • 10:00',
-                    stylist: 'STYLIST: MARCUS THORNE',
-                    scale: scale,
-                  ),
-                  SizedBox(height: 18 * scale),
-                  _buildSectionLabel('EARLIER', scale),
-                  SizedBox(height: 6 * scale),
-                  Divider(color: kWarmGrey200, height: 1),
-                  SizedBox(height: 10 * scale),
-                  _buildEarlierAppointment(
-                    image: 'https://randomuser.me/api/portraits/women/58.jpg',
-                    title: 'Scalp Therapy',
-                    subtitle: 'Sep 24 • Sophie Chen',
-                    scale: scale,
-                  ),
-                  _buildEarlierAppointment(
-                    image:
-                        'https://i.pinimg.com/736x/51/3a/3f/513a3f7e18e59884df9070a6c09a91b2.jpg',
-                    title: 'Deep Lash Tint',
-                    subtitle: 'Aug 30 • Elena Rossi',
-                    scale: scale,
-                  ),
-                  _buildEarlierAppointment(
-                    image:
-                        'https://i.pinimg.com/736x/52/20/c1/5220c1ff75f0308e6b6c2064d77f69aa.jpg',
-                    title: 'Precision Brows',
-                    subtitle: 'Aug 02 • Marcus Thorne',
-                    scale: scale,
-                  ),
-                ],
+              child: FutureBuilder<List<Booking>>(
+                future: _futureBookings,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Failed to load bookings'));
+                  }
+                  final bookings = snapshot.data ?? [];
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 6 * scale),
+                      Text(
+                        'Appointments',
+                        style: GoogleFonts.cormorantGaramond(
+                          fontSize: 36 * scale,
+                          fontStyle: FontStyle.italic,
+                          color: kCharcoalColor,
+                        ),
+                      ),
+                      SizedBox(height: 22 * scale),
+                      _buildSectionLabel('RECENT', scale),
+                      SizedBox(height: 6 * scale),
+                      Divider(color: kWarmGrey200, height: 1),
+                      SizedBox(height: 12 * scale),
+                      ...bookings
+                          .take(2)
+                          .map(
+                            (b) => Padding(
+                              padding: EdgeInsets.only(bottom: 12 * scale),
+                              child: _buildRecentAppointment(
+                                image: b.image.isNotEmpty
+                                    ? b.image
+                                    : 'https://via.placeholder.com/66x78',
+                                title: b.title,
+                                time: b.time,
+                                stylist: b.stylist,
+                                scale: scale,
+                              ),
+                            ),
+                          ),
+                      SizedBox(height: 18 * scale),
+                      _buildSectionLabel('EARLIER', scale),
+                      SizedBox(height: 6 * scale),
+                      Divider(color: kWarmGrey200, height: 1),
+                      SizedBox(height: 10 * scale),
+                      ...bookings
+                          .skip(2)
+                          .map(
+                            (b) => _buildEarlierAppointment(
+                              image: b.image.isNotEmpty
+                                  ? b.image
+                                  : 'https://via.placeholder.com/38',
+                              title: b.title,
+                              subtitle: b.stylist,
+                              scale: scale,
+                            ),
+                          ),
+                      if (bookings.isEmpty)
+                        Padding(
+                          padding: EdgeInsets.only(top: 24 * scale),
+                          child: Center(child: Text(' ')),
+                        ),
+                    ],
+                  );
+                },
               ),
             ),
           ),

@@ -3,7 +3,8 @@ import 'package:sidi/presentation/splashscreen.dart';
 // import 'package:sidi/presentation/mainscreen.dart';
 // import 'package:sidi/view/splashscreen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MainApp());
 }
 
