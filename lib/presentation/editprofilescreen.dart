@@ -105,11 +105,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       final data = response.data ?? <String, dynamic>{};
       if (response.statusCode == 200 && data['success'] == true) {
+        final userJson =
+            data['user'] as Map<String, dynamic>? ?? <String, dynamic>{};
         final updatedProfile = UserProfile(
           user: UserData(
-            username: name,
+            username: (userJson['username'] as String?) ?? name,
             email: email,
             phoneNumber: phone,
+            profileImage:
+                (userJson['profileImage'] as String?) ??
+                widget.profile.user.profileImage,
             favoriteBeauticians: widget.profile.user.favoriteBeauticians,
           ),
           stats: widget.profile.stats,
@@ -244,6 +249,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildProfileImage(double scale) {
+    final profileImage = widget.profile.user.profileImage;
+    final imageProvider = _avatarImage != null
+        ? FileImage(_avatarImage!) as ImageProvider
+        : (profileImage.isNotEmpty
+              ? NetworkImage(
+                  profileImage.startsWith('http')
+                      ? profileImage
+                      : 'https://sidi.mobilegear.co.in$profileImage',
+                )
+              : null);
+
     return Column(
       children: [
         Stack(
@@ -251,10 +267,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             CircleAvatar(
               radius: 52 * scale,
               backgroundColor: kWarmGrey200,
-              backgroundImage: _avatarImage != null
-                  ? FileImage(_avatarImage!) as ImageProvider
-                  : null,
-              child: _avatarImage == null
+              backgroundImage: imageProvider,
+              child: imageProvider == null
                   ? Icon(Icons.person, size: 44 * scale, color: kWarmGrey600)
                   : null,
             ),

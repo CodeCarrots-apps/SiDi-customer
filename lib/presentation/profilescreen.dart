@@ -68,6 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (!mounted) return;
         setState(() {
           _profile = profile;
+          _avatarImage = null;
           _isLoading = false;
         });
       } else {
@@ -360,10 +361,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: ClipOval(
                   child: _avatarImage != null
                       ? Image.file(_avatarImage!, fit: BoxFit.cover)
-                      : Image.network(
-                          'https://randomuser.me/api/portraits/women/44.jpg',
-                          fit: BoxFit.cover,
-                        ),
+                      : (_profile?.user.profileImage.isNotEmpty == true
+                            ? Image.network(
+                                _profile!.user.profileImage.startsWith('http')
+                                    ? _profile!.user.profileImage
+                                    : 'https://sidi.mobilegear.co.in${_profile!.user.profileImage}',
+                                fit: BoxFit.cover,
+                              )
+                            : Image.network(
+                                'https://randomuser.me/api/portraits/women/44.jpg',
+                                fit: BoxFit.cover,
+                              )),
                 ),
               ),
               Positioned(

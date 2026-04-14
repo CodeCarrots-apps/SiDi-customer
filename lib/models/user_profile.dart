@@ -22,12 +22,14 @@ class UserData {
     required this.username,
     required this.email,
     required this.phoneNumber,
+    required this.profileImage,
     required this.favoriteBeauticians,
   });
 
   final String username;
   final String email;
   final String phoneNumber;
+  final String profileImage;
   final List<FavoriteStylist> favoriteBeauticians;
 
   factory UserData.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,7 @@ class UserData {
       username: (json['username'] as String?) ?? '',
       email: (json['email'] as String?) ?? '',
       phoneNumber: (json['phoneNumber'] as String?) ?? '',
+      profileImage: (json['profileImage'] as String?) ?? '',
       favoriteBeauticians: favorites
           .whereType<Map<String, dynamic>>()
           .map(FavoriteStylist.fromJson)
