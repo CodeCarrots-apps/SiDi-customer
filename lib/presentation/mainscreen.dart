@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
-// import 'package:sidi/presentation/appointments_screen.dart';
+import 'package:sidi/presentation/appointments_screen.dart';
 import 'package:sidi/presentation/bookingscreen.dart';
 import 'package:sidi/presentation/homescreen.dart';
 import 'package:sidi/presentation/profilescreen.dart';

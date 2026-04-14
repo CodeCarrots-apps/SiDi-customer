@@ -1,7 +1,11 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:sidi/presentation/loginscreen.dart';
+import 'package:sidi/presentation/mainscreen.dart';
+import 'package:sidi/utils/app_constants.dart';
+import 'package:sidi/utils/token_storage.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -20,20 +24,74 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _navigationTimer = Timer(const Duration(seconds: 3), () {
-      if (!mounted) {
-        return;
+    _navigationTimer = Timer(const Duration(seconds: 3), _navigateFromSplash);
+  }
+
+  Future<bool> _isTokenValid(String token) async {
+    try {
+      final response =
+          await Dio(
+            BaseOptions(
+              connectTimeout: const Duration(seconds: 15),
+              receiveTimeout: const Duration(seconds: 20),
+              sendTimeout: const Duration(seconds: 20),
+              validateStatus: (_) => true,
+            ),
+          ).get(
+            AppConstants.profile,
+            options: Options(
+              headers: <String, dynamic>{
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer $token',
+              },
+            ),
+          );
+
+      if (response.statusCode == 200) {
+        return true;
       }
 
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder<void>(
-          pageBuilder: (_, _, _) => const LoginScreen(),
-          transitionsBuilder: (_, animation, _, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-        ),
+      debugPrint(
+        '[SplashScreen] Token validation failed: status=${response.statusCode}',
       );
-    });
+      return false;
+    } catch (error) {
+      debugPrint('[SplashScreen] Token validation error: $error');
+      return false;
+    }
+  }
+
+  Future<void> _navigateFromSplash() async {
+    if (!mounted) {
+      return;
+    }
+
+    final token = await TokenStorage.getToken();
+    debugPrint(
+      '[SplashScreen] Stored auth token: ${token == null ? '<null>' : token}',
+    );
+    final isValid = token != null && token.isNotEmpty
+        ? await _isTokenValid(token)
+        : false;
+
+    if (!isValid) {
+      await TokenStorage.deleteToken();
+    }
+
+    final destination = isValid ? const MainScreen() : const LoginScreen();
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder<void>(
+        pageBuilder: (_, _, _) => destination,
+        transitionsBuilder: (_, animation, _, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
   }
 
   @override
@@ -55,10 +113,7 @@ class _SplashScreenState extends State<SplashScreen> {
               duration: const Duration(milliseconds: 900),
               curve: Curves.easeOutCubic,
               builder: (context, value, child) {
-                return Opacity(
-                  opacity: value.clamp(0, 1),
-                  child: Transform.scale(scale: value, child: child),
-                );
+                return Transform.scale(scale: value, child: child);
               },
               child: const _BrandMark(),
             ),

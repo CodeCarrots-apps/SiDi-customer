@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/controller/logoutcontroller.dart';
+import 'package:sidi/presentation/appointments_screen.dart';
 import 'package:sidi/presentation/loginscreen.dart';
 import 'package:sidi/utils/token_storage.dart';
 
@@ -69,13 +70,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
           SliverToBoxAdapter(
             child: _buildSection(
               title: 'MANAGEMENT',
-              items: const [
-                _ProfileItemData(Icons.calendar_month_outlined, 'My Bookings'),
+              items: [
                 _ProfileItemData(
+                  Icons.calendar_month_outlined,
+                  'My Bookings',
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const AppointmentsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const _ProfileItemData(
                   Icons.credit_card_outlined,
                   'Payments & Billing',
                 ),
-                _ProfileItemData(
+                const _ProfileItemData(
                   Icons.auto_awesome_outlined,
                   'Favorite Stylists',
                 ),
@@ -159,8 +170,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<String?> _getToken() async {
-    // Retrieve token from shared_preferences
-    return await TokenStorage.getToken();
+    final token = await TokenStorage.getToken();
+    debugPrint(
+      '[ProfileScreen] Stored auth token: ${token == null ? '<null>' : token}',
+    );
+    return token;
   }
 
   Widget _buildProfileHeader(double scale) {
@@ -350,15 +364,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           color: kWarmGrey200,
           size: 17 * scale,
         ),
-        onTap: () {},
+        onTap: item.onTap,
       ),
     );
   }
 }
 
 class _ProfileItemData {
-  const _ProfileItemData(this.icon, this.label);
+  const _ProfileItemData(this.icon, this.label, {this.onTap});
 
   final IconData icon;
   final String label;
+  final VoidCallback? onTap;
 }

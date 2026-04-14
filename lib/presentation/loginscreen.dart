@@ -16,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final LoginController _loginController = LoginController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -25,6 +26,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLoginTap() async {
+    if (_isLoading) {
+      return;
+    }
+
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
@@ -50,33 +55,42 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    setState(() {
+      _isLoading = true;
+    });
+
     _loginController.email = email;
     _loginController.password = password;
     debugPrint('[Login] Starting login request');
 
-    final result = await _loginController.login();
-    debugPrint(
-      '[Login] Request finished. success=${result.isSuccess}, message=${result.message}, user=${result.username.isEmpty ? '<unknown>' : result.username}',
-    );
-
-    if (!mounted) {
-      return;
-    }
-
-    if (result.isSuccess) {
-      // ScaffoldMessenger.of(
-      //   context,
-      // ).showSnackBar(SnackBar(content: Text(result.message)));
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainScreen()),
+    try {
+      final result = await _loginController.login();
+      debugPrint(
+        '[Login] Request finished. success=${result.isSuccess}, message=${result.message}, user=${result.username.isEmpty ? '<unknown>' : result.username}',
       );
-      return;
-    }
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(result.message)));
+      if (!mounted) {
+        return;
+      }
+
+      if (result.isSuccess) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+        );
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result.message)));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -193,14 +207,20 @@ class _LoginScreenState extends State<LoginScreen> {
           width: double.infinity,
           height: kInputFieldHeight,
           child: ElevatedButton(
-            onPressed: _handleLoginTap,
+            onPressed: _isLoading ? null : _handleLoginTap,
             style: ElevatedButton.styleFrom(
               backgroundColor: kEspressoColor,
               foregroundColor: kIvoryColor,
               shape: RoundedRectangleBorder(borderRadius: kFullBorderRadius),
               textStyle: kButtonTextStyle,
             ),
-            child: const Text('LOG IN'),
+            child: _isLoading
+                ? const SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('LOG IN'),
           ),
         ),
       ],

@@ -9,7 +9,7 @@ class AppConstants {
   static const String forgotpass =
       '${baseUrl}api/mobileapp/auth/forgot-password';
   static const String resetpass = '${baseUrl}api/mobileapp/auth/reset-password';
-  static const String profile = '${baseUrl}api/mobileapp/auth/customer/profile';
+  static const String profile = '${baseUrl}api/mobileapp/user/profile';
   static const String availabilty = '${baseUrl}customer/availability';
   static const String earnings = '${baseUrl}customer/earnings';
   static const String appointments = '${baseUrl}customer/appointments';

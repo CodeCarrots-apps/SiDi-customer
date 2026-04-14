@@ -53,9 +53,26 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(child: CircularProgressIndicator());
                   } else if (snapshot.hasError) {
-                    return Center(child: Text('Failed to load bookings'));
+                    return Center(
+                      child: Text(
+                        'Failed to load bookings: ${snapshot.error}',
+                        textAlign: TextAlign.center,
+                      ),
+                    );
                   }
                   final bookings = snapshot.data ?? [];
+                  if (bookings.isEmpty) {
+                    return Center(
+                      child: Text(
+                        'No bookings found. Please make a booking or try again later.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 14 * scale,
+                          color: kWarmGrey600,
+                        ),
+                      ),
+                    );
+                  }
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

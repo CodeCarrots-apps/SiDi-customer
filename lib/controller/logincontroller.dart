@@ -5,7 +5,16 @@ import 'package:sidi/utils/app_constants.dart';
 import 'package:sidi/utils/token_storage.dart';
 
 class LoginController extends GetxController {
-  LoginController({Dio? dio}) : _dio = dio ?? Dio();
+  LoginController({Dio? dio})
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
+              connectTimeout: const Duration(seconds: 15),
+              receiveTimeout: const Duration(seconds: 20),
+              sendTimeout: const Duration(seconds: 20),
+            ),
+          );
 
   final Dio _dio;
   String email = '';
@@ -39,19 +48,21 @@ class LoginController extends GetxController {
       final user = data['user'] is Map<String, dynamic>
           ? data['user'] as Map<String, dynamic>
           : <String, dynamic>{};
-
+      final token = (data['token'] as String?) ?? '';
+      final isSuccess = data['success'] == true && token.isNotEmpty;
+      final message = (data['message'] as String?) ?? 'Login completed.';
       final result = LoginResult(
-        isSuccess: data['success'] == true,
-        message: (data['message'] as String?) ?? 'Login completed.',
-        token: (data['token'] as String?) ?? '',
+        isSuccess: isSuccess,
+        message: message,
+        token: token,
         username: (user['username'] as String?) ?? '',
       );
 
       if (!result.isSuccess) {
-        errorMessage = result.message;
-        debugPrint(
-          '[LoginController] Login rejected by API: ${result.message}',
-        );
+        errorMessage = result.token.isEmpty && data['success'] == true
+            ? 'Login failed. Invalid token received.'
+            : result.message;
+        debugPrint('[LoginController] Login rejected by API: $errorMessage');
       } else {
         debugPrint(
           '[LoginController] Login successful: user=${result.username}, email=${email.trim()}',
