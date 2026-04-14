@@ -5,7 +5,9 @@ import 'package:sidi/constant/constants.dart';
 import 'servicedetailscreen.dart';
 
 class DetailedServiceScreen extends StatefulWidget {
-  const DetailedServiceScreen({super.key});
+  const DetailedServiceScreen({super.key, this.initialSearchQuery});
+
+  final String? initialSearchQuery;
 
   @override
   State<DetailedServiceScreen> createState() => _DetailedServiceScreenState();
@@ -14,6 +16,30 @@ class DetailedServiceScreen extends StatefulWidget {
 class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
   int _selectedFilterIndex = 0;
   int _selectedSubFilterIndex = 0;
+
+  bool get _hasSearchQuery =>
+      widget.initialSearchQuery != null &&
+      widget.initialSearchQuery!.trim().isNotEmpty;
+
+  String get _searchQuery =>
+      widget.initialSearchQuery?.trim().toLowerCase() ?? '';
+
+  List<Map<String, String>> get _searchFilteredServices {
+    if (!_hasSearchQuery) return [];
+    return services.where((service) {
+      final title = service['title']!.toLowerCase();
+      final price = service['price']!.toLowerCase();
+      final duration = service['duration']!.toLowerCase();
+      final category = service['category']!.toLowerCase();
+      final subCategory = service['subCategory']!.toLowerCase();
+      final query = _searchQuery;
+      return title.contains(query) ||
+          price.contains(query) ||
+          duration.contains(query) ||
+          category.contains(query) ||
+          subCategory.contains(query);
+    }).toList();
+  }
 
   // Colors are provided by lib/constant/constants.dart
 
@@ -106,6 +132,10 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
   }
 
   List<Map<String, String>> get _filteredServices {
+    if (_hasSearchQuery) {
+      return _searchFilteredServices;
+    }
+
     final categoryFiltered = _categoryServices;
     if (_selectedSubFilterIndex == 0) {
       return categoryFiltered;
@@ -175,6 +205,23 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
               SizedBox(width: 8),
             ],
           ),
+          if (_hasSearchQuery)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 18,
+                ),
+                child: Text(
+                  'Search results for "${widget.initialSearchQuery}"',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    letterSpacing: 1.2,
+                    color: kWarmGrey600,
+                  ),
+                ),
+              ),
+            ),
           SliverToBoxAdapter(child: _buildFilterChips()),
           SliverToBoxAdapter(child: _buildSubFilterChips()),
           SliverPadding(

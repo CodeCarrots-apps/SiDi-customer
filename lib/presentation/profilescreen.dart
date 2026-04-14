@@ -1,12 +1,16 @@
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/controller/logoutcontroller.dart';
 import 'package:sidi/presentation/appointments_screen.dart';
+import 'package:sidi/presentation/editprofilescreen.dart';
 import 'package:sidi/presentation/loginscreen.dart';
+import 'package:sidi/models/user_profile.dart';
+import 'package:sidi/utils/app_constants.dart';
 import 'package:sidi/utils/token_storage.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -19,7 +23,80 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final LogoutController _logoutController = LogoutController();
   final ImagePicker _imagePicker = ImagePicker();
+  final Dio _dio = Dio();
   File? _avatarImage;
+  bool _isLoading = true;
+  String? _errorMessage;
+  UserProfile? _profile;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserProfile();
+  }
+
+  Future<void> _fetchUserProfile() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final token = await _getToken();
+    if (token == null || token.isEmpty) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Authentication token is missing.';
+      });
+      return;
+    }
+
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        AppConstants.profile,
+        options: Options(
+          headers: <String, dynamic>{
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      final data = response.data ?? <String, dynamic>{};
+      if (response.statusCode == 200 && data['success'] == true) {
+        final profile = UserProfile.fromJson(data);
+        if (!mounted) return;
+        setState(() {
+          _profile = profile;
+          _isLoading = false;
+        });
+      } else {
+        final message =
+            (data['message'] as String?) ?? 'Unable to load profile.';
+        if (!mounted) return;
+        setState(() {
+          _errorMessage = message;
+          _isLoading = false;
+        });
+      }
+    } on DioException catch (error) {
+      final responseData = error.response?.data;
+      final message = responseData is Map<String, dynamic>
+          ? (responseData['message'] as String?) ?? 'Unable to load profile.'
+          : 'Unable to load profile. Please check your connection.';
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = message;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Something went wrong while loading your profile.';
+        _isLoading = false;
+      });
+    }
+  }
 
   Future<void> _pickProfileImage() async {
     final pickedFile = await _imagePicker.pickImage(
@@ -65,105 +142,181 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ),
-          SliverToBoxAdapter(child: _buildProfileHeader(scale)),
-          SliverToBoxAdapter(child: _buildStatStrip(scale)),
-          SliverToBoxAdapter(
-            child: _buildSection(
-              title: 'MANAGEMENT',
-              items: [
-                _ProfileItemData(
-                  Icons.calendar_month_outlined,
-                  'My Bookings',
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const AppointmentsScreen(),
-                      ),
-                    );
-                  },
-                ),
-                const _ProfileItemData(
-                  Icons.credit_card_outlined,
-                  'Payments & Billing',
-                ),
-                const _ProfileItemData(
-                  Icons.auto_awesome_outlined,
-                  'Favorite Stylists',
-                ),
-              ],
-              scale: scale,
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: _buildSection(
-              title: 'APPLICATION',
-              items: const [
-                _ProfileItemData(Icons.tune, 'Settings'),
-                _ProfileItemData(Icons.help_outline, 'Support Center'),
-              ],
-              scale: scale,
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                24 * scale,
-                24 * scale,
-                24 * scale,
-                110 * scale,
+          if (_isLoading)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: CircularProgressIndicator(color: kEspressoColor),
               ),
-              child: OutlinedButton(
-                onPressed: () async {
-                  final token = await _getToken();
-                  if (token == null || token.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('No token found.')),
-                    );
-                    return;
-                  }
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (context) =>
-                        const Center(child: CircularProgressIndicator()),
-                  );
-                  final success = await _logoutController.logout(token);
-                  Navigator.of(context).pop(); // Remove loading dialog
-                  if (success) {
-                    // Navigate to splash screen and clear all previous routes
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                      (route) => false,
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          _logoutController.errorMessage ?? 'Logout failed.',
+            )
+          else if (_errorMessage != null)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24 * scale),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 14 * scale,
+                        color: kCharcoalColor,
+                      ),
+                    ),
+                    SizedBox(height: 20 * scale),
+                    OutlinedButton(
+                      onPressed: _fetchUserProfile,
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: kWarmGrey200),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(0),
                         ),
                       ),
-                    );
-                  }
-                },
-                style: OutlinedButton.styleFrom(
-                  minimumSize: Size.fromHeight(42 * scale),
-                  side: BorderSide(color: kWarmGrey200),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(0),
-                  ),
+                      child: Text(
+                        'RETRY',
+                        style: GoogleFonts.inter(
+                          fontSize: 12 * scale,
+                          letterSpacing: 2,
+                          color: kAccentGold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  'SIGN OUT',
-                  style: GoogleFonts.inter(
-                    fontSize: 9 * scale,
-                    letterSpacing: 4,
-                    fontWeight: FontWeight.w500,
-                    color: kAccentGold,
+              ),
+            )
+          else ...[
+            SliverToBoxAdapter(child: _buildProfileHeader(scale)),
+            SliverToBoxAdapter(child: _buildStatStrip(scale)),
+            SliverToBoxAdapter(child: _buildFavoriteStylistsSection(scale)),
+            SliverToBoxAdapter(
+              child: _buildSection(
+                title: 'MANAGEMENT',
+                items: [
+                  _ProfileItemData(
+                    Icons.edit_outlined,
+                    'Edit Profile',
+                    onTap: () async {
+                      if (_profile == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Profile not loaded yet.'),
+                          ),
+                        );
+                        return;
+                      }
+
+                      final updatedProfile = await Navigator.of(context)
+                          .push<UserProfile?>(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  EditProfileScreen(profile: _profile!),
+                            ),
+                          );
+
+                      if (updatedProfile != null && mounted) {
+                        setState(() {
+                          _profile = updatedProfile;
+                        });
+                        await _fetchUserProfile();
+                      }
+                    },
+                  ),
+                  _ProfileItemData(
+                    Icons.calendar_month_outlined,
+                    'My Bookings',
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const AppointmentsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const _ProfileItemData(
+                    Icons.credit_card_outlined,
+                    'Payments & Billing',
+                  ),
+                  const _ProfileItemData(
+                    Icons.auto_awesome_outlined,
+                    'Favorite Stylists',
+                  ),
+                ],
+                scale: scale,
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: _buildSection(
+                title: 'APPLICATION',
+                items: const [
+                  _ProfileItemData(Icons.tune, 'Settings'),
+                  _ProfileItemData(Icons.help_outline, 'Support Center'),
+                ],
+                scale: scale,
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  24 * scale,
+                  24 * scale,
+                  24 * scale,
+                  110 * scale,
+                ),
+                child: OutlinedButton(
+                  onPressed: () async {
+                    final token = await _getToken();
+                    if (token == null || token.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('No token found.')),
+                      );
+                      return;
+                    }
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) =>
+                          const Center(child: CircularProgressIndicator()),
+                    );
+                    final success = await _logoutController.logout(token);
+                    Navigator.of(context).pop();
+                    if (success) {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        (route) => false,
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            _logoutController.errorMessage ?? 'Logout failed.',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: Size.fromHeight(42 * scale),
+                    side: BorderSide(color: kWarmGrey200),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(0),
+                    ),
+                  ),
+                  child: Text(
+                    'SIGN OUT',
+                    style: GoogleFonts.inter(
+                      fontSize: 9 * scale,
+                      letterSpacing: 4,
+                      fontWeight: FontWeight.w500,
+                      color: kAccentGold,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -178,6 +331,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileHeader(double scale) {
+    final name = _profile?.user.username ?? 'Customer';
+    final tier = _profile?.stats.tier.toUpperCase() ?? 'MEMBER';
+    final joined = _profile != null
+        ? 'MEMBER SINCE ${_formatMemberSince(_profile!.stats.memberSince)}'
+        : 'MEMBER SINCE 2022';
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(
@@ -233,7 +392,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           SizedBox(height: 18 * scale),
           Text(
-            'Isabella Sterling',
+            name,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: GoogleFonts.playfairDisplay(
@@ -246,7 +405,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           SizedBox(height: 8 * scale),
           Text(
-            'Gold Member',
+            tier,
             style: GoogleFonts.playfairDisplay(
               fontSize: 22 * scale,
               fontStyle: FontStyle.italic,
@@ -255,19 +414,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           SizedBox(height: 12 * scale),
           Text(
-            'MEMBER SINCE 2022',
+            joined,
             style: GoogleFonts.inter(
               fontSize: 9 * scale,
               letterSpacing: 3,
               color: kWarmGrey600,
             ),
           ),
+          if (_profile != null) ...[
+            SizedBox(height: 8 * scale),
+            Text(
+              _profile!.user.email,
+              style: GoogleFonts.inter(
+                fontSize: 11 * scale,
+                color: kWarmGrey600,
+              ),
+            ),
+            SizedBox(height: 4 * scale),
+            Text(
+              _profile!.user.phoneNumber,
+              style: GoogleFonts.inter(
+                fontSize: 11 * scale,
+                color: kWarmGrey600,
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
   Widget _buildStatStrip(double scale) {
+    final bookings = _profile?.stats.totalBookings.toString() ?? '0';
+    final reviews = _profile?.stats.totalReviews.toString() ?? '0';
+
     return Container(
       padding: EdgeInsets.symmetric(
         vertical: 18 * scale,
@@ -281,34 +461,131 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: Row(
         children: [
-          Expanded(child: _statCell('12', 'BOOKINGS', scale)),
-          Expanded(child: _statCell('4', 'REVIEWS', scale)),
+          Expanded(child: _statCell(bookings, 'BOOKINGS', scale)),
+          Expanded(child: _statCell(reviews, 'REVIEWS', scale)),
         ],
       ),
     );
   }
 
-  Widget _statCell(String value, String label, double scale) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: GoogleFonts.playfairDisplay(
-            fontSize: 26 * scale,
-            color: kCharcoalColor,
-            fontWeight: FontWeight.w500,
+  Widget _buildFavoriteStylistsSection(double scale) {
+    final favorites = _profile?.user.favoriteBeauticians ?? [];
+
+    return Padding(
+      padding: EdgeInsets.only(top: 24 * scale, bottom: 8 * scale),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 28 * scale),
+            child: Text(
+              'FAVORITE STYLISTS',
+              style: GoogleFonts.inter(
+                fontSize: 9 * scale,
+                letterSpacing: 4,
+                color: kAccentGold,
+              ),
+            ),
           ),
-        ),
-        SizedBox(height: 6 * scale),
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 9 * scale,
-            letterSpacing: 3,
-            color: kAccentGold,
-          ),
-        ),
-      ],
+          SizedBox(height: 12 * scale),
+          if (favorites.isEmpty)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24 * scale),
+              child: Text(
+                'No favorite stylists found yet.',
+                style: GoogleFonts.inter(
+                  fontSize: 14 * scale,
+                  color: kWarmGrey600,
+                ),
+              ),
+            )
+          else
+            Column(
+              children: favorites.map((stylist) {
+                return Container(
+                  margin: EdgeInsets.symmetric(
+                    horizontal: 20 * scale,
+                    vertical: 10 * scale,
+                  ),
+                  padding: EdgeInsets.all(14 * scale),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16 * scale),
+                    boxShadow: [
+                      BoxShadow(
+                        color: kWarmGrey200.withOpacity(0.25),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 24 * scale,
+                        backgroundColor: kWarmGrey50,
+                        backgroundImage: stylist.profileImage.isNotEmpty
+                            ? NetworkImage(
+                                'https://sidi.mobilegear.co.in${stylist.profileImage}',
+                              )
+                            : null,
+                        child: stylist.profileImage.isEmpty
+                            ? Icon(
+                                Icons.person,
+                                color: kWarmGrey600,
+                                size: 26 * scale,
+                              )
+                            : null,
+                      ),
+                      SizedBox(width: 14 * scale),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              stylist.fullName,
+                              style: GoogleFonts.inter(
+                                fontSize: 16 * scale,
+                                fontWeight: FontWeight.w500,
+                                color: kCharcoalColor,
+                              ),
+                            ),
+                            SizedBox(height: 4 * scale),
+                            Text(
+                              stylist.tier,
+                              style: GoogleFonts.inter(
+                                fontSize: 12 * scale,
+                                color: kAccentGold,
+                              ),
+                            ),
+                            SizedBox(height: 4 * scale),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.star,
+                                  color: kAccentGold,
+                                  size: 14 * scale,
+                                ),
+                                SizedBox(width: 4 * scale),
+                                Text(
+                                  stylist.rating.toStringAsFixed(1),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12 * scale,
+                                    color: kWarmGrey600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
+      ),
     );
   }
 
@@ -367,6 +644,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
         onTap: item.onTap,
       ),
     );
+  }
+
+  Widget _statCell(String value, String label, double scale) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: GoogleFonts.playfairDisplay(
+            fontSize: 26 * scale,
+            color: kCharcoalColor,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        SizedBox(height: 6 * scale),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 9 * scale,
+            letterSpacing: 3,
+            color: kAccentGold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatMemberSince(String value) {
+    try {
+      final date = DateTime.parse(value).toLocal();
+      const monthNames = [
+        'JAN',
+        'FEB',
+        'MAR',
+        'APR',
+        'MAY',
+        'JUN',
+        'JUL',
+        'AUG',
+        'SEP',
+        'OCT',
+        'NOV',
+        'DEC',
+      ];
+      return '${monthNames[date.month - 1]} ${date.year}';
+    } catch (_) {
+      return value.split('T').first;
+    }
   }
 }
 

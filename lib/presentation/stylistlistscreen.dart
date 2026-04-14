@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/presentation/locationsearchscreen.dart'
     show LocationSearchScreen;
+import 'detailedartistscreen.dart';
 import '../models/stylist.dart';
 
 class StylistListScreen extends StatefulWidget {
@@ -171,7 +172,18 @@ class StylistCard extends StatelessWidget {
               Row(
                 children: [
                   GestureDetector(
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => DetailedArtistScreen(
+                            artistName: stylist.name,
+                            role: stylist.role,
+                            imageUrl: stylist.image,
+                          ),
+                        ),
+                      );
+                    },
                     child: const Text(
                       'BOOK NOW',
                       style: TextStyle(
@@ -184,7 +196,18 @@ class StylistCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 20),
                   GestureDetector(
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => DetailedArtistScreen(
+                            artistName: stylist.name,
+                            role: stylist.role,
+                            imageUrl: stylist.image,
+                          ),
+                        ),
+                      );
+                    },
                     child: const Text(
                       'VIEW',
                       style: TextStyle(

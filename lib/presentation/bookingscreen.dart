@@ -2,8 +2,59 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 
-class BookingScreen extends StatelessWidget {
+import 'detailedartistscreen.dart';
+import 'detailedservicescreen.dart';
+
+class BookingScreen extends StatefulWidget {
   const BookingScreen({super.key});
+
+  @override
+  State<BookingScreen> createState() => _BookingScreenState();
+}
+
+class _BookingScreenState extends State<BookingScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  final List<Map<String, String>> _searchData = [
+    {
+      'type': 'service',
+      'title': 'Glow Facial',
+      'subtitle': 'Signature facial treatment',
+    },
+    {
+      'type': 'service',
+      'title': 'Silk Press',
+      'subtitle': 'Smooth hair styling',
+    },
+    {
+      'type': 'service',
+      'title': 'Moonlight Ritual',
+      'subtitle': 'Botanical skin therapy',
+    },
+    {
+      'type': 'artist',
+      'title': 'Elena Rodriguez',
+      'subtitle': 'Senior Beauty Artist',
+    },
+    {'type': 'artist', 'title': 'Julian V.', 'subtitle': 'Colorist'},
+    {'type': 'artist', 'title': 'Sasha L.', 'subtitle': 'Cut Specialist'},
+  ];
+
+  List<Map<String, String>> get _filteredSearchResults {
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return [];
+    return _searchData.where((item) {
+      return item['title']!.toLowerCase().contains(query) ||
+          item['subtitle']!.toLowerCase().contains(query);
+    }).toList();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +87,10 @@ class BookingScreen extends StatelessWidget {
                 children: [
                   _buildSearchBox(scale),
                   SizedBox(height: 14 * scale),
-                  _buildRecentSearches(scale),
+                  if (_searchQuery.isNotEmpty)
+                    _buildSearchResults(scale)
+                  else
+                    _buildRecentSearches(scale),
                   SizedBox(height: 20 * scale),
                   _buildSectionTitle('Curated Categories', scale),
                   SizedBox(height: 10 * scale),
@@ -77,18 +131,154 @@ class BookingScreen extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              'Search services or stylists',
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) => setState(() => _searchQuery = value),
               style: GoogleFonts.cormorantGaramond(
-                fontSize: 22 * scale,
+                fontSize: 18 * scale,
                 fontStyle: FontStyle.italic,
-                color: kWarmGrey600,
+                color: kCharcoalColor,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Search services or stylists',
+                hintStyle: GoogleFonts.cormorantGaramond(
+                  fontSize: 18 * scale,
+                  fontStyle: FontStyle.italic,
+                  color: kWarmGrey600,
+                ),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
               ),
             ),
           ),
-          Icon(Icons.search, color: kWarmGrey600, size: 20 * scale),
+          if (_searchController.text.isNotEmpty)
+            IconButton(
+              icon: Icon(Icons.clear, color: kWarmGrey600, size: 20 * scale),
+              onPressed: () => setState(() {
+                _searchController.clear();
+                _searchQuery = '';
+              }),
+            )
+          else
+            Icon(Icons.search, color: kWarmGrey600, size: 20 * scale),
         ],
       ),
+    );
+  }
+
+  Widget _buildSearchResults(double scale) {
+    final results = _filteredSearchResults;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'SEARCH RESULTS',
+          style: GoogleFonts.inter(
+            fontSize: 9 * scale,
+            letterSpacing: 2,
+            color: kWarmGrey600,
+          ),
+        ),
+        SizedBox(height: 8 * scale),
+        if (results.isEmpty)
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 12 * scale),
+            child: Text(
+              'No matching services or stylists found.',
+              style: GoogleFonts.inter(
+                fontSize: 12 * scale,
+                color: kWarmGrey600,
+              ),
+            ),
+          )
+        else
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: results.length,
+            separatorBuilder: (_, __) => SizedBox(height: 8 * scale),
+            itemBuilder: (context, index) {
+              final item = results[index];
+              final isArtist = item['type'] == 'artist';
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) {
+                        if (isArtist) {
+                          return DetailedArtistScreen(
+                            artistName: item['title']!,
+                            role: item['subtitle']!,
+                          );
+                        }
+                        return DetailedServiceScreen(
+                          initialSearchQuery: item['title'],
+                        );
+                      },
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: EdgeInsets.all(10 * scale),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: kWarmGrey200),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 34 * scale,
+                        height: 34 * scale,
+                        decoration: BoxDecoration(
+                          color: isArtist ? kEspressoColor : kWarmGrey200,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          isArtist ? Icons.person : Icons.brush,
+                          color: Colors.white,
+                          size: 20 * scale,
+                        ),
+                      ),
+                      SizedBox(width: 10 * scale),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item['title']!,
+                              style: GoogleFonts.inter(
+                                fontSize: 14 * scale,
+                                color: kCharcoalColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            SizedBox(height: 2 * scale),
+                            Text(
+                              item['subtitle']!,
+                              style: GoogleFonts.inter(
+                                fontSize: 11 * scale,
+                                color: kWarmGrey600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        isArtist ? 'Artist' : 'Service',
+                        style: GoogleFonts.inter(
+                          fontSize: 9 * scale,
+                          color: kWarmGrey600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+      ],
     );
   }
 
