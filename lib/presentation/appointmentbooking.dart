@@ -1,319 +1,379 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 
-class ConfirmationScreen extends StatelessWidget {
-  ConfirmationScreen({super.key});
+import 'package:sidi/models/booking_models.dart';
+import 'package:sidi/services/booking_service.dart';
+
+class ConfirmationScreen extends StatefulWidget {
+  const ConfirmationScreen({super.key});
+
+  @override
+  State<ConfirmationScreen> createState() => _ConfirmationScreenState();
+}
+
+class _ConfirmationScreenState extends State<ConfirmationScreen> {
+  late Future<BookingCreateResponse> _bookingFuture;
 
   final String service = "Signature Lavender Facial";
-  final DateTime date = DateTime(2024, 10, 24, 14, 30);
   final String artist = "Elena Rodriguez";
   final String location = "Elite Spa, Beverly Hills";
+
+  @override
+  void initState() {
+    super.initState();
+    _bookingFuture = _createBooking();
+  }
+
+  Future<BookingCreateResponse> _createBooking() {
+    return BookingService.createBooking(
+      serviceId: '6652...',
+      beauticianId: null,
+      bookingDate: '2026-04-10',
+      bookingTime: '14:00',
+      locationType: 'home',
+      address: BookingAddress(
+        address: '12 MG Road',
+        city: 'Kochi',
+        pincode: '682001',
+        latitude: 9.9312,
+        longitude: 76.2673,
+        unit: 'Apt 4B',
+        gateCode: '1234',
+      ),
+      notes: 'Please be on time',
+      preferredGender: 'Female',
+      addonIds: ['6654...', '6655...'],
+    );
+  }
+
+  void _retry() {
+    setState(() {
+      _bookingFuture = _createBooking();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final dateFormatted = DateFormat('MMM dd, yyyy').format(date);
-    final timeFormatted = DateFormat('h:mm a').format(date);
-
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            pinned: true,
-            floating: true,
-            snap: true,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            backgroundColor: Colors.transparent,
-            surfaceTintColor: Colors.transparent,
-            leading: IconButton(
-              icon: Icon(Icons.close, color: Colors.black87),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-          ),
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: SafeArea(
-              top: false,
-              child: Container(
-                width: double.infinity,
-                margin: EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 40,
-                      offset: Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(height: 16),
-                    SizedBox(height: 16),
+      body: FutureBuilder<BookingCreateResponse>(
+        future: _bookingFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-                    // Check Icon Circle
-                    Container(
-                      height: 80,
-                      width: 80,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Color(0xFFC5A059).withValues(alpha: 0.3),
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 15,
-                            offset: Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.check,
-                        size: 36,
-                        color: Color(0xFFC5A059),
-                      ),
-                    ),
-                    SizedBox(height: 16),
+          if (snapshot.hasError) {
+            return _buildError(
+              message:
+                  snapshot.error?.toString() ??
+                  'Something went wrong. Please try again.',
+              context: context,
+              showClose: true,
+            );
+          }
 
-                    // Heading
-                    Text(
-                      "Confirmed",
-                      style: GoogleFonts.cormorantGaramond(
-                        fontSize: 40,
-                        fontStyle: FontStyle.italic,
-                        fontWeight: FontWeight.w300,
-                        color: Color(0xFF1A1A1A),
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 24),
-                      child: Text(
-                        "Your time of indulgence is secured. We\n look forward to your arrival.",
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: Color(0xFF6B6B6B),
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 24),
+          final response = snapshot.data;
+          if (response == null) {
+            return _buildError(
+              message: 'Unexpected response from booking service.',
+              context: context,
+              showClose: true,
+            );
+          }
 
-                    // Service Section
-                    Column(
-                      children: [
-                        Text(
-                          "SERVICE",
-                          style: GoogleFonts.inter(
-                            fontSize: 10,
-                            color: Color(0xFFC5A059),
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          service,
-                          style: GoogleFonts.cormorantGaramond(
-                            fontSize: 24,
-                            fontStyle: FontStyle.italic,
-                            color: Color(0xFF1A1A1A),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 24),
+          if (!response.success) {
+            return _buildError(
+              message: response.message,
+              context: context,
+              showClose: true,
+            );
+          }
 
-                    // Date & Time Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Column(
-                          children: [
-                            Text(
-                              "DATE",
-                              style: GoogleFonts.inter(
-                                fontSize: 9,
-                                color: Color(0xFF6B6B6B),
-                                letterSpacing: 2,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              dateFormatted,
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Container(
-                          width: 1,
-                          height: 40,
-                          color: Color(0xFFC5A059).withValues(alpha: 0.2),
-                          margin: EdgeInsets.symmetric(horizontal: 16),
-                        ),
-                        Column(
-                          children: [
-                            Text(
-                              "TIME",
-                              style: GoogleFonts.inter(
-                                fontSize: 9,
-                                color: Color(0xFF6B6B6B),
-                                letterSpacing: 2,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              timeFormatted,
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-
-                    // Artist Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircleAvatar(
-                          radius: 16,
-                          backgroundImage: NetworkImage(
-                            'https://randomuser.me/api/portraits/women/69.jpg',
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          artist,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 12),
-
-                    // Location
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.location_on_outlined,
-                          size: 16,
-                          color: Color(0xFF6B6B6B),
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          location,
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: Color(0xFF6B6B6B),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 12),
-
-                    // Map/Image Placeholder
-                    Container(
-                      height: 120,
-                      margin: EdgeInsets.symmetric(horizontal: 24),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        image: DecorationImage(
-                          image: NetworkImage(
-                            'https://maps.googleapis.com/maps/api/staticmap?center=Beverly+Hills&zoom=13&size=600x300&maptype=roadmap&markers=color:red%7Clabel:S%7CBeverly+Hills',
-                          ),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    Spacer(),
-
-                    // Buttons
-                    Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Column(
-                        children: [
-                          ElevatedButton.icon(
-                            onPressed: () {},
-                            icon: Icon(Icons.calendar_today_outlined, size: 18),
-                            label: Text(
-                              "ADD TO CALENDAR",
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 1.5,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              minimumSize: Size(double.infinity, 50),
-                              backgroundColor: Colors.white.withValues(
-                                alpha: 0.5,
-                              ),
-                              foregroundColor: Color(0xFF1A1A1A),
-                              side: BorderSide(color: Color(0xFF1A1A1A)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(24),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 12),
-                          OutlinedButton(
-                            onPressed: () {},
-                            style: OutlinedButton.styleFrom(
-                              minimumSize: Size(double.infinity, 50),
-                              side: BorderSide(
-                                color: Color(0xFFC5A059).withValues(alpha: 0.3),
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(24),
-                              ),
-                            ),
-                            child: Text(
-                              "VIEW DETAILS",
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 1.5,
-                                color: Color(0xFFC5A059),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 12),
-                          TextButton(
-                            onPressed: () {},
-                            child: Text(
-                              "RETURN TO HOME",
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                color: Color(0xFF6B6B6B),
-                                letterSpacing: 1,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+          return CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                pinned: true,
+                floating: true,
+                snap: true,
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                backgroundColor: Colors.transparent,
+                surfaceTintColor: Colors.transparent,
+                leading: IconButton(
+                  icon: Icon(Icons.close, color: Colors.black87),
+                  onPressed: () => Navigator.pop(context),
                 ),
               ),
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: SafeArea(
+                  top: false,
+                  child: Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 40,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 16),
+                        const SizedBox(height: 16),
+                        Container(
+                          height: 80,
+                          width: 80,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(
+                                0xFFC5A059,
+                              ).withValues(alpha: 0.3),
+                              width: 2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 15,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.check,
+                            size: 36,
+                            color: Color(0xFFC5A059),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          "Confirmed",
+                          style: GoogleFonts.cormorantGaramond(
+                            fontSize: 40,
+                            fontStyle: FontStyle.italic,
+                            fontWeight: FontWeight.w300,
+                            color: const Color(0xFF1A1A1A),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Text(
+                            response.message,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: const Color(0xFF6B6B6B),
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Column(
+                          children: [
+                            Text(
+                              "SERVICE",
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                color: const Color(0xFFC5A059),
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 2,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              service,
+                              style: GoogleFonts.cormorantGaramond(
+                                fontSize: 24,
+                                fontStyle: FontStyle.italic,
+                                color: const Color(0xFF1A1A1A),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Column(
+                            children: [
+                              _buildDetailRow(
+                                'Booking ID',
+                                response.booking?.id ?? 'N/A',
+                              ),
+                              const SizedBox(height: 8),
+                              _buildDetailRow(
+                                'Status',
+                                response.booking?.status ?? 'N/A',
+                              ),
+                              const SizedBox(height: 8),
+                              _buildDetailRow(
+                                'Job ID',
+                                response.booking?.id ?? 'N/A',
+                              ),
+                              const SizedBox(height: 8),
+                              _buildDetailRow(
+                                'Price',
+                                '₹${response.estimatedPrice ?? 0}',
+                              ),
+                              const SizedBox(height: 8),
+                              _buildDetailRow(
+                                'Travel Fee',
+                                '₹${response.travelFee ?? 0}',
+                              ),
+                              const SizedBox(height: 8),
+                              _buildDetailRow(
+                                'Addons',
+                                '₹${response.addonsAmount ?? 0}',
+                              ),
+                              const SizedBox(height: 8),
+                              _buildDetailRow(
+                                'Broadcasted Count',
+                                '${response.broadcastedCount ?? 0}',
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Spacer(),
+                        Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            children: [
+                              ElevatedButton(
+                                onPressed: () => Navigator.pop(context),
+                                style: ElevatedButton.styleFrom(
+                                  minimumSize: const Size(double.infinity, 50),
+                                  backgroundColor: const Color(0xFFC5A059),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                ),
+                                child: Text(
+                                  "RETURN TO HOME",
+                                  style: GoogleFonts.inter(
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 1.5,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              OutlinedButton(
+                                onPressed: _retry,
+                                style: OutlinedButton.styleFrom(
+                                  minimumSize: const Size(double.infinity, 50),
+                                  side: BorderSide(
+                                    color: const Color(
+                                      0xFFC5A059,
+                                    ).withValues(alpha: 0.3),
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                ),
+                                child: Text(
+                                  "BOOK AGAIN",
+                                  style: GoogleFonts.inter(
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 1.5,
+                                    color: const Color(0xFFC5A059),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildError({
+    required String message,
+    required BuildContext context,
+    bool showClose = true,
+  }) {
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (showClose)
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Colors.black87),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                Text(
+                  'Booking failed',
+                  style: GoogleFonts.cormorantGaramond(
+                    fontSize: 32,
+                    fontStyle: FontStyle.italic,
+                    color: const Color(0xFF1A1A1A),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: const Color(0xFF6B6B6B),
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _retry,
+                  child: Text(
+                    'Retry',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            color: const Color(0xFF6B6B6B),
+            letterSpacing: 1,
+          ),
+        ),
+        Text(
+          value,
+          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+      ],
     );
   }
 }

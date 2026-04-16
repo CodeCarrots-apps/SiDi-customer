@@ -220,7 +220,12 @@ class DetailedArtistScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const SelectTimeSlotScreen(),
+                    builder: (_) => SelectTimeSlotScreen(
+                      title: service['title']!,
+                      price: service['price']!,
+                      duration: 'N/A',
+                      imageUrl: imageUrl,
+                    ),
                   ),
                 );
               },

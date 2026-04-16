@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
-
 import 'detailedservicescreen.dart';
+import 'servicedetailscreen.dart';
 import 'locationsearchscreen.dart';
 import 'notificationsscreen.dart';
 
@@ -181,7 +181,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const DetailedServiceScreen(),
+                          builder: (context) => const ServiceDetailScreen(
+                            title: 'Luxury Service',
+                            price: '₹1200',
+                            duration: '45 mins',
+                            imageUrl:
+                                'https://lh3.googleusercontent.com/aida-public/AB6AXuAhaWq1M13518DNZyCPQ9g4KOQRTAht8dZj5D874IbfzvkqszpLXlucjRhYezVs-_lJLiWAVHI9qI03t19Y8J7k2BgdDzQWlEngeqMMV1VLwhE0APclHMHm1VZCRX1lb-FVx6KM61B6XsFJZN8ft8CwzFZVTZo2xGzdp0GlXvaPbhZFTDVh_MfrckXWfO8Ahzcqi-KhgaMct57N4TmBn7L22sCcgVACr_9Mgi9SS8GgHQGRIjPFSj_MzAUg7B25s1FLULVBmrCCIcg',
+                          ),
                         ),
                       );
                     },

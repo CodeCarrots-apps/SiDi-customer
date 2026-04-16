@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:get/get_state_manager/get_state_manager.dart';
-import 'package:sidi/utils/app_constants.dart';
 import 'package:sidi/utils/token_storage.dart';
 
 class LogoutController extends GetxController {

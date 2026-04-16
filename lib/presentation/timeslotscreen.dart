@@ -2,8 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 
+import 'selectaddress.dart';
+
 class SelectTimeSlotScreen extends StatefulWidget {
-  const SelectTimeSlotScreen({super.key});
+  const SelectTimeSlotScreen({
+    super.key,
+    required this.title,
+    required this.price,
+    required this.duration,
+    required this.imageUrl,
+    this.description = '',
+  });
+
+  final String title;
+  final String price;
+  final String duration;
+  final String imageUrl;
+  final String description;
 
   @override
   State<SelectTimeSlotScreen> createState() => _SelectTimeSlotScreenState();
@@ -87,10 +102,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
             borderRadius: BorderRadius.circular(20),
             child: AspectRatio(
               aspectRatio: 4 / 3,
-              child: Image.network(
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuDT5hRQS0itEISJLmTfM1WkwPcjeyBjkYDvLRWzucDP5TLvttMOWBYqju6G4977etvz90vvYXYOtFw6GWLKWYAQ6cn4zUROlQPTZczPsRmEE9VYnfWJBeS8ZNY6Son6t9nV3WTxeslTk1qvdyGP5Ik_zMjTzU5EJ7jR4N28cxLM5FLNs6MjQAoJ8YeVmpEGWgo9EqZ4edtufuQv3Oa_1JHdUe9WHGC0-lu3KToVf7ur27OfiavyRkX4NilPCU5sBO3N6yHvnElRp_U",
-                fit: BoxFit.cover,
-              ),
+              child: Image.network(widget.imageUrl, fit: BoxFit.cover),
             ),
           ),
           const SizedBox(height: 20),
@@ -102,12 +114,12 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Signature Blowout",
+                      widget.title,
                       style: GoogleFonts.playfairDisplay(fontSize: 24),
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      "DURATION: 60 MINUTES",
+                      "DURATION: ${widget.duration.toUpperCase()}",
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         letterSpacing: 2,
@@ -118,7 +130,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                 ),
               ),
               Text(
-                "\$85.00",
+                widget.price,
                 style: GoogleFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w300,
@@ -135,7 +147,17 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 30),
       child: OutlinedButton.icon(
-        onPressed: () {},
+        onPressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Enhancement options will be available soon.',
+                style: GoogleFonts.inter(),
+              ),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        },
         icon: const Icon(Icons.auto_awesome, size: 18),
         label: Text(
           "Enhance your session",
@@ -291,13 +313,27 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                 borderRadius: BorderRadius.circular(50),
               ),
             ),
-            onPressed: selectedTime.isEmpty ? null : () {},
+            onPressed: selectedTime.isEmpty
+                ? null
+                : () {
+                    final selectedDate = 'October $selectedDay, 2023';
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SelectAddressScreen(
+                          selectedDate: selectedDate,
+                          selectedTime: selectedTime,
+                        ),
+                      ),
+                    );
+                  },
             child: Text(
               "CONTINUE TO PAYMENT",
               style: GoogleFonts.inter(
                 fontSize: 12,
                 letterSpacing: 2,
                 fontWeight: FontWeight.w600,
+                color: Colors.white,
               ),
             ),
           ),

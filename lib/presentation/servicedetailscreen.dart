@@ -282,7 +282,12 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const SelectTimeSlotScreen(),
+                  builder: (context) => SelectTimeSlotScreen(
+                    title: widget.title,
+                    price: widget.price,
+                    duration: widget.duration,
+                    imageUrl: widget.imageUrl,
+                  ),
                 ),
               );
             },

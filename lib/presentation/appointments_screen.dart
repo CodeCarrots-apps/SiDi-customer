@@ -17,7 +17,18 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
   @override
   void initState() {
     super.initState();
+    _loadBookings();
+  }
+
+  void _loadBookings() {
     _futureBookings = BookingService.fetchBookings();
+  }
+
+  Future<void> _refreshBookings() async {
+    setState(() {
+      _loadBookings();
+    });
+    await _futureBookings;
   }
 
   @override
@@ -27,114 +38,122 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
 
     return Scaffold(
       backgroundColor: kBackgroundLight,
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            pinned: true,
-            floating: true,
-            snap: true,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            backgroundColor: kBackgroundLight,
-            surfaceTintColor: kBackgroundLight,
-            centerTitle: true,
-          ),
-          SliverPadding(
-            padding: EdgeInsets.fromLTRB(
-              16 * scale,
-              10 * scale,
-              16 * scale,
-              24 * scale,
+      body: RefreshIndicator(
+        onRefresh: _refreshBookings,
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              pinned: true,
+              floating: true,
+              snap: true,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              backgroundColor: kBackgroundLight,
+              surfaceTintColor: kBackgroundLight,
+              centerTitle: true,
             ),
-            sliver: SliverToBoxAdapter(
-              child: FutureBuilder<List<Booking>>(
-                future: _futureBookings,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(
-                      child: Text(
-                        'Failed to load bookings: ${snapshot.error}',
-                        textAlign: TextAlign.center,
-                      ),
-                    );
-                  }
-                  final bookings = snapshot.data ?? [];
-                  if (bookings.isEmpty) {
-                    return Center(
-                      child: Text(
-                        'No bookings found. Please make a booking or try again later.',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 14 * scale,
-                          color: kWarmGrey600,
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                16 * scale,
+                10 * scale,
+                16 * scale,
+                24 * scale,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: FutureBuilder<List<Booking>>(
+                  future: _futureBookings,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Failed to load bookings:\n${snapshot.error}',
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 12),
+                            ElevatedButton(
+                              onPressed: _refreshBookings,
+                              child: const Text('Retry'),
+                            ),
+                          ],
                         ),
-                      ),
-                    );
-                  }
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: 6 * scale),
-                      Text(
-                        'Appointments',
-                        style: GoogleFonts.cormorantGaramond(
-                          fontSize: 36 * scale,
-                          fontStyle: FontStyle.italic,
-                          color: kCharcoalColor,
+                      );
+                    }
+                    final bookings = snapshot.data ?? [];
+                    if (bookings.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'No bookings found. Please make a booking or try again later.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            fontSize: 14 * scale,
+                            color: kWarmGrey600,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 22 * scale),
-                      _buildSectionLabel('RECENT', scale),
-                      SizedBox(height: 6 * scale),
-                      Divider(color: kWarmGrey200, height: 1),
-                      SizedBox(height: 12 * scale),
-                      ...bookings
-                          .take(2)
-                          .map(
-                            (b) => Padding(
-                              padding: EdgeInsets.only(bottom: 12 * scale),
-                              child: _buildRecentAppointment(
+                      );
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: 6 * scale),
+                        Text(
+                          'Appointments',
+                          style: GoogleFonts.cormorantGaramond(
+                            fontSize: 36 * scale,
+                            fontStyle: FontStyle.italic,
+                            color: kCharcoalColor,
+                          ),
+                        ),
+                        SizedBox(height: 22 * scale),
+                        _buildSectionLabel('RECENT', scale),
+                        SizedBox(height: 6 * scale),
+                        Divider(color: kWarmGrey200, height: 1),
+                        SizedBox(height: 12 * scale),
+                        ...bookings
+                            .take(2)
+                            .map(
+                              (b) => Padding(
+                                padding: EdgeInsets.only(bottom: 12 * scale),
+                                child: _buildRecentAppointment(
+                                  image: b.image.isNotEmpty
+                                      ? b.image
+                                      : 'https://via.placeholder.com/66x78',
+                                  title: b.title,
+                                  time: b.time,
+                                  stylist: b.stylist,
+                                  scale: scale,
+                                ),
+                              ),
+                            ),
+                        SizedBox(height: 18 * scale),
+                        _buildSectionLabel('EARLIER', scale),
+                        SizedBox(height: 6 * scale),
+                        Divider(color: kWarmGrey200, height: 1),
+                        SizedBox(height: 10 * scale),
+                        ...bookings
+                            .skip(2)
+                            .map(
+                              (b) => _buildEarlierAppointment(
                                 image: b.image.isNotEmpty
                                     ? b.image
-                                    : 'https://via.placeholder.com/66x78',
+                                    : 'https://via.placeholder.com/38',
                                 title: b.title,
-                                time: b.time,
-                                stylist: b.stylist,
+                                subtitle: b.stylist,
                                 scale: scale,
                               ),
                             ),
-                          ),
-                      SizedBox(height: 18 * scale),
-                      _buildSectionLabel('EARLIER', scale),
-                      SizedBox(height: 6 * scale),
-                      Divider(color: kWarmGrey200, height: 1),
-                      SizedBox(height: 10 * scale),
-                      ...bookings
-                          .skip(2)
-                          .map(
-                            (b) => _buildEarlierAppointment(
-                              image: b.image.isNotEmpty
-                                  ? b.image
-                                  : 'https://via.placeholder.com/38',
-                              title: b.title,
-                              subtitle: b.stylist,
-                              scale: scale,
-                            ),
-                          ),
-                      if (bookings.isEmpty)
-                        Padding(
-                          padding: EdgeInsets.only(top: 24 * scale),
-                          child: Center(child: Text(' ')),
-                        ),
-                    ],
-                  );
-                },
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

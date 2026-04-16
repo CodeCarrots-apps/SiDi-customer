@@ -90,8 +90,8 @@ class _BookingScreenState extends State<BookingScreen> {
                   if (_searchQuery.isNotEmpty)
                     _buildSearchResults(scale)
                   else
-                    _buildRecentSearches(scale),
-                  SizedBox(height: 20 * scale),
+                    // _buildRecentSearches(scale),
+                    SizedBox(height: 20 * scale),
                   _buildSectionTitle('Curated Categories', scale),
                   SizedBox(height: 10 * scale),
                   _buildCuratedGrid(scale),
@@ -278,31 +278,6 @@ class _BookingScreenState extends State<BookingScreen> {
               );
             },
           ),
-      ],
-    );
-  }
-
-  Widget _buildRecentSearches(double scale) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'RECENT SEARCHES',
-          style: GoogleFonts.inter(
-            fontSize: 9 * scale,
-            letterSpacing: 2,
-            color: kWarmGrey600,
-          ),
-        ),
-        SizedBox(height: 8 * scale),
-        Wrap(
-          spacing: 14 * scale,
-          children: [
-            _recentSearchText('Silk Press', scale),
-            _recentSearchText('Elena Rodriguez', scale),
-            _recentSearchText('Glow Facial', scale),
-          ],
-        ),
       ],
     );
   }
