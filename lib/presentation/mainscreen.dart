@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:sidi/presentation/appointments_screen.dart';
+import 'package:sidi/presentation/bookingscreen.dart';
 import 'package:sidi/presentation/homescreen.dart';
 import 'package:sidi/presentation/profilescreen.dart';
 import 'package:sidi/presentation/stylistlistscreen.dart';
 
 final List<Widget> _tabs = <Widget>[
   const HomeScreen(),
-  const AppointmentsScreen(),
+  const BookingScreen(),
   const StylistListScreen(),
   const ProfileScreen(),
 ];

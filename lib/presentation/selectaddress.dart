@@ -245,43 +245,17 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-      child: Row(
-        children: [
-          // GestureDetector(
-          //   onTap: () => Navigator.pop(context),
-          //   child: Container(
-          //     width: 42,
-          //     height: 42,
-          //     decoration: BoxDecoration(
-          //       color: Colors.white,
-          //       borderRadius: BorderRadius.circular(16),
-          //       boxShadow: [
-          //         BoxShadow(
-          //           color: const Color(0x0D000000),
-          //           blurRadius: 12,
-          //           offset: const Offset(0, 4),
-          //         ),
-          //       ],
-          //     ),
-          //     child: const Icon(
-          //       Icons.arrow_back_ios_new,
-          //       size: 18,
-          //       color: kEspressoColor,
-          //     ),
-          //   ),
-          // ),
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_ios_new, color: kEspressoColor),
-          ),
-          const Spacer(),
+    return Row(
+      children: [
+        IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back_ios_new, color: kEspressoColor),
+        ),
+        const Spacer(),
 
-          const Spacer(),
-          const SizedBox(width: 42),
-        ],
-      ),
+        const Spacer(),
+        const SizedBox(width: 42),
+      ],
     );
   }
 
