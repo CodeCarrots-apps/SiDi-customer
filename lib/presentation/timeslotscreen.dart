@@ -30,11 +30,30 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
   final Color mutedGold = kMutedGoldColor;
   final Color backgroundLight = kBackgroundLight;
 
-  int selectedDay = 5;
+  static const List<String> monthNames = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+
+  final DateTime initialDate = DateTime.now();
+  late DateTime selectedDate = initialDate;
   String selectedTime = "10:30 AM";
   int bottomIndex = 1;
 
-  final List<int> days = List.generate(14, (index) => index + 1);
+  late final List<DateTime> days = List.generate(
+    DateTime(initialDate.year, initialDate.month + 1, 0).day,
+    (index) => DateTime(initialDate.year, initialDate.month, index + 1),
+  );
 
   final List<String> timeSlots = [
     "09:00 AM",
@@ -176,13 +195,16 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
   }
 
   Widget _buildCalendar() {
+    final headerMonth = monthNames[days.first.month - 1].toUpperCase();
+    final headerYear = days.first.year;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "OCTOBER 2023",
+            "$headerMonth $headerYear",
             style: GoogleFonts.inter(
               fontSize: 11,
               letterSpacing: 3,
@@ -201,23 +223,33 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
             ),
             itemBuilder: (context, index) {
               final day = days[index];
-              final isSelected = selectedDay == day;
+              final today = DateTime(
+                initialDate.year,
+                initialDate.month,
+                initialDate.day,
+              );
+              final isPast = day.isBefore(today);
+              final isSelected =
+                  !isPast &&
+                  selectedDate.day == day.day &&
+                  selectedDate.month == day.month &&
+                  selectedDate.year == day.year;
 
               return GestureDetector(
-                onTap: () => setState(() => selectedDay = day),
+                onTap: isPast ? null : () => setState(() => selectedDate = day),
                 child: Container(
                   alignment: Alignment.center,
                   decoration: isSelected
                       ? BoxDecoration(color: champagne, shape: BoxShape.circle)
                       : null,
                   child: Text(
-                    "$day",
+                    "${day.day}",
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: isSelected
                           ? FontWeight.w600
                           : FontWeight.w300,
-                      color: espresso,
+                      color: isPast ? Colors.grey.shade400 : espresso,
                     ),
                   ),
                 ),
@@ -316,12 +348,13 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
             onPressed: selectedTime.isEmpty
                 ? null
                 : () {
-                    final selectedDate = 'October $selectedDay, 2023';
+                    final selectedDateString =
+                        '${monthNames[selectedDate.month - 1]} ${selectedDate.day}, ${selectedDate.year}';
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => SelectAddressScreen(
-                          selectedDate: selectedDate,
+                          selectedDate: selectedDateString,
                           selectedTime: selectedTime,
                         ),
                       ),
