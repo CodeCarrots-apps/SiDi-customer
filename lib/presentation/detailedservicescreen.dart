@@ -149,6 +149,16 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
           "https://lh3.googleusercontent.com/aida-public/AB6AXuCjD3Idcb9NwaKXy001FZBgWYb-DgyMVlYrDj7uZOEaJj6AVbNvATlq8Ivohs072AF9MuIquo9xyLLPMepeVLRbrZvshrVePIJ9vLLfQH7eghBjNqedHkwCNgascLhoJ0i5xGz2gmkT1wpCSGgp1J9U12Dk_DldmNTzrPfoHXqNHWurJJr0v2ARZF3ujQDcunGu3OJI9ib9MUKXg_uCntevkfCLnkbeZxRagDq1yx2F8Lt1qJlk8hZT9Q1NhTYeqrHG6JcDm0JpAUE",
     },
     {
+      "id": "6607",
+      "category": "Facials",
+      "subCategory": "Glow",
+      "title": "The 60-Minute Refresh",
+      "price": "\$120",
+      "duration": "60 mins",
+      "image":
+          "https://lh3.googleusercontent.com/aida-public/AB6AXuCjD3Idcb9NwaKXy001FZBgWYb-DgyMVlYrDj7uZOEaJj6AVbNvATlq8Ivohs072AF9MuIquo9xyLLPMepeVLRbrZvshrVePIJ9vLLfQH7eghBjNqedHkwCNgascLhoJ0i5xGz2gmkT1wpCSGgp1J9U12Dk_DldmNTzrPfoHXqNHWurJJr0v2ARZF3ujQDcunGu3OJI9ib9MUKXg_uCntevkfCLnkbeZxRagDq1yx2F8Lt1qJlk8hZT9Q1NhTYeqrHG6JcDm0JpAUE",
+    },
+    {
       "id": "6606",
       "category": "Facials",
       "subCategory": "Therapy",
@@ -310,6 +320,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
               ),
             ),
           SliverToBoxAdapter(child: _buildFilterChips()),
+          SliverToBoxAdapter(child: SizedBox(height: 8)),
           SliverToBoxAdapter(child: _buildSubFilterChips()),
           if (_filteredServices.isEmpty)
             SliverToBoxAdapter(

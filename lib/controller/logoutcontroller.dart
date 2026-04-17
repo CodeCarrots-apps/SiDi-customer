@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:get/get_state_manager/get_state_manager.dart';
+import 'package:sidi/services/local_storage_service.dart';
 import 'package:sidi/utils/token_storage.dart';
 
 class LogoutController extends GetxController {
@@ -27,8 +28,9 @@ class LogoutController extends GetxController {
         ),
       );
       if (response.statusCode == 200) {
-        // Clear token from shared_preferences
+        // Clear token from shared_preferences and remove cached appointments.
         await TokenStorage.deleteToken();
+        await LocalStorageService.clearCachedBookings();
         return true;
       } else {
         errorMessage = 'Logout failed. Please try again.';

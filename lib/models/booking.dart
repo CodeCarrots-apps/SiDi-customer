@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class Booking {
   final String id;
   final String title;
@@ -27,5 +29,28 @@ class Booking {
       status: json['status'] ?? '',
       jobId: json['jobId'] ?? json['job_id'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'time': time,
+      'stylist': stylist,
+      'image': image,
+      'status': status,
+      'jobId': jobId,
+    };
+  }
+
+  static List<Booking> listFromJson(String jsonString) {
+    final list = json.decode(jsonString) as List<dynamic>;
+    return list
+        .map((item) => Booking.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  static String listToJson(List<Booking> bookings) {
+    return json.encode(bookings.map((booking) => booking.toJson()).toList());
   }
 }

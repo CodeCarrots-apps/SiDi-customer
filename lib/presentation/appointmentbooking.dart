@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:sidi/models/booking_models.dart';
+import 'package:sidi/presentation/mainscreen.dart';
 
 class ConfirmationScreen extends StatefulWidget {
   const ConfirmationScreen({
@@ -34,212 +35,478 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
     }
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            pinned: true,
-            floating: true,
-            snap: true,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            backgroundColor: Colors.transparent,
-            surfaceTintColor: Colors.transparent,
-            leading: IconButton(
-              icon: const Icon(Icons.close, color: Colors.black87),
-              onPressed: () => Navigator.pop(context),
+      backgroundColor: const Color(0xFFF9F5EE),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    'BOOKING STATUS',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 2,
+                      color: const Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  const Spacer(flex: 2),
+                ],
+              ),
             ),
-          ),
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: SafeArea(
-              top: false,
-              child: Container(
-                width: double.infinity,
-                margin: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 40,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 16),
-                    const SizedBox(height: 16),
-                    Container(
-                      height: 80,
-                      width: 80,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFFC5A059).withValues(alpha: 0.3),
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 15,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.check,
-                        size: 36,
-                        color: Color(0xFFC5A059),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      "Confirmed",
-                      style: GoogleFonts.cormorantGaramond(
-                        fontSize: 40,
-                        fontStyle: FontStyle.italic,
-                        fontWeight: FontWeight.w300,
-                        color: const Color(0xFF1A1A1A),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Text(
-                        response.message,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: const Color(0xFF6B6B6B),
-                          height: 1.5,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        height: 300,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(28),
+                          image: DecorationImage(
+                            image: NetworkImage(
+                              response.booking?.image.isNotEmpty == true
+                                  ? response.booking!.image
+                                  : 'https://via.placeholder.com/600x420',
+                            ),
+                            fit: BoxFit.cover,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 28,
+                              offset: const Offset(0, 14),
+                            ),
+                          ],
+                        ),
+                        child: Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(28),
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.black.withOpacity(0.0),
+                                    Colors.black.withOpacity(0.48),
+                                  ],
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: 18,
+                              left: 18,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.88),
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                                child: Text(
+                                  'ARRIVING IN 5 MINS',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 1.6,
+                                    color: const Color(0xFF1A1A1A),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              left: 24,
+                              right: 24,
+                              bottom: 24,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'On the way',
+                                    style: GoogleFonts.playfairDisplay(
+                                      fontSize: 34,
+                                      fontStyle: FontStyle.italic,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Your stylist is close and will arrive shortly.',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      color: Colors.white.withOpacity(0.88),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                     const SizedBox(height: 24),
-                    Column(
-                      children: [
-                        Text(
-                          "SERVICE",
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 28,
+                              offset: const Offset(0, 14),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 32,
+                              backgroundImage: NetworkImage(
+                                response.booking?.image.isNotEmpty == true
+                                    ? response.booking!.image
+                                    : 'https://via.placeholder.com/120',
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    response.booking?.stylist.isNotEmpty == true
+                                        ? response.booking!.stylist
+                                        : 'Elena Richardson',
+                                    style: GoogleFonts.playfairDisplay(
+                                      fontSize: 18,
+                                      fontStyle: FontStyle.italic,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Master Stylist & Colorist',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      color: const Color(0xFF8C8C8C),
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: const Color(0xFFDDD6C3),
+                                    ),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: IconButton(
+                                    icon: const Icon(
+                                      Icons.chat_bubble_outline,
+                                      size: 18,
+                                      color: Color(0xFF1A1A1A),
+                                    ),
+                                    onPressed: () {},
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: const Color(0xFFDDD6C3),
+                                    ),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: IconButton(
+                                    icon: const Icon(
+                                      Icons.call,
+                                      size: 18,
+                                      color: Color(0xFF1A1A1A),
+                                    ),
+                                    onPressed: () {},
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 28,
+                              offset: const Offset(0, 14),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Booking Timeline',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                letterSpacing: 2,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF8C8C8C),
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            _buildTimelineRow(
+                              title: 'Booking Confirmed',
+                              time: response.booking?.time ?? '10:00 AM',
+                              active: false,
+                            ),
+                            const SizedBox(height: 18),
+                            _buildTimelineRow(
+                              title: 'Stylist Assigned',
+                              time: '10:15 AM',
+                              active: false,
+                            ),
+                            const SizedBox(height: 18),
+                            _buildTimelineRow(
+                              title: 'Stylist is on the way',
+                              time: response.booking?.time.isNotEmpty == true
+                                  ? response.booking!.time
+                                  : '10:42 AM',
+                              active: true,
+                              subtitle: 'CURRENT • ETA 10:42 AM',
+                            ),
+                            const SizedBox(height: 18),
+                            _buildTimelineRow(
+                              title: 'Service in Progress',
+                              time: 'Expected 11:00 AM',
+                              active: false,
+                              dimmed: true,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        height: 190,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 28,
+                              offset: const Offset(0, 14),
+                            ),
+                          ],
+                        ),
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(28),
+                                  color: const Color(0xFFF4EEE5),
+                                ),
+                              ),
+                            ),
+                            Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.location_on,
+                                    size: 32,
+                                    color: const Color(
+                                      0xFFC5A059,
+                                    ).withOpacity(0.9),
+                                  ),
+                                  const SizedBox(height: 14),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(50),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.05),
+                                          blurRadius: 12,
+                                        ),
+                                      ],
+                                    ),
+                                    child: Text(
+                                      response.booking?.stylist.isNotEmpty ==
+                                              true
+                                          ? '${response.booking!.stylist} is near'
+                                          : 'Elena is near',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 1.2,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                              builder: (_) => const MainScreen(),
+                            ),
+                            (route) => false,
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFC5A059),
+                          minimumSize: const Size(double.infinity, 56),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                        ),
+                        child: Text(
+                          'GO TO HOME',
                           style: GoogleFonts.inter(
-                            fontSize: 10,
-                            color: const Color(0xFFC5A059),
+                            fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            letterSpacing: 2,
+                            letterSpacing: 1.5,
+                            color: Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          widget.service,
-                          style: GoogleFonts.cormorantGaramond(
-                            fontSize: 24,
-                            fontStyle: FontStyle.italic,
-                            color: const Color(0xFF1A1A1A),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
-                        children: [
-                          _buildDetailRow(
-                            'Booking ID',
-                            response.booking?.id ?? 'N/A',
-                          ),
-                          const SizedBox(height: 8),
-                          _buildDetailRow(
-                            'Status',
-                            response.booking?.status ?? 'N/A',
-                          ),
-                          const SizedBox(height: 8),
-                          _buildDetailRow(
-                            'Job ID',
-                            response.booking?.id ?? 'N/A',
-                          ),
-                          const SizedBox(height: 8),
-                          _buildDetailRow(
-                            'Price',
-                            '₹${response.estimatedPrice ?? 0}',
-                          ),
-                          const SizedBox(height: 8),
-                          _buildDetailRow(
-                            'Travel Fee',
-                            '₹${response.travelFee ?? 0}',
-                          ),
-                          const SizedBox(height: 8),
-                          _buildDetailRow(
-                            'Addons',
-                            '₹${response.addonsAmount ?? 0}',
-                          ),
-                          const SizedBox(height: 8),
-                          _buildDetailRow(
-                            'Broadcasted Count',
-                            '${response.broadcastedCount ?? 0}',
-                          ),
-                        ],
                       ),
                     ),
-                    const Spacer(),
-                    Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        children: [
-                          ElevatedButton(
-                            onPressed: () => Navigator.pop(context),
-                            style: ElevatedButton.styleFrom(
-                              minimumSize: const Size(double.infinity, 50),
-                              backgroundColor: const Color(0xFFC5A059),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(24),
-                              ),
-                            ),
-                            child: Text(
-                              "RETURN TO HOME",
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 1.5,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          OutlinedButton(
-                            onPressed: _retry,
-                            style: OutlinedButton.styleFrom(
-                              minimumSize: const Size(double.infinity, 50),
-                              side: BorderSide(
-                                color: const Color(
-                                  0xFFC5A059,
-                                ).withValues(alpha: 0.3),
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(24),
-                              ),
-                            ),
-                            child: Text(
-                              "BOOK AGAIN",
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 1.5,
-                                color: const Color(0xFFC5A059),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    const SizedBox(height: 40),
                   ],
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildTimelineRow({
+    required String title,
+    required String time,
+    bool active = false,
+    bool dimmed = false,
+    String? subtitle,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: active ? const Color(0xFFC5A059) : Colors.white,
+                border: Border.all(
+                  color: active
+                      ? const Color(0xFFC5A059)
+                      : const Color(0xFFCCCCCC),
+                  width: 2,
+                ),
+                shape: BoxShape.circle,
+              ),
+            ),
+            if (!dimmed)
+              Container(
+                width: 2,
+                height: 58,
+                margin: const EdgeInsets.only(top: 2),
+                color: const Color(0xFFE4D8C2),
+              )
+            else
+              Container(
+                width: 2,
+                height: 58,
+                margin: const EdgeInsets.only(top: 2),
+                color: const Color(0xFFEDE6DD),
+              ),
+          ],
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                  color: dimmed
+                      ? const Color(0xFFB5B0A4)
+                      : const Color(0xFF1A1A1A),
+                ),
+              ),
+              const SizedBox(height: 4),
+              if (subtitle != null)
+                Text(
+                  subtitle,
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    letterSpacing: 1.2,
+                    color: const Color(0xFF8C8C8C),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        Text(
+          time,
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            color: dimmed ? const Color(0xFFB5B0A4) : const Color(0xFF8C8C8C),
+          ),
+        ),
+      ],
     );
   }
 
@@ -295,26 +562,6 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: const Color(0xFF6B6B6B),
-            letterSpacing: 1,
-          ),
-        ),
-        Text(
-          value,
-          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
-        ),
-      ],
     );
   }
 }

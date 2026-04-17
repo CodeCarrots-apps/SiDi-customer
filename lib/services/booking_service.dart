@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:sidi/models/booking.dart';
 import 'package:sidi/models/booking_models.dart';
+import 'package:sidi/services/local_storage_service.dart';
 import 'package:sidi/utils/token_storage.dart';
 
 class BookingService {
@@ -44,11 +45,12 @@ class BookingService {
   }) async {
     final token = await TokenStorage.getToken();
     if (token == null || token.isEmpty) {
+      final cached = await LocalStorageService.loadCachedBookings();
       return MyBookingsResponse(
-        success: false,
-        message: 'Authentication token is missing.',
-        bookings: [],
-        total: 0,
+        success: cached.isNotEmpty,
+        message: 'Authentication token is missing. Showing saved appointments.',
+        bookings: cached,
+        total: cached.length,
         currentPage: page,
       );
     }
@@ -59,21 +61,66 @@ class BookingService {
       queryParameters['status'] = status;
     }
 
-    final response = await dio.get(
-      _myBookingsUrl,
-      queryParameters: queryParameters,
-    );
-    if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
-      return MyBookingsResponse.fromJson(response.data as Map<String, dynamic>);
-    }
+    try {
+      final response = await dio.get(
+        _myBookingsUrl,
+        queryParameters: queryParameters,
+      );
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        final result = MyBookingsResponse.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+        final cached = await LocalStorageService.loadCachedBookings();
+        if (result.bookings.isNotEmpty) {
+          await LocalStorageService.saveCachedBookings(result.bookings);
+          return result;
+        }
+        if (cached.isNotEmpty) {
+          return MyBookingsResponse(
+            success: true,
+            message: 'Showing saved local appointments.',
+            bookings: cached,
+            total: cached.length,
+            currentPage: page,
+          );
+        }
+        return result;
+      }
 
-    return MyBookingsResponse(
-      success: false,
-      message: 'Failed to fetch bookings.',
-      bookings: [],
-      total: 0,
-      currentPage: page,
-    );
+      final cached = await LocalStorageService.loadCachedBookings();
+      return MyBookingsResponse(
+        success: cached.isNotEmpty,
+        message: 'Failed to fetch bookings. Showing saved appointments.',
+        bookings: cached,
+        total: cached.length,
+        currentPage: page,
+      );
+    } on DioException catch (error) {
+      debugPrint(
+        'BookingService.fetchBookingsResponse DioException: '
+        'status=${error.response?.statusCode}, '
+        'data=${error.response?.data}, '
+        'message=${error.message}',
+      );
+      final cached = await LocalStorageService.loadCachedBookings();
+      return MyBookingsResponse(
+        success: cached.isNotEmpty,
+        message: 'Failed to fetch bookings. Showing saved appointments.',
+        bookings: cached,
+        total: cached.length,
+        currentPage: page,
+      );
+    } catch (error) {
+      debugPrint('BookingService.fetchBookingsResponse error: $error');
+      final cached = await LocalStorageService.loadCachedBookings();
+      return MyBookingsResponse(
+        success: cached.isNotEmpty,
+        message: 'Failed to fetch bookings. Showing saved appointments.',
+        bookings: cached,
+        total: cached.length,
+        currentPage: page,
+      );
+    }
   }
 
   static Future<BookingCreateResponse> createBooking({

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import '../models/booking.dart';
 import '../services/booking_service.dart';
+import '../services/local_storage_service.dart';
 
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
@@ -17,16 +18,22 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadBookings();
+    _futureBookings = LocalStorageService.loadCachedBookings();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _refreshBookings();
+    });
   }
 
-  void _loadBookings() {
-    _futureBookings = BookingService.fetchBookings();
+  Future<List<Booking>> _loadBookings() async {
+    final bookings = await BookingService.fetchBookings();
+    await LocalStorageService.saveCachedBookings(bookings);
+    return bookings;
   }
 
   Future<void> _refreshBookings() async {
     setState(() {
-      _loadBookings();
+      _futureBookings = _loadBookings();
     });
     await _futureBookings;
   }

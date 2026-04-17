@@ -191,7 +191,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           else ...[
             SliverToBoxAdapter(child: _buildProfileHeader(scale)),
             SliverToBoxAdapter(child: _buildStatStrip(scale)),
-            SliverToBoxAdapter(child: _buildFavoriteStylistsSection(scale)),
             SliverToBoxAdapter(
               child: _buildSection(
                 title: 'MANAGEMENT',
@@ -472,128 +471,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Expanded(child: _statCell(bookings, 'BOOKINGS', scale)),
           Expanded(child: _statCell(reviews, 'REVIEWS', scale)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFavoriteStylistsSection(double scale) {
-    final favorites = _profile?.user.favoriteBeauticians ?? [];
-
-    return Padding(
-      padding: EdgeInsets.only(top: 24 * scale, bottom: 8 * scale),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 28 * scale),
-            child: Text(
-              'FAVORITE STYLISTS',
-              style: GoogleFonts.inter(
-                fontSize: 9 * scale,
-                letterSpacing: 4,
-                color: kAccentGold,
-              ),
-            ),
-          ),
-          SizedBox(height: 12 * scale),
-          if (favorites.isEmpty)
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24 * scale),
-              child: Text(
-                'No favorite stylists found yet.',
-                style: GoogleFonts.inter(
-                  fontSize: 14 * scale,
-                  color: kWarmGrey600,
-                ),
-              ),
-            )
-          else
-            Column(
-              children: favorites.map((stylist) {
-                return Container(
-                  margin: EdgeInsets.symmetric(
-                    horizontal: 20 * scale,
-                    vertical: 10 * scale,
-                  ),
-                  padding: EdgeInsets.all(14 * scale),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16 * scale),
-                    boxShadow: [
-                      BoxShadow(
-                        color: kWarmGrey200.withOpacity(0.25),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 24 * scale,
-                        backgroundColor: kWarmGrey50,
-                        backgroundImage: stylist.profileImage.isNotEmpty
-                            ? NetworkImage(
-                                // 'https://sidi.mobilegear.co.in${stylist.profileImage}',
-                                'https://i.pinimg.com/736x/8b/f4/d6/8bf4d6706d34d799dcc6a6c8cde495ed.jpg',
-                              )
-                            : null,
-                        child: stylist.profileImage.isEmpty
-                            ? Icon(
-                                Icons.person,
-                                color: kWarmGrey600,
-                                size: 26 * scale,
-                              )
-                            : null,
-                      ),
-                      SizedBox(width: 14 * scale),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              stylist.fullName,
-                              style: GoogleFonts.inter(
-                                fontSize: 16 * scale,
-                                fontWeight: FontWeight.w500,
-                                color: kCharcoalColor,
-                              ),
-                            ),
-                            SizedBox(height: 4 * scale),
-                            Text(
-                              stylist.tier,
-                              style: GoogleFonts.inter(
-                                fontSize: 12 * scale,
-                                color: kAccentGold,
-                              ),
-                            ),
-                            SizedBox(height: 4 * scale),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.star,
-                                  color: kAccentGold,
-                                  size: 14 * scale,
-                                ),
-                                SizedBox(width: 4 * scale),
-                                Text(
-                                  stylist.rating.toStringAsFixed(1),
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12 * scale,
-                                    color: kWarmGrey600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
         ],
       ),
     );

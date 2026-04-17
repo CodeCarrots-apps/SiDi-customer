@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 
-import 'selectaddress.dart';
+import '../models/booking.dart';
+import '../models/booking_models.dart';
+import '../services/local_storage_service.dart';
+import 'appointmentbooking.dart';
 
 class SelectTimeSlotScreen extends StatefulWidget {
   const SelectTimeSlotScreen({
@@ -431,28 +434,48 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
             ),
             onPressed: selectedTime.isEmpty
                 ? null
-                : () {
-                    final selectedDateDisplay =
-                        '${monthNames[selectedDate.month - 1]} ${selectedDate.day}, ${selectedDate.year}';
+                : () async {
                     final selectedDateIso =
                         '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}';
                     _logAction(
                       'Continue pressed with selectedDate=$selectedDateIso selectedTime=$selectedTime',
                     );
+
+                    final booking = Booking(
+                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                      title: widget.title,
+                      time: selectedTime,
+                      stylist: 'Assigned stylist',
+                      image: widget.imageUrl,
+                      status: 'Confirmed',
+                      jobId: DateTime.now().millisecondsSinceEpoch.toString(),
+                    );
+
+                    await LocalStorageService.addCachedBooking(booking);
+
+                    final response = BookingCreateResponse(
+                      success: true,
+                      message: 'Your appointment is confirmed.',
+                      booking: booking,
+                      estimatedPrice: 0,
+                      addonsAmount: 0,
+                      travelFee: 0,
+                      broadcastedCount: 0,
+                    );
+
+                    if (!mounted) return;
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => SelectAddressScreen(
-                          selectedDateDisplay: selectedDateDisplay,
-                          selectedDateIso: selectedDateIso,
-                          selectedTime: selectedTime,
-                          serviceId: widget.serviceId,
+                        builder: (_) => ConfirmationScreen(
+                          service: widget.title,
+                          response: response,
                         ),
                       ),
                     );
                   },
             child: Text(
-              "CONTINUE TO PAYMENT",
+              "CONFIRM APPOINTMENT",
               style: GoogleFonts.inter(
                 fontSize: 12,
                 letterSpacing: 2,
