@@ -19,9 +19,11 @@ class PaymentMethodModel {
       case 'apple':
         return Icons.apple;
       case 'visa':
-        return Icons.credit_card;
       case 'mastercard':
         return Icons.credit_card;
+      case 'cash':
+      case 'cash onsite':
+        return Icons.money;
       default:
         return Icons.payment;
     }

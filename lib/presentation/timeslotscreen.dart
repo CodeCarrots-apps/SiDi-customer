@@ -7,6 +7,7 @@ import 'selectaddress.dart';
 class SelectTimeSlotScreen extends StatefulWidget {
   const SelectTimeSlotScreen({
     super.key,
+    required this.serviceId,
     required this.title,
     required this.price,
     required this.duration,
@@ -14,6 +15,7 @@ class SelectTimeSlotScreen extends StatefulWidget {
     this.description = '',
   });
 
+  final String serviceId;
   final String title;
   final String price;
   final String duration;
@@ -55,6 +57,66 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
     (index) => DateTime(initialDate.year, initialDate.month, index + 1),
   );
 
+  DateTime get _today =>
+      DateTime(initialDate.year, initialDate.month, initialDate.day);
+
+  @override
+  void initState() {
+    super.initState();
+    selectedTime = _firstAvailableTimeForDate(selectedDate) ?? '';
+    _logAction(
+      'initState selectedDate=$selectedDate selectedTime="$selectedTime"',
+    );
+  }
+
+  DateTime _slotDateTime(DateTime date, String time) {
+    final match = RegExp(
+      r'^(\d{1,2}):(\d{2})\s*([APMapm]{2})$',
+    ).firstMatch(time);
+    if (match == null) {
+      return DateTime(date.year, date.month, date.day);
+    }
+
+    var hour = int.parse(match.group(1)!);
+    final minute = int.parse(match.group(2)!);
+    final period = match.group(3)!.toUpperCase();
+
+    if (period == 'PM' && hour < 12) {
+      hour += 12;
+    }
+    if (period == 'AM' && hour == 12) {
+      hour = 0;
+    }
+
+    return DateTime(date.year, date.month, date.day, hour, minute);
+  }
+
+  bool _isSlotAvailable(DateTime date, String time) {
+    final slotDateTime = _slotDateTime(date, time);
+    final now = DateTime.now();
+    final selectedDay = DateTime(date.year, date.month, date.day);
+    if (selectedDay.isBefore(_today)) {
+      return false;
+    }
+    if (selectedDay.isAtSameMomentAs(_today)) {
+      return slotDateTime.isAtSameMomentAs(now) || slotDateTime.isAfter(now);
+    }
+    return true;
+  }
+
+  void _logAction(String message) {
+    debugPrint('SelectTimeSlotScreen: $message');
+  }
+
+  String? _firstAvailableTimeForDate(DateTime date) {
+    for (final time in timeSlots) {
+      if (_isSlotAvailable(date, time)) {
+        return time;
+      }
+    }
+    return null;
+  }
+
   final List<String> timeSlots = [
     "09:00 AM",
     "10:30 AM",
@@ -80,7 +142,10 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
             surfaceTintColor: backgroundLight,
             automaticallyImplyLeading: false,
             leading: IconButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                _logAction('Back button pressed');
+                Navigator.pop(context);
+              },
               icon: const Icon(Icons.arrow_back_ios, size: 22),
             ),
             centerTitle: true,
@@ -167,6 +232,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 30),
       child: OutlinedButton.icon(
         onPressed: () {
+          _logAction('Enhance button pressed');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -236,7 +302,15 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                   selectedDate.year == day.year;
 
               return GestureDetector(
-                onTap: isPast ? null : () => setState(() => selectedDate = day),
+                onTap: isPast
+                    ? null
+                    : () {
+                        _logAction('Date selected: ${day.toIso8601String()}');
+                        setState(() {
+                          selectedDate = day;
+                          selectedTime = _firstAvailableTimeForDate(day) ?? '';
+                        });
+                      },
                 child: Container(
                   alignment: Alignment.center,
                   decoration: isSelected
@@ -288,17 +362,27 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
             ),
             itemBuilder: (context, index) {
               final time = timeSlots[index];
-              final isSelected = selectedTime == time;
+              final isAvailable = _isSlotAvailable(selectedDate, time);
+              final isSelected = selectedTime == time && isAvailable;
 
               return GestureDetector(
-                onTap: () => setState(() => selectedTime = time),
+                onTap: isAvailable
+                    ? () {
+                        _logAction('Time slot selected: $time');
+                        setState(() => selectedTime = time);
+                      }
+                    : null,
                 child: Container(
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: isSelected ? champagne : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isSelected ? mutedGold : Colors.grey.shade200,
+                      color: isSelected
+                          ? mutedGold
+                          : isAvailable
+                          ? Colors.grey.shade200
+                          : Colors.grey.shade300,
                     ),
                     boxShadow: [
                       if (!isSelected)
@@ -315,7 +399,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                       fontWeight: isSelected
                           ? FontWeight.w600
                           : FontWeight.w500,
-                      color: espresso,
+                      color: isAvailable ? espresso : Colors.grey.shade400,
                     ),
                   ),
                 ),
@@ -348,14 +432,21 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
             onPressed: selectedTime.isEmpty
                 ? null
                 : () {
-                    final selectedDateString =
+                    final selectedDateDisplay =
                         '${monthNames[selectedDate.month - 1]} ${selectedDate.day}, ${selectedDate.year}';
+                    final selectedDateIso =
+                        '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}';
+                    _logAction(
+                      'Continue pressed with selectedDate=$selectedDateIso selectedTime=$selectedTime',
+                    );
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => SelectAddressScreen(
-                          selectedDate: selectedDateString,
+                          selectedDateDisplay: selectedDateDisplay,
+                          selectedDateIso: selectedDateIso,
                           selectedTime: selectedTime,
+                          serviceId: widget.serviceId,
                         ),
                       ),
                     );

@@ -19,28 +19,32 @@ class DetailedArtistScreen extends StatelessWidget {
 
   static const _services = [
     {
+      'id': '6652',
       'title': 'Signature Color',
-      'price': '240+',
+      'price': '240+',
       'description':
-          'Bespoke dimensional coloring designed to enhance natural movement and depth.',
+          'A bespoke, multi-dimensional color service that enhances natural movement and luminous depth.',
     },
     {
+      'id': '6653',
       'title': 'Precision Cut',
-      'price': '140+',
+      'price': '140+',
       'description':
-          'Architectural cutting techniques tailored to the unique geometry of the face.',
+          'A sculpted haircut tailored to your facial structure and personal style, with clean lines and soft texture.',
     },
     {
+      'id': '6654',
       'title': 'Editorial Styling',
-      'price': '110+',
+      'price': '110+',
       'description':
-          'Refined finishes for distinguished events, focusing on effortless sophistication.',
+          'Polished styling for special occasions that balances modern ease with timeless elegance.',
     },
     {
+      'id': '6655',
       'title': 'Scalp Treatment',
-      'price': '90+',
+      'price': '90+',
       'description':
-          'Botanical infusion therapy to restore the natural equilibrium of the scalp ecosystem.',
+          'A nourishing ritual that calms, revitalizes, and restores balance to the scalp.',
     },
   ];
 
@@ -111,7 +115,7 @@ class DetailedArtistScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'With over fifteen years of dedicated practice in Milan and London, $artistName has defined a signature approach to minimalist beauty. Her philosophy centers on the transformative power of meticulous detail and a quiet, editorial aesthetic.',
+                  'With more than fifteen years of experience between Milan and London, $artistName creates refined looks rooted in subtlety and precision. Her approach emphasizes the quiet power of detail and contemporary editorial balance.',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     height: 1.8,
@@ -121,7 +125,7 @@ class DetailedArtistScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'Specializing in precision techniques that honor natural textures, $artistName curates bespoke looks that transcend trends, favoring timeless elegance over the temporary.',
+                  'Specializing in techniques that celebrate natural texture, $artistName crafts tailored services that feel modern yet enduring, with an emphasis on effortless sophistication.',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     height: 1.8,
@@ -221,6 +225,7 @@ class DetailedArtistScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => SelectTimeSlotScreen(
+                      serviceId: service['id']!,
                       title: service['title']!,
                       price: service['price']!,
                       duration: 'N/A',

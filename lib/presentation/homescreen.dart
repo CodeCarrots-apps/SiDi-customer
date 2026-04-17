@@ -46,10 +46,15 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _openDetailedServices() async {
+  Future<void> _openDetailedServices({String? query, String? category}) async {
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const DetailedServiceScreen()),
+      MaterialPageRoute(
+        builder: (_) => DetailedServiceScreen(
+          initialSearchQuery: query,
+          initialCategory: category,
+        ),
+      ),
     );
   }
 
@@ -81,13 +86,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   onPressed: _openLocationSearch,
                 ),
                 const SizedBox(width: 4),
-                Text(
-                  _selectedLocation,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    letterSpacing: 2,
-                    fontWeight: FontWeight.w500,
-                    color: kCharcoalColor,
+                InkWell(
+                  onTap: _openLocationSearch,
+
+                  child: Text(
+                    _selectedLocation,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      letterSpacing: 2,
+                      fontWeight: FontWeight.w500,
+                      color: kCharcoalColor,
+                    ),
                   ),
                 ),
               ],
@@ -182,6 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => const ServiceDetailScreen(
+                            serviceId: '6652',
                             title: 'Luxury Service',
                             price: '₹1200',
                             duration: '45 mins',
@@ -234,12 +244,21 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Text(
-            "Our Services",
-            style: GoogleFonts.cormorantGaramond(
-              fontSize: 32,
-              fontStyle: FontStyle.italic,
-            ),
+          child: Row(
+            children: [
+              Text(
+                "Our Services",
+                style: GoogleFonts.cormorantGaramond(
+                  fontSize: 32,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+              Spacer(),
+              IconButton(
+                onPressed: _openDetailedServices,
+                icon: const Icon(Icons.arrow_forward_ios, size: 16),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 24),
@@ -255,7 +274,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(6),
-                    onTap: _openDetailedServices,
+                    onTap: () =>
+                        _openDetailedServices(category: service['title']),
                     child: Column(
                       children: [
                         ClipRRect(
@@ -341,7 +361,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   final item = items[index];
                   return InkWell(
                     borderRadius: BorderRadius.circular(6),
-                    onTap: _openDetailedServices,
+                    onTap: () => _openDetailedServices(query: item['title']),
                     child: SizedBox(
                       width: itemWidth,
                       child: Column(

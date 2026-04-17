@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:sidi/models/booking.dart';
 import 'package:sidi/models/booking_models.dart';
 import 'package:sidi/utils/token_storage.dart';
@@ -97,13 +98,15 @@ class BookingService {
     final dio = _createDio(token);
     final payload = <String, dynamic>{
       'serviceId': serviceId,
-      'beauticianId': beauticianId,
       'bookingDate': bookingDate,
       'bookingTime': bookingTime,
       'locationType': locationType,
       'address': address.toJson(),
     };
 
+    if (beauticianId != null && beauticianId.isNotEmpty) {
+      payload['beauticianId'] = beauticianId;
+    }
     if (notes != null && notes.isNotEmpty) {
       payload['notes'] = notes;
     }
@@ -114,8 +117,13 @@ class BookingService {
       payload['addonIds'] = addonIds;
     }
 
+    debugPrint('BookingService.createBooking payload: $payload');
+
     try {
       final response = await dio.post('$_baseUrl/create', data: payload);
+      debugPrint(
+        'BookingService.createBooking response: status=${response.statusCode}, data=${response.data}',
+      );
       if ((response.statusCode == 200 || response.statusCode == 201) &&
           response.data is Map<String, dynamic>) {
         return BookingCreateResponse.fromJson(
@@ -129,6 +137,12 @@ class BookingService {
         );
       }
     } on DioException catch (error) {
+      debugPrint(
+        'BookingService.createBooking DioException: '
+        'status=${error.response?.statusCode}, '
+        'data=${error.response?.data}, '
+        'message=${error.message}',
+      );
       if (error.response?.data is Map<String, dynamic>) {
         return BookingCreateResponse.fromJson(
           error.response!.data as Map<String, dynamic>,

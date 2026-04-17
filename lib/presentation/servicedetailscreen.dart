@@ -7,12 +7,14 @@ import 'timeslotscreen.dart';
 class ServiceDetailScreen extends StatefulWidget {
   const ServiceDetailScreen({
     super.key,
+    required this.serviceId,
     required this.title,
     required this.price,
     required this.duration,
     required this.imageUrl,
   });
 
+  final String serviceId;
   final String title;
   final String price;
   final String duration;
@@ -283,6 +285,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => SelectTimeSlotScreen(
+                    serviceId: widget.serviceId,
                     title: widget.title,
                     price: widget.price,
                     duration: widget.duration,

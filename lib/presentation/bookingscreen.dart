@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 
 import 'detailedartistscreen.dart';
-import 'detailedservicescreen.dart';
+import 'servicedetailscreen.dart';
 
 class BookingScreen extends StatefulWidget {
   const BookingScreen({super.key});
@@ -19,26 +19,58 @@ class _BookingScreenState extends State<BookingScreen> {
   final List<Map<String, String>> _searchData = [
     {
       'type': 'service',
+      'id': '6605',
       'title': 'Glow Facial',
       'subtitle': 'Signature facial treatment',
+      'price': '₹240',
+      'duration': '75 mins',
+      'imageUrl':
+          'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80',
     },
     {
       'type': 'service',
+      'id': '6602',
       'title': 'Silk Press',
       'subtitle': 'Smooth hair styling',
+      'price': '₹95',
+      'duration': '70 mins',
+      'imageUrl':
+          'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=800&q=80',
     },
     {
       'type': 'service',
+      'id': '6606',
       'title': 'Moonlight Ritual',
       'subtitle': 'Botanical skin therapy',
+      'price': '₹110',
+      'duration': '90 mins',
+      'imageUrl':
+          'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80',
+    },
+    {
+      'type': 'artist',
+      'title': 'Julianne Vough',
+      'subtitle': 'MASTER COLORIST',
+      'role': 'MASTER COLORIST',
+      'imageUrl':
+          'https://i.pinimg.com/736x/36/2d/70/362d7087b1b8367db1c98d3f73f3be3a.jpg',
+    },
+    {
+      'type': 'artist',
+      'title': 'Marcus Chen',
+      'subtitle': 'SKIN SCULPTOR',
+      'role': 'SKIN SCULPTOR',
+      'imageUrl':
+          'https://i.pinimg.com/736x/e3/52/30/e3523011d5dd97b97709e1d83ca75e5b.jpg',
     },
     {
       'type': 'artist',
       'title': 'Elena Rodriguez',
-      'subtitle': 'Senior Beauty Artist',
+      'subtitle': 'ARTISTIC DIRECTOR',
+      'role': 'ARTISTIC DIRECTOR',
+      'imageUrl':
+          'https://i.pinimg.com/1200x/b5/af/0f/b5af0f1fdc01adb5cd55609e7b302de1.jpg',
     },
-    {'type': 'artist', 'title': 'Julian V.', 'subtitle': 'Colorist'},
-    {'type': 'artist', 'title': 'Sasha L.', 'subtitle': 'Cut Specialist'},
   ];
 
   List<Map<String, String>> get _filteredSearchResults {
@@ -100,14 +132,14 @@ class _BookingScreenState extends State<BookingScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _buildSectionTitle('Top Stylists', scale),
-                      Text(
-                        'VIEW ALL',
-                        style: GoogleFonts.inter(
-                          fontSize: 9 * scale,
-                          letterSpacing: 1.8,
-                          color: kWarmGrey600,
-                        ),
-                      ),
+                      // Text(
+                      //   'VIEW ALL',
+                      //   style: GoogleFonts.inter(
+                      //     fontSize: 9 * scale,
+                      //     letterSpacing: 1.8,
+                      //     color: kWarmGrey600,
+                      //   ),
+                      // ),
                     ],
                   ),
                   SizedBox(height: 10 * scale),
@@ -197,7 +229,7 @@ class _BookingScreenState extends State<BookingScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: results.length,
-            separatorBuilder: (_, __) => SizedBox(height: 8 * scale),
+            separatorBuilder: (_, __) => SizedBox(height: 6 * scale),
             itemBuilder: (context, index) {
               final item = results[index];
               final isArtist = item['type'] == 'artist';
@@ -210,21 +242,34 @@ class _BookingScreenState extends State<BookingScreen> {
                         if (isArtist) {
                           return DetailedArtistScreen(
                             artistName: item['title']!,
-                            role: item['subtitle']!,
+                            role: item['role'] ?? item['subtitle']!,
+                            imageUrl:
+                                item['imageUrl'] ??
+                                'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80',
                           );
                         }
-                        return DetailedServiceScreen(
-                          initialSearchQuery: item['title'],
+                        return ServiceDetailScreen(
+                          serviceId: item['id'] ?? '6600',
+                          title: item['title']!,
+                          price: item['price'] ?? '₹0',
+                          duration: item['duration'] ?? 'N/A',
+                          imageUrl:
+                              item['imageUrl'] ??
+                              'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80',
                         );
                       },
                     ),
                   );
                 },
                 child: Container(
-                  padding: EdgeInsets.all(10 * scale),
+                  padding: EdgeInsets.symmetric(
+                    vertical: 8 * scale,
+                    horizontal: 12 * scale,
+                  ),
                   decoration: BoxDecoration(
                     border: Border.all(color: kWarmGrey200),
                     borderRadius: BorderRadius.circular(12),
+                    color: Colors.white,
                   ),
                   child: Row(
                     children: [
@@ -282,17 +327,6 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  Widget _recentSearchText(String text, double scale) {
-    return Text(
-      text,
-      style: GoogleFonts.cormorantGaramond(
-        fontSize: 20 * scale,
-        fontStyle: FontStyle.italic,
-        color: kCharcoalColor,
-      ),
-    );
-  }
-
   Widget _buildSectionTitle(String text, double scale) {
     return Text(
       text,
@@ -310,33 +344,84 @@ class _BookingScreenState extends State<BookingScreen> {
       child: Row(
         children: [
           Expanded(
-            child: _categoryTile(
-              image:
-                  'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=800&q=80',
-              title: 'Editorial Hair',
-              subtitle: 'THE COLLECTION',
-              height: double.infinity,
-              scale: scale,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ServiceDetailScreen(
+                      serviceId: '6610',
+                      title: 'Editorial Hair',
+                      price: '₹220',
+                      duration: '60 mins',
+                      imageUrl:
+                          'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=800&q=80',
+                    ),
+                  ),
+                );
+              },
+              child: _categoryTile(
+                image:
+                    'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=800&q=80',
+                title: 'Editorial Hair',
+                subtitle: 'THE COLLECTION',
+                height: double.infinity,
+                scale: scale,
+              ),
             ),
           ),
           SizedBox(width: 6 * scale),
           Expanded(
             child: Column(
               children: [
-                _categoryTile(
-                  image:
-                      'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80',
-                  title: 'Signature Facials',
-                  height: 147 * scale,
-                  scale: scale,
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ServiceDetailScreen(
+                          serviceId: '6611',
+                          title: 'Signature Facials',
+                          price: '₹250',
+                          duration: '75 mins',
+                          imageUrl:
+                              'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80',
+                        ),
+                      ),
+                    );
+                  },
+                  child: _categoryTile(
+                    image:
+                        'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80',
+                    title: 'Signature Facials',
+                    height: 147 * scale,
+                    scale: scale,
+                  ),
                 ),
                 SizedBox(height: 6 * scale),
-                _categoryTile(
-                  image:
-                      'https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=800&q=80',
-                  title: 'Bridal Atelier',
-                  height: 147 * scale,
-                  scale: scale,
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ServiceDetailScreen(
+                          serviceId: '6612',
+                          title: 'Bridal Atelier',
+                          price: '₹380',
+                          duration: '90 mins',
+                          imageUrl:
+                              'https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=800&q=80',
+                        ),
+                      ),
+                    );
+                  },
+                  child: _categoryTile(
+                    image:
+                        'https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=800&q=80',
+                    title: 'Bridal Atelier',
+                    height: 147 * scale,
+                    scale: scale,
+                  ),
                 ),
               ],
             ),
@@ -410,17 +495,24 @@ class _BookingScreenState extends State<BookingScreen> {
 
   Widget _buildStylistsRow(double scale) {
     final stylists = [
-      (
-        'https://randomuser.me/api/portraits/men/33.jpg',
-        'Julian V.',
-        'COLORIST',
-      ),
-      ('https://randomuser.me/api/portraits/women/44.jpg', 'Sasha L.', 'CUTS'),
-      (
-        'https://randomuser.me/api/portraits/men/22.jpg',
-        'Marcus R.',
-        'ARTISTIC',
-      ),
+      {
+        'imageUrl':
+            'https://i.pinimg.com/736x/36/2d/70/362d7087b1b8367db1c98d3f73f3be3a.jpg',
+        'name': 'Julianne Vough',
+        'role': 'MASTER COLORIST',
+      },
+      {
+        'imageUrl':
+            'https://i.pinimg.com/736x/e3/52/30/e3523011d5dd97b97709e1d83ca75e5b.jpg',
+        'name': 'Marcus Chen',
+        'role': 'SKIN SCULPTOR',
+      },
+      {
+        'imageUrl':
+            'https://i.pinimg.com/1200x/b5/af/0f/b5af0f1fdc01adb5cd55609e7b302de1.jpg',
+        'name': 'Elena Rodriguez',
+        'role': 'ARTISTIC DIRECTOR',
+      },
     ];
 
     return SizedBox(
@@ -431,42 +523,59 @@ class _BookingScreenState extends State<BookingScreen> {
         separatorBuilder: (_, index) => SizedBox(width: 10 * scale),
         itemBuilder: (context, index) {
           final stylist = stylists[index];
-          return SizedBox(
-            width: 78 * scale,
-            child: Column(
-              children: [
-                Container(
-                  width: 76 * scale,
-                  height: 76 * scale,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: kWarmGrey200),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(stylist.$1, fit: BoxFit.cover),
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DetailedArtistScreen(
+                    artistName: stylist['name']!,
+                    role: stylist['role']!,
+                    imageUrl: stylist['imageUrl']!,
                   ),
                 ),
-                SizedBox(height: 6 * scale),
-                Text(
-                  stylist.$2,
-                  style: GoogleFonts.inter(
-                    fontSize: 11 * scale,
-                    color: kCharcoalColor,
+              );
+            },
+            child: SizedBox(
+              width: 78 * scale,
+              child: Column(
+                children: [
+                  Container(
+                    width: 76 * scale,
+                    height: 76 * scale,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: kWarmGrey200),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        stylist['imageUrl']!,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 2 * scale),
-                Text(
-                  stylist.$3,
-                  style: GoogleFonts.inter(
-                    fontSize: 8 * scale,
-                    letterSpacing: 1.3,
-                    color: kWarmGrey600,
+                  SizedBox(height: 6 * scale),
+                  Text(
+                    stylist['name']!,
+                    style: GoogleFonts.inter(
+                      fontSize: 11 * scale,
+                      color: kCharcoalColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
+                  SizedBox(height: 2 * scale),
+                  Text(
+                    stylist['role']!,
+                    style: GoogleFonts.inter(
+                      fontSize: 8 * scale,
+                      letterSpacing: 1.3,
+                      color: kWarmGrey600,
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },

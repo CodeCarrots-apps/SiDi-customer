@@ -5,9 +5,14 @@ import 'package:sidi/constant/constants.dart';
 import 'servicedetailscreen.dart';
 
 class DetailedServiceScreen extends StatefulWidget {
-  const DetailedServiceScreen({super.key, this.initialSearchQuery});
+  const DetailedServiceScreen({
+    super.key,
+    this.initialSearchQuery,
+    this.initialCategory,
+  });
 
   final String? initialSearchQuery;
+  final String? initialCategory;
 
   @override
   State<DetailedServiceScreen> createState() => _DetailedServiceScreenState();
@@ -16,13 +21,51 @@ class DetailedServiceScreen extends StatefulWidget {
 class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
   int _selectedFilterIndex = 0;
   int _selectedSubFilterIndex = 0;
+  bool _isSearchActive = false;
+  String? _currentSearchQuery;
+  late final TextEditingController _searchController;
 
   bool get _hasSearchQuery =>
-      widget.initialSearchQuery != null &&
-      widget.initialSearchQuery!.trim().isNotEmpty;
+      _currentSearchQuery != null && _currentSearchQuery!.isNotEmpty;
 
-  String get _searchQuery =>
-      widget.initialSearchQuery?.trim().toLowerCase() ?? '';
+  String get _searchQuery => _currentSearchQuery?.toLowerCase() ?? '';
+
+  @override
+  void initState() {
+    super.initState();
+    _currentSearchQuery = widget.initialSearchQuery?.trim();
+    _searchController = TextEditingController(text: _currentSearchQuery ?? '');
+    _isSearchActive = _currentSearchQuery?.isNotEmpty ?? false;
+
+    if (widget.initialCategory != null) {
+      final initialIndex = filters.indexOf(widget.initialCategory!);
+      if (initialIndex != -1) {
+        _selectedFilterIndex = initialIndex;
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _updateSearchQuery(String value) {
+    setState(() {
+      _currentSearchQuery = value.trim();
+    });
+  }
+
+  void _toggleSearchMode() {
+    setState(() {
+      _isSearchActive = !_isSearchActive;
+      if (!_isSearchActive) {
+        _currentSearchQuery = null;
+        _searchController.clear();
+      }
+    });
+  }
 
   List<Map<String, String>> get _searchFilteredServices {
     if (!_hasSearchQuery) return [];
@@ -47,6 +90,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
 
   final List<Map<String, String>> services = [
     {
+      "id": "6601",
       "category": "Hair",
       "subCategory": "Styling",
       "title": "Signature Blowout",
@@ -56,6 +100,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
           "https://lh3.googleusercontent.com/aida-public/AB6AXuDhwtGGswF8f6oTbJt2kPjLH2OE_akDqZF5tTdlemziRZa77tptBWoFGbY7Ye2mQJ4LvbpdRvmqt4ICTx9hvIpfO1L2MiY_TAM3lRf1oDavv95dUHldy4Sm88cSbvjYys7JOzthV1BW8Mn1fMQBMdnK3c8rg-mZIC2JuWW_UNm-pa_-S_r-7ryJ1bE8m_15thFYV_PmFtWGR5EINnVMm59lJj9zAj1LLTjuwX6MEV-hngrVkotbtwMAZkjEzsbqaJdPCPsNyi4vs6M",
     },
     {
+      "id": "6602",
       "category": "Hair",
       "subCategory": "Treatment",
       "title": "Silk Press & Finish",
@@ -65,6 +110,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
           "https://lh3.googleusercontent.com/aida-public/AB6AXuAhaWq1M13518DNZyCPQ9g4KOQRTAht8dZj5D874IbfzvkqszpLXlucjRhYezVs-_lJLiWAVHI9qI03t19Y8J7k2BgdDzQWlEngeqMMV1VLwhE0APclHMHm1VZCRX1lb-FVx6KM61B6XsFJZN8ft8CwzFZVTZo2xGzdp0GlXvaPbhZFTDVh_MfrckXWfO8Ahzcqi-KhgaMct57N4TmBn7L22sCcgVACr_9Mgi9SS8GgHQGRIjPFSj_MzAUg7B25s1FLULVBmrCCIcg",
     },
     {
+      "id": "6603",
       "category": "Nails",
       "subCategory": "Manicure",
       "title": "Signature Silk Manicure",
@@ -74,6 +120,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
           "https://lh3.googleusercontent.com/aida-public/AB6AXuBBYEO4G9e9SXUHhmUpFTOV3PWtGQs3jD24uVhrTk9zjIG1f1ubaugSCBH32kItXCAlNa9K1asoJoRe5TWj714hzf7UDOt-Bnnx8l5j4MFVz515ceZGByzqOjjhClsxjTZ9J9_uV33TJ8VYDDRot4IOQ4Azx9W_oOJT3XickZxxNfJG69MnRQfMDYYHnSAgRgqfNqPPWvt1v4Hi1fNfOIzF1VsumU8wvA_vrl0Atna8qrWl-CFGzCdndtBqy-7fYCwa_LNs-xT8Z78",
     },
     {
+      "id": "6604",
       "category": "Nails",
       "subCategory": "Pedicure",
       "title": "Luxury Spa Pedicure",
@@ -92,6 +139,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
           "https://lh3.googleusercontent.com/aida-public/AB6AXuCtJWLbhrrHtqz2qPSquBG_yi6xBKYNNV4Q21-bQ0EWvtOvKQHxfqb1oH9z483HzXLIrbB-QW723AXgVOQHeaNpCLiTlw9HgMOFR2Be1W0uxOCBrUUZt00SOAAMUFhYh3IQjuBGdQHHTkIEcOHZ4aNaiusM1aavDSfafktZ-KripjaeGSG4Uy4V0PIpXIXzBM-4cIXIS9jO_m4twy3Gc3RQcsNKQ6WdoRUf6wR4c0rP_K54o5hCE7hYPM7fyjWR5S1bpGiexO8nSBA",
     },
     {
+      "id": "6605",
       "category": "Facials",
       "subCategory": "Glow",
       "title": "Morning Glow Facial",
@@ -101,6 +149,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
           "https://lh3.googleusercontent.com/aida-public/AB6AXuCjD3Idcb9NwaKXy001FZBgWYb-DgyMVlYrDj7uZOEaJj6AVbNvATlq8Ivohs072AF9MuIquo9xyLLPMepeVLRbrZvshrVePIJ9vLLfQH7eghBjNqedHkwCNgascLhoJ0i5xGz2gmkT1wpCSGgp1J9U12Dk_DldmNTzrPfoHXqNHWurJJr0v2ARZF3ujQDcunGu3OJI9ib9MUKXg_uCntevkfCLnkbeZxRagDq1yx2F8Lt1qJlk8hZT9Q1NhTYeqrHG6JcDm0JpAUE",
     },
     {
+      "id": "6606",
       "category": "Facials",
       "subCategory": "Therapy",
       "title": "Deep Sleep Therapy",
@@ -148,6 +197,9 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
   }
 
   String get _screenTitle {
+    if (_hasSearchQuery) {
+      return 'SEARCH RESULTS';
+    }
     if (_selectedFilterIndex == 0) {
       return 'OUR SERVICES';
     }
@@ -159,6 +211,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => ServiceDetailScreen(
+          serviceId: service['id'] ?? '6600',
           title: service['title'] ?? 'Service',
           price: service['price'] ?? '\$0',
           duration: service['duration'] ?? 'N/A',
@@ -196,15 +249,49 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
                 letterSpacing: 1.6,
               ),
             ),
-            actions: const [
-              SizedBox(
-                width: 40,
-                height: 40,
-                child: Icon(Icons.search, size: 24),
+            actions: [
+              IconButton(
+                onPressed: _toggleSearchMode,
+                icon: Icon(
+                  _isSearchActive ? Icons.close : Icons.search,
+                  size: 24,
+                ),
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
             ],
           ),
+          if (_isSearchActive)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 10,
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: _updateSearchQuery,
+                  decoration: InputDecoration(
+                    hintText: 'Search services',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _currentSearchQuery?.isNotEmpty == true
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              _updateSearchQuery('');
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: Colors.grey.shade200),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           if (_hasSearchQuery)
             SliverToBoxAdapter(
               child: Padding(
@@ -213,7 +300,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
                   vertical: 18,
                 ),
                 child: Text(
-                  'Search results for "${widget.initialSearchQuery}"',
+                  'Search results for "${_currentSearchQuery}"',
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     letterSpacing: 1.2,
@@ -224,14 +311,34 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
             ),
           SliverToBoxAdapter(child: _buildFilterChips()),
           SliverToBoxAdapter(child: _buildSubFilterChips()),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate((context, index) {
-                return _buildServiceCard(_filteredServices[index]);
-              }, childCount: _filteredServices.length),
+          if (_filteredServices.isEmpty)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 30,
+                ),
+                child: Text(
+                  _hasSearchQuery
+                      ? 'No services match your search. Try a different keyword.'
+                      : 'No services available for the selected filters.',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: kWarmGrey600,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  return _buildServiceCard(_filteredServices[index]);
+                }, childCount: _filteredServices.length),
+              ),
             ),
-          ),
         ],
       ),
     );
