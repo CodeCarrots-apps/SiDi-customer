@@ -1,4 +1,4 @@
-package com.example.sidi
+package com.codecarrots.sidi
 
 import io.flutter.embedding.android.FlutterActivity
 
