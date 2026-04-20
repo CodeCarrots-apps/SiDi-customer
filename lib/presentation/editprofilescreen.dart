@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -102,6 +103,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           headers: <String, dynamic>{'Authorization': 'Bearer $token'},
         ),
       );
+
+      debugPrint('Response: ${response.data}');
 
       final data = response.data ?? <String, dynamic>{};
       if (response.statusCode == 200 && data['success'] == true) {

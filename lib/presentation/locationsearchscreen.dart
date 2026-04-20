@@ -131,22 +131,21 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
       }
 
       final response = await _dio.get(
-        'https://nominatim.openstreetmap.org/reverse',
-        queryParameters: {'lat': lat, 'lon': lon, 'format': 'jsonv2'},
-        options: Options(
-          headers: {
-            'User-Agent': 'SiDiCustomerApp/1.0 (location-search)',
-            'Accept-Language': 'en',
-          },
-        ),
+        'https://sidi.mobilegear.co.in/api/mobileapp/services/location',
+        queryParameters: {'lat': lat, 'lng': lon},
       );
 
-      final map = response.data as Map<String, dynamic>;
+      final data = response.data as Map<String, dynamic>;
+      if (data['success'] != true) {
+        throw Exception(data['message'] ?? 'Failed to fetch location details');
+      }
+
+      final location = data['location'] as Map<String, dynamic>;
       final result = _PlaceResult(
-        name: (map['name'] as String?) ?? 'Current Location',
-        displayName: (map['display_name'] as String?) ?? 'Lat: $lat, Lon: $lon',
-        latitude: double.tryParse((map['lat'] ?? lat).toString()) ?? lat,
-        longitude: double.tryParse((map['lon'] ?? lon).toString()) ?? lon,
+        name: (location['city'] as String?) ?? 'Unknown',
+        displayName: (location['address'] as String?) ?? 'Unknown address',
+        latitude: lat,
+        longitude: lon,
       );
 
       if (!mounted) {
