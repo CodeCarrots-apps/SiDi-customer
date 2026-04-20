@@ -13,6 +13,8 @@ import 'package:sidi/models/user_profile.dart';
 import 'package:sidi/utils/app_constants.dart';
 import 'package:sidi/utils/token_storage.dart';
 
+import 'favoritestylistscreen.dart';
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -239,9 +241,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Icons.credit_card_outlined,
                     'Payments & Billing',
                   ),
-                  const _ProfileItemData(
+                  _ProfileItemData(
                     Icons.auto_awesome_outlined,
                     'Favorite Stylists',
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => FavoriteStylistScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ],
                 scale: scale,
@@ -374,28 +383,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               )),
                 ),
               ),
-              Positioned(
-                right: -2,
-                bottom: -2,
-                child: InkWell(
-                  onTap: _pickProfileImage,
-                  borderRadius: BorderRadius.circular(999),
-                  child: Container(
-                    width: 30 * scale,
-                    height: 30 * scale,
-                    decoration: BoxDecoration(
-                      color: kEspressoColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: kWarmGrey50, width: 2),
-                    ),
-                    child: Icon(
-                      Icons.edit,
-                      color: Colors.white,
-                      size: 15 * scale,
-                    ),
-                  ),
-                ),
-              ),
+              // Positioned(
+              //   right: -2,
+              //   bottom: -2,
+              //   child: InkWell(
+              //     onTap: _pickProfileImage,
+              //     borderRadius: BorderRadius.circular(999),
+              //     child: Container(
+              //       width: 30 * scale,
+              //       height: 30 * scale,
+              //       decoration: BoxDecoration(
+              //         color: kEspressoColor,
+              //         shape: BoxShape.circle,
+              //         border: Border.all(color: kWarmGrey50, width: 2),
+              //       ),
+              //       child: Icon(
+              //         Icons.edit,
+              //         color: Colors.white,
+              //         size: 15 * scale,
+              //       ),
+              //     ),
+              //   ),
+              // ),
             ],
           ),
           SizedBox(height: 18 * scale),

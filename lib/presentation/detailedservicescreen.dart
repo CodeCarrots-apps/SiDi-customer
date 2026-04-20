@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
+import 'package:dio/dio.dart';
 
 import 'servicedetailscreen.dart';
 
@@ -24,11 +25,24 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
   bool _isSearchActive = false;
   String? _currentSearchQuery;
   late final TextEditingController _searchController;
+  late Future<List<Map<String, dynamic>>> _categoriesFuture;
+  late Future<List<Map<String, dynamic>>> _subcategoriesFuture;
+  late Future<List<Map<String, dynamic>>> _servicesFuture;
+  List<Map<String, dynamic>> _allCategories = [];
+  List<Map<String, dynamic>> _allSubcategories = [];
+  List<Map<String, dynamic>> _allServices = [];
 
   bool get _hasSearchQuery =>
       _currentSearchQuery != null && _currentSearchQuery!.isNotEmpty;
 
   String get _searchQuery => _currentSearchQuery?.toLowerCase() ?? '';
+
+  List<String> get filters {
+    return [
+      'All Services',
+      ..._allCategories.map((cat) => cat['name'] as String).toList(),
+    ];
+  }
 
   @override
   void initState() {
@@ -36,12 +50,81 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
     _currentSearchQuery = widget.initialSearchQuery?.trim();
     _searchController = TextEditingController(text: _currentSearchQuery ?? '');
     _isSearchActive = _currentSearchQuery?.isNotEmpty ?? false;
+    _categoriesFuture = _fetchCategories();
+    _subcategoriesFuture = _fetchSubcategories();
+    _servicesFuture = _fetchServices();
+  }
 
-    if (widget.initialCategory != null) {
-      final initialIndex = filters.indexOf(widget.initialCategory!);
-      if (initialIndex != -1) {
-        _selectedFilterIndex = initialIndex;
+  Future<List<Map<String, dynamic>>> _fetchCategories() async {
+    try {
+      final dio = Dio();
+      final response = await dio.get(
+        'https://sidi.mobilegear.co.in/api/categories',
+      );
+
+      if (response.statusCode == 200 && response.data is List) {
+        final data = List<Map<String, dynamic>>.from(response.data);
+        setState(() {
+          _allCategories = data;
+          // Set initial category if provided
+          if (widget.initialCategory != null) {
+            final initialIndex = filters.indexOf(widget.initialCategory!);
+            if (initialIndex != -1) {
+              _selectedFilterIndex = initialIndex;
+            }
+          }
+        });
+        return data;
+      } else {
+        throw Exception('Failed to load categories');
       }
+    } catch (e) {
+      print('Error fetching categories: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchSubcategories() async {
+    try {
+      final dio = Dio();
+      final response = await dio.get(
+        'https://sidi.mobilegear.co.in/api/subcategories',
+      );
+
+      if (response.statusCode == 200 && response.data is List) {
+        final data = List<Map<String, dynamic>>.from(response.data);
+        setState(() {
+          _allSubcategories = data;
+        });
+        return data;
+      } else {
+        throw Exception('Failed to load subcategories');
+      }
+    } catch (e) {
+      print('Error fetching subcategories: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchServices() async {
+    try {
+      final dio = Dio();
+      final response = await dio.get(
+        'https://sidi.mobilegear.co.in/api/services',
+      );
+
+      if (response.statusCode == 200 && response.data is List) {
+        final data = List<Map<String, dynamic>>.from(response.data);
+        setState(() {
+          _allServices = data;
+        });
+        return data;
+      } else {
+        throw Exception('Failed to load services');
+      }
+    } catch (e) {
+      print('Error fetching services: $e');
+      rethrow;
     }
   }
 
@@ -67,143 +150,71 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
     });
   }
 
-  List<Map<String, String>> get _searchFilteredServices {
+  List<Map<String, dynamic>> get _searchFilteredServices {
     if (!_hasSearchQuery) return [];
-    return services.where((service) {
-      final title = service['title']!.toLowerCase();
-      final price = service['price']!.toLowerCase();
-      final duration = service['duration']!.toLowerCase();
-      final category = service['category']!.toLowerCase();
-      final subCategory = service['subCategory']!.toLowerCase();
+    return _allServices.where((service) {
+      final title = (service['name'] ?? '').toString().toLowerCase();
+      final price = (service['price'] ?? '').toString().toLowerCase();
+      final duration = (service['duration'] ?? '').toString().toLowerCase();
+      final categoryName = service['category'] is Map
+          ? (service['category']['name'] ?? '').toString().toLowerCase()
+          : (service['category'] ?? '').toString().toLowerCase();
       final query = _searchQuery;
       return title.contains(query) ||
           price.contains(query) ||
           duration.contains(query) ||
-          category.contains(query) ||
-          subCategory.contains(query);
+          categoryName.contains(query);
     }).toList();
   }
 
   // Colors are provided by lib/constant/constants.dart
 
-  final List<String> filters = ["All Services", "Hair", "Nails", "Facials"];
-
-  final List<Map<String, String>> services = [
-    {
-      "id": "6601",
-      "category": "Hair",
-      "subCategory": "Styling",
-      "title": "Signature Blowout",
-      "price": "\$85",
-      "duration": "60 mins",
-      "image":
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuDhwtGGswF8f6oTbJt2kPjLH2OE_akDqZF5tTdlemziRZa77tptBWoFGbY7Ye2mQJ4LvbpdRvmqt4ICTx9hvIpfO1L2MiY_TAM3lRf1oDavv95dUHldy4Sm88cSbvjYys7JOzthV1BW8Mn1fMQBMdnK3c8rg-mZIC2JuWW_UNm-pa_-S_r-7ryJ1bE8m_15thFYV_PmFtWGR5EINnVMm59lJj9zAj1LLTjuwX6MEV-hngrVkotbtwMAZkjEzsbqaJdPCPsNyi4vs6M",
-    },
-    {
-      "id": "6602",
-      "category": "Hair",
-      "subCategory": "Treatment",
-      "title": "Silk Press & Finish",
-      "price": "\$95",
-      "duration": "70 mins",
-      "image":
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuAhaWq1M13518DNZyCPQ9g4KOQRTAht8dZj5D874IbfzvkqszpLXlucjRhYezVs-_lJLiWAVHI9qI03t19Y8J7k2BgdDzQWlEngeqMMV1VLwhE0APclHMHm1VZCRX1lb-FVx6KM61B6XsFJZN8ft8CwzFZVTZo2xGzdp0GlXvaPbhZFTDVh_MfrckXWfO8Ahzcqi-KhgaMct57N4TmBn7L22sCcgVACr_9Mgi9SS8GgHQGRIjPFSj_MzAUg7B25s1FLULVBmrCCIcg",
-    },
-    {
-      "id": "6603",
-      "category": "Nails",
-      "subCategory": "Manicure",
-      "title": "Signature Silk Manicure",
-      "price": "\$85",
-      "duration": "60 mins",
-      "image":
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuBBYEO4G9e9SXUHhmUpFTOV3PWtGQs3jD24uVhrTk9zjIG1f1ubaugSCBH32kItXCAlNa9K1asoJoRe5TWj714hzf7UDOt-Bnnx8l5j4MFVz515ceZGByzqOjjhClsxjTZ9J9_uV33TJ8VYDDRot4IOQ4Azx9W_oOJT3XickZxxNfJG69MnRQfMDYYHnSAgRgqfNqPPWvt1v4Hi1fNfOIzF1VsumU8wvA_vrl0Atna8qrWl-CFGzCdndtBqy-7fYCwa_LNs-xT8Z78",
-    },
-    {
-      "id": "6604",
-      "category": "Nails",
-      "subCategory": "Pedicure",
-      "title": "Luxury Spa Pedicure",
-      "price": "\$110",
-      "duration": "75 mins",
-      "image":
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuDOnlzfJ5hytmdW4ELdw6Ok_SOYRYxWdVOdaPEBl2PZIl8csFiA9YcMkfFd6F_-4QYpyIIq1vJZra5ZX9AsrbPX6CfJdS7nHLizeUa6oY3Roh3FgwfnKeurxbc3kl9hV-Mif5hRf9qsLgSXKhtvZpWQfQzKUo2Rk5lxo-V2-tSZcnqNgoCOLm24oZdjHaXhpNaLvRo9qMzOoCLIwbicwmcX-YlSmQ3FbSv4iD8ZzAvPZSgl0arTWqYC7o5SwnwKEfQJEhy0lDN0JEM",
-    },
-    {
-      "category": "Nails",
-      "subCategory": "Nail Art",
-      "title": "Editorial Nail Art",
-      "price": "\$130",
-      "duration": "90 mins",
-      "image":
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuCtJWLbhrrHtqz2qPSquBG_yi6xBKYNNV4Q21-bQ0EWvtOvKQHxfqb1oH9z483HzXLIrbB-QW723AXgVOQHeaNpCLiTlw9HgMOFR2Be1W0uxOCBrUUZt00SOAAMUFhYh3IQjuBGdQHHTkIEcOHZ4aNaiusM1aavDSfafktZ-KripjaeGSG4Uy4V0PIpXIXzBM-4cIXIS9jO_m4twy3Gc3RQcsNKQ6WdoRUf6wR4c0rP_K54o5hCE7hYPM7fyjWR5S1bpGiexO8nSBA",
-    },
-    {
-      "id": "6605",
-      "category": "Facials",
-      "subCategory": "Glow",
-      "title": "Morning Glow Facial",
-      "price": "\$120",
-      "duration": "75 mins",
-      "image":
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuCjD3Idcb9NwaKXy001FZBgWYb-DgyMVlYrDj7uZOEaJj6AVbNvATlq8Ivohs072AF9MuIquo9xyLLPMepeVLRbrZvshrVePIJ9vLLfQH7eghBjNqedHkwCNgascLhoJ0i5xGz2gmkT1wpCSGgp1J9U12Dk_DldmNTzrPfoHXqNHWurJJr0v2ARZF3ujQDcunGu3OJI9ib9MUKXg_uCntevkfCLnkbeZxRagDq1yx2F8Lt1qJlk8hZT9Q1NhTYeqrHG6JcDm0JpAUE",
-    },
-    {
-      "id": "6607",
-      "category": "Facials",
-      "subCategory": "Glow",
-      "title": "The 60-Minute Refresh",
-      "price": "\$120",
-      "duration": "60 mins",
-      "image":
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuCjD3Idcb9NwaKXy001FZBgWYb-DgyMVlYrDj7uZOEaJj6AVbNvATlq8Ivohs072AF9MuIquo9xyLLPMepeVLRbrZvshrVePIJ9vLLfQH7eghBjNqedHkwCNgascLhoJ0i5xGz2gmkT1wpCSGgp1J9U12Dk_DldmNTzrPfoHXqNHWurJJr0v2ARZF3ujQDcunGu3OJI9ib9MUKXg_uCntevkfCLnkbeZxRagDq1yx2F8Lt1qJlk8hZT9Q1NhTYeqrHG6JcDm0JpAUE",
-    },
-    {
-      "id": "6606",
-      "category": "Facials",
-      "subCategory": "Therapy",
-      "title": "Deep Sleep Therapy",
-      "price": "\$140",
-      "duration": "90 mins",
-      "image":
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuAak35w8RQZUxL5yYqAE1NHnvj8xEqXP3aTEY38GDI0k3rdA8Kj6zayxBazwKLFmv-Q-HTZ-9_AhtjV0lYkbE6kR5A8N3FLacPhanDY9AFaAdeDYrtwMG9MGoEtX-32zmFpIKa0ShusjITSMVFVd19-L2h6xvTXijda9zXEoPyVOoXlJOjhc8BzBb67kfjY0YE4lqnaGxjxzsnCBfOmtua4cOyXv7ScN_hUh4CwhJ-1J6F2kalpWt1bDKpeu9yJzwHiWweufPhij1A",
-    },
-  ];
-
-  List<Map<String, String>> get _categoryServices {
+  List<Map<String, dynamic>> get _categoryServices {
     if (_selectedFilterIndex == 0) {
-      return services;
+      return _allServices;
     }
 
     final selectedCategory = filters[_selectedFilterIndex];
-    return services
-        .where((service) => service['category'] == selectedCategory)
-        .toList();
+    return _allServices.where((service) {
+      final categoryName = service['category'] is Map
+          ? service['category']['name']
+          : service['category'];
+      return categoryName == selectedCategory;
+    }).toList();
   }
 
   List<String> get _subFilters {
-    final uniqueSubCategories = _categoryServices
-        .map((service) => service['subCategory'] ?? 'Other')
+    if (_allSubcategories.isEmpty) {
+      return ['All'];
+    }
+
+    final selectedCategory = _selectedFilterIndex == 0
+        ? null
+        : filters[_selectedFilterIndex];
+
+    // Filter subcategories by the selected category
+    final filteredSubcategories = _allSubcategories.where((sub) {
+      if (selectedCategory == null) return true;
+      final categoryName = sub['category'] is Map
+          ? sub['category']['name']
+          : sub['category'];
+      return categoryName == selectedCategory;
+    }).toList();
+
+    final subCategoryNames = filteredSubcategories
+        .map((sub) => sub['name'] as String? ?? 'Other')
         .toSet()
         .toList();
-    uniqueSubCategories.sort();
-    return ['All', ...uniqueSubCategories];
+    subCategoryNames.sort();
+    return ['All', ...subCategoryNames];
   }
 
-  List<Map<String, String>> get _filteredServices {
+  List<Map<String, dynamic>> get _filteredServices {
     if (_hasSearchQuery) {
       return _searchFilteredServices;
     }
 
-    final categoryFiltered = _categoryServices;
-    if (_selectedSubFilterIndex == 0) {
-      return categoryFiltered;
-    }
-
-    final selectedSubCategory = _subFilters[_selectedSubFilterIndex];
-    return categoryFiltered
-        .where((service) => service['subCategory'] == selectedSubCategory)
-        .toList();
+    return _categoryServices;
   }
 
   String get _screenTitle {
@@ -216,16 +227,16 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
     return filters[_selectedFilterIndex].toUpperCase();
   }
 
-  void _openServiceDetails(Map<String, String> service) {
+  void _openServiceDetails(Map<String, dynamic> service) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ServiceDetailScreen(
-          serviceId: service['id'] ?? '6600',
-          title: service['title'] ?? 'Service',
-          price: service['price'] ?? '\$0',
-          duration: service['duration'] ?? 'N/A',
-          imageUrl: service['image'] ?? '',
+          serviceId: service['_id'] ?? '6600',
+          title: service['name'] ?? 'Service',
+          price: '₹${service['price'] ?? '0'}',
+          duration: '${service['duration'] ?? 'N/A'} mins',
+          imageUrl: service['image2'] ?? '',
         ),
       ),
     );
@@ -319,37 +330,110 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
                 ),
               ),
             ),
-          SliverToBoxAdapter(child: _buildFilterChips()),
           SliverToBoxAdapter(child: SizedBox(height: 8)),
-          SliverToBoxAdapter(child: _buildSubFilterChips()),
-          if (_filteredServices.isEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: _categoriesFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 52,
+                    child: Center(
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  ),
+                );
+              }
+              if (snapshot.hasError) {
+                print('Error loading categories: ${snapshot.error}');
+              }
+              return SliverToBoxAdapter(child: _buildFilterChips());
+            },
+          ),
+          SliverToBoxAdapter(child: SizedBox(height: 8)),
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: _subcategoriesFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 46,
+                    child: Center(
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  ),
+                );
+              }
+              if (snapshot.hasError) {
+                print('Error loading subcategories: ${snapshot.error}');
+              }
+              return SliverToBoxAdapter(child: _buildSubFilterChips());
+            },
+          ),
+          SliverToBoxAdapter(child: SizedBox(height: 8)),
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: _servicesFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 30,
+                    ),
+                    child: Center(
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  ),
+                );
+              }
+              if (snapshot.hasError) {
+                print('Error loading services: ${snapshot.error}');
+              }
+              if (_filteredServices.isEmpty)
+                return SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 30,
+                    ),
+                    child: Text(
+                      _hasSearchQuery
+                          ? 'No services match your search. Try a different keyword.'
+                          : 'No services available for the selected filters.',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: kWarmGrey600,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                );
+              return SliverPadding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
-                  vertical: 30,
+                  vertical: 12,
                 ),
-                child: Text(
-                  _hasSearchQuery
-                      ? 'No services match your search. Try a different keyword.'
-                      : 'No services available for the selected filters.',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: kWarmGrey600,
-                    height: 1.5,
-                  ),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    return _buildServiceCard(_filteredServices[index]);
+                  }, childCount: _filteredServices.length),
                 ),
-              ),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  return _buildServiceCard(_filteredServices[index]);
-                }, childCount: _filteredServices.length),
-              ),
-            ),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -430,7 +514,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
     );
   }
 
-  Widget _buildServiceCard(Map<String, String> service) {
+  Widget _buildServiceCard(Map<String, dynamic> service) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
       child: InkWell(
@@ -450,7 +534,16 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
                 borderRadius: BorderRadius.circular(14),
                 child: AspectRatio(
                   aspectRatio: 16 / 11,
-                  child: Image.network(service["image"]!, fit: BoxFit.cover),
+                  child: Image.network(
+                    (service["image1"] ?? service["image"] ?? '') as String,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.error),
+                      );
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -459,7 +552,8 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      service["title"]!,
+                      (service["name"] ?? service["title"] ?? 'Service')
+                          as String,
                       style: GoogleFonts.cormorantGaramond(
                         fontSize: 24,
                         fontStyle: FontStyle.italic,
@@ -471,7 +565,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    service["price"]!,
+                    '₹${service["price"] ?? 0}',
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -486,7 +580,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    service["duration"]!.toUpperCase(),
+                    '${service["duration"] ?? 'N/A'} MINS',
                     style: GoogleFonts.inter(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,

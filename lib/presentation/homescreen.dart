@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
+import 'package:dio/dio.dart';
 import 'detailedservicescreen.dart';
 import 'servicedetailscreen.dart';
 import 'locationsearchscreen.dart';
@@ -16,6 +17,31 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   // Colors are provided by lib/constant/constants.dart
   String _selectedLocation = 'KOCHI';
+  late Future<List<Map<String, dynamic>>> _categoriesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _categoriesFuture = _fetchCategories();
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchCategories() async {
+    try {
+      final dio = Dio();
+      final response = await dio.get(
+        'https://sidi.mobilegear.co.in/api/categories',
+      );
+
+      if (response.statusCode == 200 && response.data is List) {
+        return List<Map<String, dynamic>>.from(response.data);
+      } else {
+        throw Exception('Failed to load categories');
+      }
+    } catch (e) {
+      print('Error fetching categories: $e');
+      rethrow;
+    }
+  }
 
   Future<void> _openLocationSearch() async {
     final result = await Navigator.push(
@@ -221,94 +247,137 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildServicesSection() {
-    final services = [
-      {
-        "title": "Hair",
-        "image":
-            "https://lh3.googleusercontent.com/aida-public/AB6AXuDhwtGGswF8f6oTbJt2kPjLH2OE_akDqZF5tTdlemziRZa77tptBWoFGbY7Ye2mQJ4LvbpdRvmqt4ICTx9hvIpfO1L2MiY_TAM3lRf1oDavv95dUHldy4Sm88cSbvjYys7JOzthV1BW8Mn1fMQBMdnK3c8rg-mZIC2JuWW_UNm-pa_-S_r-7ryJ1bE8m_15thFYV_PmFtWGR5EINnVMm59lJj9zAj1LLTjuwX6MEV-hngrVkotbtwMAZkjEzsbqaJdPCPsNyi4vs6M",
-      },
-      {
-        "title": "Nails",
-        "image":
-            "https://lh3.googleusercontent.com/aida-public/AB6AXuCM7VqNL24-1BJCkoR5omEK6Nbi4AX2r25Tw_eb1lWxzgzj7sh6DG9FQSvdCLlSnLVCD8XgsoToon2f4b-WN9oqXp3y8LVQb4pMvMgd2jOYF-JE0nAsT_VX08W4sQGvRll_Tcft7ccwS-Geb_-ci3ICA3cqxuqf8WjQLrn-xoaFuh9J-NNeETjMhG3RqQ4pLIKCHljGVFQ57P1BLnM9GCfKGF6nz8F6mQythsAbYDX09UbkbOmepidomwEE43_-NUrztXGyoopmdlE",
-      },
-      {
-        "title": "Facials",
-        "image":
-            "https://lh3.googleusercontent.com/aida-public/AB6AXuBb5fgSRgildruAaNPWMWA4TWVdJfvnAW1CoGxol8Z2Uqc0VvCHny5kuhkJ8Lh2AS9f020uzn4ROd0xpbhBogHLNjJXRIDoPu--RjlORLTFK7P2x8QWXaIgwtDMDlReGJLPSGfnKksfUtmtDyVwcGBKEOoo2EsgvFn0wnelZj3MlWhsHrDRsDt_heDwwAzv6IBgn9mTBWjvT-bC1EnrXVCKeuWVyU-3qoYbXxmkre4AP0gH6xz7Q4yX1qUW4k69r-xRR8fLN41Jhy4",
-      },
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Row(
-            children: [
-              Text(
-                "Our Services",
-                style: GoogleFonts.cormorantGaramond(
-                  fontSize: 32,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-              Spacer(),
-              IconButton(
-                onPressed: _openDetailedServices,
-                icon: const Icon(Icons.arrow_forward_ios, size: 16),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Row(
-            children: List.generate(services.length, (index) {
-              final service = services[index];
-              return Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    right: index == services.length - 1 ? 0 : 12,
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _categoriesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Our Services",
+                  style: GoogleFonts.cormorantGaramond(
+                    fontSize: 32,
+                    fontStyle: FontStyle.italic,
                   ),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(6),
-                    onTap: () =>
-                        _openDetailedServices(category: service['title']),
-                    child: Column(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: SizedBox(
-                            height: 160,
-                            child: Image.network(
-                              service["image"]!,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          service["title"]!,
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            letterSpacing: 2,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  height: 200,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Our Services",
+                  style: GoogleFonts.cormorantGaramond(
+                    fontSize: 32,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text('Error loading services: ${snapshot.error}'),
+              ],
+            ),
+          );
+        }
+
+        final services = snapshot.data ?? [];
+        if (services.isEmpty) {
+          return SizedBox.shrink();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  Text(
+                    "Our Services",
+                    style: GoogleFonts.cormorantGaramond(
+                      fontSize: 32,
+                      fontStyle: FontStyle.italic,
                     ),
                   ),
-                ),
-              );
-            }),
-          ),
-        ),
-      ],
+                  Spacer(),
+                  IconButton(
+                    onPressed: _openDetailedServices,
+                    icon: const Icon(Icons.arrow_forward_ios, size: 16),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              height: 220,
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                scrollDirection: Axis.horizontal,
+                itemCount: services.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final service = services[index];
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(6),
+                    onTap: () =>
+                        _openDetailedServices(category: service['name']),
+                    child: SizedBox(
+                      width: 160,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: SizedBox(
+                              height: 160,
+                              width: 160,
+                              child: Image.network(
+                                service["image"] ?? '',
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: Colors.grey[300],
+                                    child: const Icon(Icons.error),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            service["name"] ?? '',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              letterSpacing: 2,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
