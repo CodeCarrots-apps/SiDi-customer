@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/models/user_profile.dart';
 import 'package:sidi/utils/app_constants.dart';
@@ -55,8 +55,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (pickedFile == null || !mounted) {
       return;
     }
+
+    // Crop the image to 1:1 aspect ratio
+    final croppedFile = await ImageCropper().cropImage(
+      sourcePath: pickedFile.path,
+      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Crop Image',
+          toolbarColor: kEspressoColor,
+          toolbarWidgetColor: Colors.white,
+          initAspectRatio: CropAspectRatioPreset.square,
+          lockAspectRatio: true,
+        ),
+        IOSUiSettings(title: 'Crop Image', aspectRatioLockEnabled: true),
+      ],
+    );
+
+    if (croppedFile == null || !mounted) {
+      return;
+    }
+
     setState(() {
-      _avatarImage = File(pickedFile.path);
+      _avatarImage = File(croppedFile.path);
     });
   }
 
