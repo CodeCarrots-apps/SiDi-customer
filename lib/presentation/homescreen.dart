@@ -18,11 +18,13 @@ class _HomeScreenState extends State<HomeScreen> {
   // Colors are provided by lib/constant/constants.dart
   String _selectedLocation = 'KOCHI';
   late Future<List<Map<String, dynamic>>> _categoriesFuture;
+  late Future<List<Map<String, dynamic>>> _bannersFuture;
 
   @override
   void initState() {
     super.initState();
     _categoriesFuture = _fetchCategories();
+    _bannersFuture = _fetchBanners();
   }
 
   Future<List<Map<String, dynamic>>> _fetchCategories() async {
@@ -70,6 +72,26 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       MaterialPageRoute(builder: (_) => const NotificationsScreen()),
     );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchBanners() async {
+    try {
+      final dio = Dio();
+      final response = await dio.get(
+        'https://sidi.mobilegear.co.in/api/banners',
+      );
+
+      if (response.statusCode == 200 && response.data is List) {
+        return List<Map<String, dynamic>>.from(
+          response.data,
+        ).where((banner) => banner['isActive'] == true).toList();
+      } else {
+        throw Exception('Failed to load banners');
+      }
+    } catch (e) {
+      print('Banner error: $e');
+      rethrow;
+    }
   }
 
   Future<void> _openDetailedServices({String? query, String? category}) async {
@@ -146,103 +168,249 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // Widget _buildHeroSection() {
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(horizontal: 24),
+  //     child: ClipRRect(
+  //       borderRadius: BorderRadius.circular(16),
+  //       child: Stack(
+  //         children: [
+  //           AspectRatio(
+  //             aspectRatio: 4 / 5,
+  //             child: Image.network(
+  //               "https://lh3.googleusercontent.com/aida-public/AB6AXuAhaWq1M13518DNZyCPQ9g4KOQRTAht8dZj5D874IbfzvkqszpLXlucjRhYezVs-_lJLiWAVHI9qI03t19Y8J7k2BgdDzQWlEngeqMMV1VLwhE0APclHMHm1VZCRX1lb-FVx6KM61B6XsFJZN8ft8CwzFZVTZo2xGzdp0GlXvaPbhZFTDVh_MfrckXWfO8Ahzcqi-KhgaMct57N4TmBn7L22sCcgVACr_9Mgi9SS8GgHQGRIjPFSj_MzAUg7B25s1FLULVBmrCCIcg",
+  //               fit: BoxFit.cover,
+  //             ),
+  //           ),
+  //           Container(
+  //             decoration: BoxDecoration(
+  //               gradient: LinearGradient(
+  //                 colors: [
+  //                   Colors.black.withValues(alpha: 0.6),
+  //                   Colors.black.withValues(alpha: 0.2),
+  //                   Colors.transparent,
+  //                 ],
+  //                 begin: Alignment.bottomCenter,
+  //                 end: Alignment.topCenter,
+  //               ),
+  //             ),
+  //           ),
+  //           Positioned(
+  //             bottom: 32,
+  //             left: 24,
+  //             right: 24,
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Text(
+  //                   "SUMMER EDITORIAL",
+  //                   style: GoogleFonts.inter(
+  //                     color: Colors.white70,
+  //                     fontSize: 10,
+  //                     letterSpacing: 4,
+  //                     fontWeight: FontWeight.w500,
+  //                   ),
+  //                 ),
+  //                 const SizedBox(height: 8),
+  //                 Text(
+  //                   "Effortless luxury,\ndelivered to you.",
+  //                   style: GoogleFonts.cormorantGaramond(
+  //                     color: Colors.white,
+  //                     fontSize: 36,
+  //                     fontStyle: FontStyle.italic,
+  //                     fontWeight: FontWeight.w300,
+  //                     height: 1.1,
+  //                   ),
+  //                 ),
+  //                 const SizedBox(height: 24),
+  //                 ElevatedButton(
+  //                   style: ElevatedButton.styleFrom(
+  //                     backgroundColor: kEspressoColor,
+  //                     shape: RoundedRectangleBorder(
+  //                       borderRadius: BorderRadius.circular(50),
+  //                     ),
+  //                     padding: const EdgeInsets.symmetric(
+  //                       horizontal: 32,
+  //                       vertical: 14,
+  //                     ),
+  //                   ),
+  //                   onPressed: () {
+  //                     Navigator.push(
+  //                       context,
+  //                       MaterialPageRoute(
+  //                         builder: (context) => const ServiceDetailScreen(
+  //                           serviceId: '6652',
+  //                           title: 'Luxury Service',
+  //                           price: '₹1200',
+  //                           duration: '45 mins',
+  //                           imageUrl:
+  //                               'https://lh3.googleusercontent.com/aida-public/AB6AXuAhaWq1M13518DNZyCPQ9g4KOQRTAht8dZj5D874IbfzvkqszpLXlucjRhYezVs-_lJLiWAVHI9qI03t19Y8J7k2BgdDzQWlEngeqMMV1VLwhE0APclHMHm1VZCRX1lb-FVx6KM61B6XsFJZN8ft8CwzFZVTZo2xGzdp0GlXvaPbhZFTDVh_MfrckXWfO8Ahzcqi-KhgaMct57N4TmBn7L22sCcgVACr_9Mgi9SS8GgHQGRIjPFSj_MzAUg7B25s1FLULVBmrCCIcg',
+  //                         ),
+  //                       ),
+  //                     );
+  //                   },
+  //                   child: Text(
+  //                     "BOOK NOW",
+  //                     style: GoogleFonts.inter(
+  //                       fontSize: 12,
+  //                       letterSpacing: 2,
+  //                       fontWeight: FontWeight.w500,
+  //                       color: Colors.white,
+  //                     ),
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
+
   Widget _buildHeroSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Stack(
-          children: [
-            AspectRatio(
-              aspectRatio: 4 / 5,
-              child: Image.network(
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuAhaWq1M13518DNZyCPQ9g4KOQRTAht8dZj5D874IbfzvkqszpLXlucjRhYezVs-_lJLiWAVHI9qI03t19Y8J7k2BgdDzQWlEngeqMMV1VLwhE0APclHMHm1VZCRX1lb-FVx6KM61B6XsFJZN8ft8CwzFZVTZo2xGzdp0GlXvaPbhZFTDVh_MfrckXWfO8Ahzcqi-KhgaMct57N4TmBn7L22sCcgVACr_9Mgi9SS8GgHQGRIjPFSj_MzAUg7B25s1FLULVBmrCCIcg",
-                fit: BoxFit.cover,
-              ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.black.withValues(alpha: 0.6),
-                    Colors.black.withValues(alpha: 0.2),
-                    Colors.transparent,
-                  ],
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _bannersFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: AspectRatio(
+                aspectRatio: 4 / 5,
+                child: Container(
+                  color: Colors.grey[300],
+                  child: const Center(child: CircularProgressIndicator()),
                 ),
               ),
             ),
-            Positioned(
-              bottom: 32,
-              left: 24,
-              right: 24,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "SUMMER EDITORIAL",
-                    style: GoogleFonts.inter(
-                      color: Colors.white70,
-                      fontSize: 10,
-                      letterSpacing: 4,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Effortless luxury,\ndelivered to you.",
-                    style: GoogleFonts.cormorantGaramond(
-                      color: Colors.white,
-                      fontSize: 36,
-                      fontStyle: FontStyle.italic,
-                      fontWeight: FontWeight.w300,
-                      height: 1.1,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: kEspressoColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(50),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 14,
-                      ),
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ServiceDetailScreen(
-                            serviceId: '6652',
-                            title: 'Luxury Service',
-                            price: '₹1200',
-                            duration: '45 mins',
-                            imageUrl:
-                                'https://lh3.googleusercontent.com/aida-public/AB6AXuAhaWq1M13518DNZyCPQ9g4KOQRTAht8dZj5D874IbfzvkqszpLXlucjRhYezVs-_lJLiWAVHI9qI03t19Y8J7k2BgdDzQWlEngeqMMV1VLwhE0APclHMHm1VZCRX1lb-FVx6KM61B6XsFJZN8ft8CwzFZVTZo2xGzdp0GlXvaPbhZFTDVh_MfrckXWfO8Ahzcqi-KhgaMct57N4TmBn7L22sCcgVACr_9Mgi9SS8GgHQGRIjPFSj_MzAUg7B25s1FLULVBmrCCIcg',
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Text('Error loading banners'),
+          );
+        }
+
+        final banners = snapshot.data ?? [];
+
+        if (banners.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: SizedBox(
+            height: 420,
+            child: PageView.builder(
+              itemCount: banners.length,
+              itemBuilder: (context, index) {
+                final banner = banners[index];
+
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Image.network(
+                          banner["image"] ?? '',
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.error),
                           ),
                         ),
-                      );
-                    },
-                    child: Text(
-                      "BOOK NOW",
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        letterSpacing: 2,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white,
                       ),
-                    ),
+
+                      /// Gradient Overlay
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.black.withValues(alpha: 0.6),
+                              Colors.black.withValues(alpha: 0.2),
+                              Colors.transparent,
+                            ],
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                          ),
+                        ),
+                      ),
+
+                      /// Content
+                      Positioned(
+                        bottom: 32,
+                        left: 24,
+                        right: 24,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              (banner["title"] ?? "").toUpperCase(),
+                              style: GoogleFonts.inter(
+                                color: Colors.white70,
+                                fontSize: 10,
+                                letterSpacing: 4,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+
+                            Text(
+                              banner["description"] ?? '',
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.cormorantGaramond(
+                                color: Colors.white,
+                                fontSize: 32,
+                                fontStyle: FontStyle.italic,
+                                fontWeight: FontWeight.w300,
+                                height: 1.2,
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: kEspressoColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                  vertical: 14,
+                                ),
+                              ),
+                              onPressed: () {
+                                if ((banner["link"] ?? '').isNotEmpty) {
+                                  _openDetailedServices(query: banner["title"]);
+                                }
+                              },
+                              child: Text(
+                                "EXPLORE",
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  letterSpacing: 2,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
