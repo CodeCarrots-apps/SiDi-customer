@@ -3,6 +3,10 @@ class AppConstants {
   static const String registerUrl =
       '${baseUrl}api/mobileapp/auth/customer/register';
   static const String loginUrl = '${baseUrl}api/mobileapp/auth/customer/login';
+  static const String verifyOtpUrl =
+      '${baseUrl}api/mobileapp/auth/customer/verify-otp';
+  static const String resendOtpUrl =
+      '${baseUrl}api/mobileapp/auth/customer/resend-otp';
   static const String logout = '${baseUrl}api/mobileapp/auth/logout';
   static const String documentsVerify =
       '${baseUrl}api/mobileapp/auth/customer/upload-documents';

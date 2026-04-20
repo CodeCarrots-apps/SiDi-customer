@@ -27,10 +27,11 @@ class RegisterController extends GetxController {
         baseUrl,
         data: <String, dynamic>{
           'name': name.trim(),
-          'email': email.trim(),
-          'phone': phone.trim(),
+          if (email.trim().isNotEmpty) 'email': email.trim(),
+          if (phone.trim().isNotEmpty) 'phone': phone.trim(),
           'password': password,
-          'confirmPassword': confirmPassword,
+          if (confirmPassword.trim().isNotEmpty)
+            'confirmPassword': confirmPassword,
         },
         options: Options(
           headers: <String, dynamic>{'Content-Type': 'application/json'},

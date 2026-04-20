@@ -364,8 +364,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ? Image.network(
                                 _profile!.user.profileImage.startsWith('http')
                                     ? _profile!.user.profileImage
-                                    // : 'https://sidi.mobilegear.co.in${_profile!.user.profileImage}',
-                                    : 'https://i.pinimg.com/736x/8b/f4/d6/8bf4d6706d34d799dcc6a6c8cde495ed.jpg',
+                                    : 'https://sidi.mobilegear.co.in${_profile!.user.profileImage}',
+                                // : 'https://i.pinimg.com/736x/8b/f4/d6/8bf4d6706d34d799dcc6a6c8cde495ed.jpg',
                                 fit: BoxFit.cover,
                               )
                             : Image.network(

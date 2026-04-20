@@ -14,13 +14,13 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final LoginController _loginController = LoginController();
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _identifierController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _identifierController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -30,18 +30,18 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    final email = _emailController.text.trim();
+    final identifier = _identifierController.text.trim();
     final password = _passwordController.text;
 
     debugPrint('[Login] Sign in button tapped');
     debugPrint(
-      '[Login] Email/username entered: ${email.isEmpty ? '<empty>' : email}',
+      '[Login] Identifier entered: ${identifier.isEmpty ? '<empty>' : identifier}',
     );
     debugPrint('[Login] Password entered: ${password.isEmpty ? 'no' : 'yes'}');
 
-    if (email.isEmpty || password.isEmpty) {
+    if (identifier.isEmpty || password.isEmpty) {
       debugPrint(
-        '[Login] Validation failed: missing email/username or password',
+        '[Login] Validation failed: missing email/username/phone or password',
       );
       if (!mounted) {
         return;
@@ -49,7 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Enter both email/username and password.'),
+          content: Text('Enter both email/username/phone and password.'),
         ),
       );
       return;
@@ -59,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
 
-    _loginController.email = email;
+    _loginController.identifier = identifier;
     _loginController.password = password;
     debugPrint('[Login] Starting login request');
 
@@ -161,14 +161,14 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       children: [
         AnimatedInputField(
-          'Email or Username',
-          'your@email.com',
-          label: 'Email or Username',
-          placeholder: 'your@email.com',
-          controller: _emailController,
+          'Email, Username or Phone',
+          'your@email.com / +1 555 0123',
+          label: 'Email, Username or Phone',
+          placeholder: 'your@email.com or +15550123',
+          controller: _identifierController,
           onChanged: (value) {
             debugPrint(
-              '[Login] Email/username field changed: ${value.trim().isEmpty ? '<empty>' : value.trim()}',
+              '[Login] Identifier field changed: ${value.trim().isEmpty ? '<empty>' : value.trim()}',
             );
           },
         ),

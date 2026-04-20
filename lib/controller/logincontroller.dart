@@ -17,7 +17,7 @@ class LoginController extends GetxController {
           );
 
   final Dio _dio;
-  String email = '';
+  String identifier = '';
   String password = '';
   final String baseUrl = AppConstants.loginUrl;
 
@@ -28,14 +28,28 @@ class LoginController extends GetxController {
     isLoading = true;
     errorMessage = null;
     update();
+    final trimmedIdentifier = identifier.trim();
+    final isPhoneLogin = RegExp(r'^\+?\d{7,15}$').hasMatch(trimmedIdentifier);
+    final isEmailLogin = RegExp(
+      r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+    ).hasMatch(trimmedIdentifier);
+
     debugPrint(
-      '[LoginController] Login started for ${email.trim().isEmpty ? '<empty>' : email.trim()}',
+      '[LoginController] Login started for ${trimmedIdentifier.isEmpty ? '<empty>' : trimmedIdentifier}',
     );
 
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         baseUrl,
-        data: <String, dynamic>{'email': email.trim(), 'password': password},
+        data: <String, dynamic>{
+          if (isPhoneLogin)
+            'phone': trimmedIdentifier
+          else if (isEmailLogin)
+            'email': trimmedIdentifier
+          else
+            'username': trimmedIdentifier,
+          'password': password,
+        },
         options: Options(
           headers: <String, dynamic>{'Content-Type': 'application/json'},
         ),
@@ -65,7 +79,7 @@ class LoginController extends GetxController {
         debugPrint('[LoginController] Login rejected by API: $errorMessage');
       } else {
         debugPrint(
-          '[LoginController] Login successful: user=${result.username}, email=${email.trim()}',
+          '[LoginController] Login successful: user=${result.username}, identifier=$trimmedIdentifier',
         );
         // Save token using shared_preferences
         await TokenStorage.saveToken(result.token);
