@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:dio/dio.dart';
 import 'detailedservicescreen.dart';
-import 'servicedetailscreen.dart';
+// import 'servicedetailscreen.dart';
 import 'locationsearchscreen.dart';
 import 'notificationsscreen.dart';
 
