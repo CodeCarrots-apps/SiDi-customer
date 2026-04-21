@@ -1,49 +1,77 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
-import 'package:sidi/models/user_profile.dart';
+import 'package:sidi/models/user_profile.dart' hide FavoriteService;
 import 'package:sidi/presentation/detailedartistscreen.dart';
+import 'package:sidi/services/favorite_service.dart' as favorite_service;
+import 'package:sidi/services/favorite_service_api.dart';
+import 'package:sidi/models/user_profile.dart' as user_profile show FavoriteService;
 
-class FavoriteStylistScreen extends StatelessWidget {
-  final List<FavoriteStylist> favoriteStylists;
 
-  FavoriteStylistScreen({super.key, List<FavoriteStylist>? favoriteStylists})
-    : favoriteStylists = favoriteStylists ?? _fallbackFavoriteStylists;
+class FavoriteStylistScreen extends StatefulWidget {
+  final List<FavoriteStylist>? favoriteStylists;
 
-  static final List<FavoriteStylist> _fallbackFavoriteStylists = [
-    FavoriteStylist(
-      id: '1',
-      fullName: 'Eleanor Vance',
-      profileImage:
-          'https://i.pinimg.com/1200x/2f/3c/e1/2f3ce168140f0d05426428b4fa5b47e2.jpg',
-      rating: 4.9,
-      tier: 'Master Colorist',
-    ),
-    FavoriteStylist(
-      id: '2',
-      fullName: 'Julian Thorne',
-      profileImage:
-          'https://i.pinimg.com/736x/f5/bd/64/f5bd64313473df52285458b7f9d11de9.jpg',
-      rating: 4.8,
-      tier: 'Precision Cutting',
-    ),
-    FavoriteStylist(
-      id: '3',
-      fullName: 'Sophie Laurent',
-      profileImage:
-          'https://i.pinimg.com/736x/48/b5/e4/48b5e4fe73f26cace03677976462e27e.jpg',
-      rating: 4.7,
-      tier: 'Extensions Specialist',
-    ),
-    FavoriteStylist(
-      id: '4',
-      fullName: 'Marcus Sterling',
-      profileImage:
-          'https://i.pinimg.com/736x/9f/58/9e/9f589ebb0fb8bf43b0c63336b3887f84.jpg',
-      rating: 4.9,
-      tier: 'Balayage Expert',
-    ),
-  ];
+  const FavoriteStylistScreen({super.key, this.favoriteStylists});
+
+  @override
+  State<FavoriteStylistScreen> createState() => _FavoriteStylistScreenState();
+}
+
+class _FavoriteStylistScreenState extends State<FavoriteStylistScreen>
+    with TickerProviderStateMixin {
+  late TabController _tabController;
+  List<FavoriteStylist> favoriteStylists = [];
+  List<user_profile.FavoriteService> favoriteServices = [];
+  bool isLoadingStylists = true;
+  bool isLoadingServices = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _loadFavoriteStylists();
+    _loadFavoriteServices();
+  }
+
+  Future<void> _loadFavoriteStylists() async {
+    try {
+      final favorites = await favorite_service.FavoriteService.getFavorites();
+      setState(() {
+        favoriteStylists = favorites
+            .map((fav) => FavoriteStylist.fromJson(fav))
+            .toList();
+        isLoadingStylists = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading favorite stylists: $e');
+      setState(() {
+        isLoadingStylists = false;
+      });
+    }
+  }
+
+  Future<void> _loadFavoriteServices() async {
+    try {
+      final services = await FavoriteServiceApi.getFavoriteServices();
+      setState(() {
+        favoriteServices = services
+            .map((service) => user_profile.FavoriteService.fromJson(service))
+            .toList();
+        isLoadingServices = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading favorite services: $e');
+      setState(() {
+        isLoadingServices = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,19 +95,91 @@ class FavoriteStylistScreen extends StatelessWidget {
             color: kCharcoalColor,
           ),
         ),
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: kCharcoalColor,
+          unselectedLabelColor: kWarmGrey600,
+          indicatorColor: kAccentGold,
+          indicatorWeight: 3,
+          labelStyle: GoogleFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.2,
+          ),
+          unselectedLabelStyle: GoogleFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+          tabs: const [
+            Tab(text: 'STYLISTS'),
+            Tab(text: 'SERVICES'),
+          ],
+        ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: ListView.separated(
-            itemCount: favoriteStylists.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 18),
-            itemBuilder: (context, index) {
-              final stylist = favoriteStylists[index];
-              return _FavoriteStylistCard(stylist: stylist);
-            },
-          ),
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            // Stylists Tab
+            _buildStylistsList(),
+            // Services Tab
+            _buildServicesList(),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildStylistsList() {
+    if (isLoadingStylists) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (favoriteStylists.isEmpty) {
+      return Center(
+        child: Text(
+          'No favorite stylists yet',
+          style: GoogleFonts.inter(fontSize: 14, color: kWarmGrey600),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: ListView.separated(
+        itemCount: favoriteStylists.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 18),
+        itemBuilder: (context, index) {
+          final stylist = favoriteStylists[index];
+          return _FavoriteStylistCard(stylist: stylist);
+        },
+      ),
+    );
+  }
+
+  Widget _buildServicesList() {
+    if (isLoadingServices) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (favoriteServices.isEmpty) {
+      return Center(
+        child: Text(
+          'No favorite services yet',
+          style: GoogleFonts.inter(fontSize: 14, color: kWarmGrey600),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: ListView.separated(
+        itemCount: favoriteServices.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 18),
+        itemBuilder: (context, index) {
+          final service = favoriteServices[index];
+          return _FavoriteServiceCard(service: service);
+        },
       ),
     );
   }
@@ -98,6 +198,7 @@ class _FavoriteStylistCard extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (_) => DetailedArtistScreen(
+              artistId: stylist.id,
               artistName: stylist.fullName,
               role: stylist.tier,
               imageUrl: stylist.profileImage,
@@ -196,5 +297,154 @@ class _FavoriteStylistCard extends StatelessWidget {
       return parts.first.substring(0, 1).toUpperCase();
     }
     return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  }
+}
+
+class _FavoriteServiceCard extends StatelessWidget {
+  final user_profile.FavoriteService service;
+
+  const _FavoriteServiceCard({required this.service});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: kCharcoalColor.withOpacity(0.06),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: _buildServiceImage(service.image1, service.name),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      service.name,
+                      style: GoogleFonts.cormorantGaramond(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: kCharcoalColor,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${service.duration} mins',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: kWarmGrey600,
+                      ),
+                    ),
+                    if (service.category != null &&
+                        service.category!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Category: ${service.category}',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: kWarmGrey600,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Icon(Icons.favorite, color: kAccentGold, size: 24),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '\$${service.price.toStringAsFixed(2)}',
+                style: GoogleFonts.cormorantGaramond(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: kAccentGold,
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Service added to cart'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+                style: TextButton.styleFrom(
+                  backgroundColor: kAccentGold,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  'BOOK',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: kIvoryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServiceImage(String imageUrl, String serviceName) {
+    if (imageUrl.isNotEmpty) {
+      return Image.network(
+        imageUrl,
+        width: 70,
+        height: 70,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildInitialsAvatar(serviceName),
+      );
+    }
+    return _buildInitialsAvatar(serviceName);
+  }
+
+  Widget _buildInitialsAvatar(String serviceName) {
+    final initial = serviceName.isNotEmpty ? serviceName[0].toUpperCase() : '?';
+    return Container(
+      width: 70,
+      height: 70,
+      color: kWarmGrey100,
+      alignment: Alignment.center,
+      child: Text(
+        initial,
+        style: GoogleFonts.inter(
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+          color: kCharcoalColor,
+        ),
+      ),
+    );
   }
 }

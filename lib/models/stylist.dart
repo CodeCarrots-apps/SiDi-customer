@@ -1,4 +1,5 @@
 class Stylist {
+  final String? id;
   final String image;
   final String name;
   final String role;
@@ -6,6 +7,7 @@ class Stylist {
   final double distance;
 
   const Stylist({
+    this.id,
     required this.image,
     required this.name,
     required this.role,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
+import 'package:sidi/services/favorite_service_api.dart';
 
 import 'timeslotscreen.dart';
 
@@ -26,6 +27,99 @@ class ServiceDetailScreen extends StatefulWidget {
 
 class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   // Colors are provided by lib/constant/constants.dart
+  late bool isFavorite = false;
+  late bool isLoadingFavorite = false;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (isLoadingFavorite) return;
+
+    setState(() {
+      isLoadingFavorite = true;
+    });
+
+    try {
+      if (isFavorite) {
+        final result = await FavoriteServiceApi.removeFavoriteService(
+          widget.serviceId,
+        );
+        if (result['success'] == true) {
+          setState(() {
+            isFavorite = false;
+          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Removed from favorites'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  (result['message'] as String?) ??
+                      'Failed to remove from favorites',
+                ),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        }
+      } else {
+        final result = await FavoriteServiceApi.addFavoriteService(
+          widget.serviceId,
+        );
+        if (result['success'] == true) {
+          setState(() {
+            isFavorite = true;
+          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Added to favorites'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  (result['message'] as String?) ??
+                      'Failed to add to favorites',
+                ),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error toggling favorite: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoadingFavorite = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +174,14 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
         ),
       ),
       actions: [
-        _circleButton(Icons.favorite_border),
+        GestureDetector(
+          onTap: isLoadingFavorite ? null : _toggleFavorite,
+          child: Icon(
+            isFavorite ? Icons.favorite : Icons.favorite_border,
+            color: isFavorite ? kChampagneColor : Colors.black,
+            size: 20,
+          ),
+        ),
         const SizedBox(width: 12),
         _circleButton(Icons.share),
         const SizedBox(width: 16),
@@ -109,15 +210,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   Widget _circleButton(IconData icon, {VoidCallback? onTap}) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: opacity(Colors.black, 0.15),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, color: Colors.white, size: 20),
-      ),
+      child: Icon(icon, color: Colors.black, size: 20),
     );
   }
 

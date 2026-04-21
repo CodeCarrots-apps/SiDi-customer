@@ -77,6 +77,38 @@ class FavoriteStylist {
   }
 }
 
+class FavoriteService {
+  FavoriteService({
+    required this.id,
+    required this.name,
+    required this.price,
+    required this.duration,
+    required this.image1,
+    this.image2,
+    this.category,
+  });
+
+  final String id;
+  final String name;
+  final double price;
+  final int duration;
+  final String image1;
+  final String? image2;
+  final String? category;
+
+  factory FavoriteService.fromJson(Map<String, dynamic> json) {
+    return FavoriteService(
+      id: (json['_id'] as String?) ?? '',
+      name: (json['name'] as String?) ?? '',
+      price: (json['price'] is num) ? (json['price'] as num).toDouble() : 0.0,
+      duration: (json['duration'] as int?) ?? 0,
+      image1: (json['image1'] as String?) ?? '',
+      image2: (json['image2'] as String?),
+      category: (json['category'] as String?),
+    );
+  }
+}
+
 class ProfileStats {
   ProfileStats({
     required this.totalBookings,
@@ -96,6 +128,75 @@ class ProfileStats {
       totalReviews: (json['totalReviews'] as int?) ?? 0,
       memberSince: (json['memberSince'] as String?) ?? '',
       tier: (json['tier'] as String?) ?? 'Member',
+    );
+  }
+}
+
+class NearbyBeautician {
+  NearbyBeautician({
+    required this.id,
+    required this.name,
+    required this.distance,
+    required this.rating,
+  });
+
+  final String id;
+  final String name;
+  final double distance;
+  final double rating;
+
+  factory NearbyBeautician.fromJson(Map<String, dynamic> json) {
+    return NearbyBeautician(
+      id: (json['_id'] as String?) ?? '',
+      name: (json['name'] as String?) ?? '',
+      distance: (json['distance'] is num)
+          ? (json['distance'] as num).toDouble()
+          : 0.0,
+      rating: (json['rating'] is num)
+          ? (json['rating'] as num).toDouble()
+          : 0.0,
+    );
+  }
+}
+
+class AllBeautician {
+  AllBeautician({
+    required this.id,
+    required this.fullName,
+    required this.profileImage,
+    required this.rating,
+    required this.tier,
+    this.skills,
+    this.experience,
+    this.status,
+    this.isVerified,
+  });
+
+  final String id;
+  final String fullName;
+  final String profileImage;
+  final double rating;
+  final String tier;
+  final List<String>? skills;
+  final int? experience;
+  final String? status;
+  final bool? isVerified;
+
+  factory AllBeautician.fromJson(Map<String, dynamic> json) {
+    return AllBeautician(
+      id: (json['_id'] as String?) ?? '',
+      fullName: (json['fullName'] as String?) ?? '',
+      profileImage: (json['profileImage'] as String?) ?? '',
+      rating: (json['rating'] is num)
+          ? (json['rating'] as num).toDouble()
+          : 0.0,
+      tier: (json['tier'] as String?) ?? '',
+      skills: (json['skills'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList(),
+      experience: (json['experience'] as int?),
+      status: (json['status'] as String?),
+      isVerified: (json['isVerified'] as bool?),
     );
   }
 }

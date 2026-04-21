@@ -3,19 +3,63 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 
 import 'timeslotscreen.dart';
+import '../services/favorite_service.dart';
 
-class DetailedArtistScreen extends StatelessWidget {
+class DetailedArtistScreen extends StatefulWidget {
   const DetailedArtistScreen({
     super.key,
+    this.artistId = "",
     this.artistName = 'Elena Rossi',
     this.role = 'Master Stylist',
     this.imageUrl =
         'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80',
   });
 
+  final String artistId;
   final String artistName;
   final String role;
   final String imageUrl;
+
+  @override
+  State<DetailedArtistScreen> createState() => _DetailedArtistScreenState();
+}
+
+class _DetailedArtistScreenState extends State<DetailedArtistScreen> {
+  bool isFavorited = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkIfFavorited();
+  }
+
+  Future<void> _checkIfFavorited() async {
+    final favorites = await FavoriteService.getFavorites();
+    setState(() {
+      isFavorited = favorites.any((fav) => fav['id'] == widget.artistId);
+    });
+  }
+
+  Future<void> _toggleFavorite() async {
+    final response = isFavorited
+        ? await FavoriteService.removeFromFavorites(widget.artistId)
+        : await FavoriteService.addToFavorites(widget.artistId);
+    if (response['success'] == true) {
+      setState(() {
+        isFavorited = !isFavorited;
+      });
+    }
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response['message'] ?? 'Unknown error'),
+          backgroundColor: response['success'] == true
+              ? Colors.green
+              : Colors.red,
+        ),
+      );
+    }
+  }
 
   static const _services = [
     {
@@ -65,13 +109,28 @@ class DetailedArtistScreen extends StatelessWidget {
               icon: const Icon(Icons.arrow_back_ios_new, color: kEspressoColor),
               onPressed: () => Navigator.pop(context),
             ),
+            actions: [
+              IconButton(
+                icon: Icon(
+                  isFavorited ? Icons.favorite : Icons.favorite_border,
+                  color: kEspressoColor,
+                ),
+                onPressed: _toggleFavorite,
+              ),
+              const SizedBox(width: 12),
+              IconButton(
+                icon: const Icon(Icons.share, color: kEspressoColor),
+                onPressed: () {},
+              ),
+              const SizedBox(width: 16),
+            ],
             centerTitle: true,
             expandedHeight: MediaQuery.of(context).size.height * 0.44,
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.network(imageUrl, fit: BoxFit.cover),
+                  Image.network(widget.imageUrl, fit: BoxFit.cover),
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -95,7 +154,7 @@ class DetailedArtistScreen extends StatelessWidget {
               delegate: SliverChildListDelegate([
                 const SizedBox(height: 32),
                 Text(
-                  role.toUpperCase(),
+                  widget.role.toUpperCase(),
                   style: GoogleFonts.inter(
                     fontSize: 10,
                     letterSpacing: 2,
@@ -105,7 +164,7 @@ class DetailedArtistScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  artistName,
+                  widget.artistName,
                   style: GoogleFonts.cormorantGaramond(
                     fontSize: 44,
                     fontStyle: FontStyle.italic,
@@ -115,7 +174,7 @@ class DetailedArtistScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'With more than fifteen years of experience between Milan and London, $artistName creates refined looks rooted in subtlety and precision. Her approach emphasizes the quiet power of detail and contemporary editorial balance.',
+                  'With more than fifteen years of experience between Milan and London, ${widget.artistName} creates refined looks rooted in subtlety and precision. Her approach emphasizes the quiet power of detail and contemporary editorial balance.',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     height: 1.8,
@@ -125,7 +184,7 @@ class DetailedArtistScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'Specializing in techniques that celebrate natural texture, $artistName crafts tailored services that feel modern yet enduring, with an emphasis on effortless sophistication.',
+                  'Specializing in techniques that celebrate natural texture, ${widget.artistName} crafts tailored services that feel modern yet enduring, with an emphasis on effortless sophistication.',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     height: 1.8,
@@ -229,7 +288,7 @@ class DetailedArtistScreen extends StatelessWidget {
                       title: service['title']!,
                       price: service['price']!,
                       duration: 'N/A',
-                      imageUrl: imageUrl,
+                      imageUrl: widget.imageUrl,
                     ),
                   ),
                 );

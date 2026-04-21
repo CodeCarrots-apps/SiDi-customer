@@ -1,28 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
-import 'package:sidi/presentation/locationsearchscreen.dart'
-    show LocationSearchScreen;
 import 'detailedartistscreen.dart';
 import '../models/stylist.dart';
+import 'package:get/get.dart';
+import 'locationsearchscreen.dart';
+import 'stylistlist_controller.dart';
 
-class StylistListScreen extends StatefulWidget {
-  const StylistListScreen({super.key});
+class StylistListScreen extends StatelessWidget {
+  StylistListScreen({super.key});
 
-  @override
-  State<StylistListScreen> createState() => _StylistListScreenState();
-}
+  final StylistListController controller = Get.put(StylistListController());
 
-class _StylistListScreenState extends State<StylistListScreen> {
-  String _selectedLocation = 'KOCHI';
-
-  Future<void> _openLocationSearch() async {
+  Future<void> _openLocationSearch(BuildContext context) async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const LocationSearchScreen()),
     );
 
-    if (!mounted || result == null || result is! Map) {
+    if (result == null || result is! Map) {
       return;
     }
 
@@ -30,40 +26,13 @@ class _StylistListScreenState extends State<StylistListScreen> {
         (result['name'] as String?) ?? (result['displayName'] as String?) ?? '';
     final trimmed = rawLabel.trim();
     final label = trimmed.isEmpty
-        ? _selectedLocation
+        ? controller.selectedLocation.value
         : trimmed.split(',').first.toUpperCase();
 
-    setState(() {
-      _selectedLocation = label;
-    });
+    controller.updateLocation(label);
+    // Optionally, update coordinates and refetch stylists here
+    // controller.fetchNearbyBeauticians();
   }
-
-  final List<Stylist> stylists = const [
-    Stylist(
-      image:
-          'https://i.pinimg.com/736x/36/2d/70/362d7087b1b8367db1c98d3f73f3be3a.jpg',
-      name: 'Julianne Vough',
-      role: 'MASTER COLORIST',
-      rating: 4.9,
-      distance: 0.8,
-    ),
-    Stylist(
-      image:
-          'https://i.pinimg.com/736x/e3/52/30/e3523011d5dd97b97709e1d83ca75e5b.jpg',
-      name: 'Marcus Chen',
-      role: 'SKIN SCULPTOR',
-      rating: 5.0,
-      distance: 1.2,
-    ),
-    Stylist(
-      image:
-          'https://i.pinimg.com/1200x/b5/af/0f/b5af0f1fdc01adb5cd55609e7b302de1.jpg',
-      name: 'Elena Rodriguez',
-      role: 'ARTISTIC DIRECTOR',
-      rating: 4.8,
-      distance: 2.4,
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +40,6 @@ class _StylistListScreenState extends State<StylistListScreen> {
     final scale = (screenWidth / 390).clamp(0.82, 1.0);
     return Scaffold(
       backgroundColor: const Color(0xFFF7F5F2),
-      // appBar: _buildAppBar(),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
@@ -89,8 +57,7 @@ class _StylistListScreenState extends State<StylistListScreen> {
               ),
               const SizedBox(height: 10),
               InkWell(
-                onTap: _openLocationSearch,
-
+                onTap: () => _openLocationSearch(context),
                 child: Row(
                   children: [
                     const Icon(
@@ -98,13 +65,15 @@ class _StylistListScreenState extends State<StylistListScreen> {
                       size: 14,
                       color: Colors.grey,
                     ),
-                    SizedBox(width: 4),
-                    Text(
-                      _selectedLocation,
-                      style: TextStyle(
-                        fontSize: 11,
-                        letterSpacing: 2,
-                        color: Colors.grey,
+                    const SizedBox(width: 4),
+                    Obx(
+                      () => Text(
+                        controller.selectedLocation.value,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          letterSpacing: 2,
+                          color: Colors.grey,
+                        ),
                       ),
                     ),
                   ],
@@ -112,13 +81,33 @@ class _StylistListScreenState extends State<StylistListScreen> {
               ),
               const SizedBox(height: 30),
               Expanded(
-                child: ListView.separated(
-                  itemCount: stylists.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 24),
-                  itemBuilder: (context, index) {
-                    return StylistCard(stylist: stylists[index]);
-                  },
-                ),
+                child: Obx(() {
+                  if (controller.loading.value) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (controller.error.value != null) {
+                    return Center(
+                      child: Text(
+                        controller.error.value!,
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    );
+                  } else if (controller.stylists.isEmpty) {
+                    return Center(
+                      child: Text(
+                        'No stylists found.',
+                        style: GoogleFonts.inter(fontSize: 16),
+                      ),
+                    );
+                  } else {
+                    return ListView.separated(
+                      itemCount: controller.stylists.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 24),
+                      itemBuilder: (context, index) {
+                        return StylistCard(stylist: controller.stylists[index]);
+                      },
+                    );
+                  }
+                }),
               ),
             ],
           ),
@@ -177,6 +166,7 @@ class StylistCard extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => DetailedArtistScreen(
+                            artistId: stylist.id ?? "",
                             artistName: stylist.name,
                             role: stylist.role,
                             imageUrl: stylist.image,
@@ -201,6 +191,7 @@ class StylistCard extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => DetailedArtistScreen(
+                            artistId: stylist.id ?? "",
                             artistName: stylist.name,
                             role: stylist.role,
                             imageUrl: stylist.image,

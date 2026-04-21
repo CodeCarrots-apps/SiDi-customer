@@ -49,6 +49,7 @@ class _BookingScreenState extends State<BookingScreen> {
     },
     {
       'type': 'artist',
+      'id': '6651',
       'title': 'Julianne Vough',
       'subtitle': 'MASTER COLORIST',
       'role': 'MASTER COLORIST',
@@ -57,6 +58,7 @@ class _BookingScreenState extends State<BookingScreen> {
     },
     {
       'type': 'artist',
+      'id': '6652',
       'title': 'Marcus Chen',
       'subtitle': 'SKIN SCULPTOR',
       'role': 'SKIN SCULPTOR',
@@ -65,6 +67,7 @@ class _BookingScreenState extends State<BookingScreen> {
     },
     {
       'type': 'artist',
+      'id': '6653',
       'title': 'Elena Rodriguez',
       'subtitle': 'ARTISTIC DIRECTOR',
       'role': 'ARTISTIC DIRECTOR',
@@ -241,6 +244,7 @@ class _BookingScreenState extends State<BookingScreen> {
                       builder: (context) {
                         if (isArtist) {
                           return DetailedArtistScreen(
+                            artistId: item['id'] ?? '',
                             artistName: item['title']!,
                             role: item['role'] ?? item['subtitle']!,
                             imageUrl:
@@ -496,18 +500,21 @@ class _BookingScreenState extends State<BookingScreen> {
   Widget _buildStylistsRow(double scale) {
     final stylists = [
       {
+        'id': '6652',
         'imageUrl':
             'https://i.pinimg.com/736x/36/2d/70/362d7087b1b8367db1c98d3f73f3be3a.jpg',
         'name': 'Julianne Vough',
         'role': 'MASTER COLORIST',
       },
       {
+        'id': '6652',
         'imageUrl':
             'https://i.pinimg.com/736x/e3/52/30/e3523011d5dd97b97709e1d83ca75e5b.jpg',
         'name': 'Marcus Chen',
         'role': 'SKIN SCULPTOR',
       },
       {
+        'id': '6652',
         'imageUrl':
             'https://i.pinimg.com/1200x/b5/af/0f/b5af0f1fdc01adb5cd55609e7b302de1.jpg',
         'name': 'Elena Rodriguez',
@@ -532,6 +539,7 @@ class _BookingScreenState extends State<BookingScreen> {
                     artistName: stylist['name']!,
                     role: stylist['role']!,
                     imageUrl: stylist['imageUrl']!,
+                    artistId: stylist['id'] ?? '',
                   ),
                 ),
               );

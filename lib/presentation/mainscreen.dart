@@ -8,7 +8,7 @@ import 'package:sidi/presentation/stylistlistscreen.dart';
 final List<Widget> _tabs = <Widget>[
   const HomeScreen(),
   const BookingScreen(),
-  const StylistListScreen(),
+  StylistListScreen(),
   const ProfileScreen(),
 ];
 
