@@ -129,7 +129,7 @@ class StylistCard extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(14),
           child: Image.network(
-            stylist.image,
+            stylist.profileImage,
             width: 64,
             height: 64,
             fit: BoxFit.cover,
@@ -141,7 +141,7 @@ class StylistCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                stylist.name,
+                stylist.fullName,
                 style: const TextStyle(
                   fontFamily: 'PlayfairDisplay',
                   fontSize: 18,
@@ -150,7 +150,7 @@ class StylistCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                stylist.role,
+                stylist.tier,
                 style: const TextStyle(
                   fontSize: 11,
                   letterSpacing: 2,
@@ -166,10 +166,12 @@ class StylistCard extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => DetailedArtistScreen(
-                            artistId: stylist.id ?? "",
-                            artistName: stylist.name,
-                            role: stylist.role,
-                            imageUrl: stylist.image,
+                            artistId: stylist.id,
+                            artistName: stylist.fullName,
+                            description: stylist.bio,
+                            role: stylist.tier,
+                            imageUrl: stylist.profileImage,
+                            services: [],
                           ),
                         ),
                       );
@@ -191,10 +193,12 @@ class StylistCard extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => DetailedArtistScreen(
-                            artistId: stylist.id ?? "",
-                            artistName: stylist.name,
-                            role: stylist.role,
-                            imageUrl: stylist.image,
+                            artistId: stylist.id,
+                            artistName: stylist.fullName,
+                            description: stylist.bio,
+                            role: stylist.tier,
+                            imageUrl: stylist.profileImage,
+                            services: [],
                           ),
                         ),
                       );
@@ -231,10 +235,10 @@ class StylistCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 6),
-            Text(
-              '• ${stylist.distance.toStringAsFixed(1)} MI',
-              style: const TextStyle(fontSize: 11, color: Colors.grey),
-            ),
+            // Text(
+            //   '• ${stylist.distance.toStringAsFixed(1)} MI',
+            //   style: const TextStyle(fontSize: 11, color: Colors.grey),
+            // ),
           ],
         ),
       ],

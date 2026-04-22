@@ -5,7 +5,6 @@ import 'package:sidi/utils/token_storage.dart';
 class FavoriteService {
   static const String _baseUrl =
       'https://sidi.mobilegear.co.in/api/mobileapp/user/favorites';
-
   static final Dio _dio =
       Dio(
           BaseOptions(
@@ -94,14 +93,18 @@ class FavoriteService {
 
   static Future<bool> isFavorite(String beauticianId) async {
     try {
-      final response = await _dio.get('$_baseUrl/$beauticianId');
+      // Get all favorites and check if beauticianId exists
+      final response = await _dio.get(_baseUrl);
 
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         final data = response.data as Map<String, dynamic>;
 
         if (data['success'] == true && data['favorites'] is List) {
-          final List favorites = data['favorites'];
-          return favorites.isNotEmpty; // ✅ CORRECT LOGIC
+          final List favorites = data['favorites'] as List;
+          // Check if beauticianId exists in favorites
+          return favorites.any(
+            (fav) => fav is Map<String, dynamic> && fav['_id'] == beauticianId,
+          );
         }
       }
 
@@ -118,8 +121,11 @@ class FavoriteService {
     try {
       final response = await _dio.post(
         _baseUrl,
-        data: {'beauticianId': beauticianId},
+        data: {
+          'beauticianId': beauticianId, // ✅ REQUIRED
+        },
       );
+
       return _parseMapResponse(response);
     } on DioException catch (e) {
       return _handleError(e);
@@ -131,8 +137,7 @@ class FavoriteService {
   ) async {
     try {
       final response = await _dio.delete(
-        _baseUrl,
-        data: {'beauticianId': beauticianId}, // ✅ IMPORTANT FIX
+        '$_baseUrl/$beauticianId', // ✅ FIX: path param instead of body
       );
 
       return _parseMapResponse(response);

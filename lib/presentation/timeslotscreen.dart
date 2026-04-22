@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
+import 'package:sidi/presentation/selectaddress.dart';
 
 import '../models/booking.dart';
 import '../models/booking_models.dart';
@@ -467,9 +468,11 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => ConfirmationScreen(
-                          service: widget.title,
-                          response: response,
+                        builder: (_) => SelectAddressScreen(
+                          selectedDateDisplay: selectedTime,
+                          selectedDateIso: selectedDateIso,
+                          selectedTime: selectedTime,
+                          serviceId: widget.serviceId,
                         ),
                       ),
                     );
