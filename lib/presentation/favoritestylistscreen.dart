@@ -3,10 +3,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/models/user_profile.dart' hide FavoriteService;
 import 'package:sidi/presentation/detailedartistscreen.dart';
+import 'package:sidi/presentation/servicedetailscreen.dart';
 import 'package:sidi/services/favorite_service.dart' as favorite_service;
 import 'package:sidi/services/favorite_service_api.dart';
-import 'package:sidi/models/user_profile.dart' as user_profile show FavoriteService;
-
+import 'package:sidi/models/user_profile.dart'
+    as user_profile
+    show FavoriteService;
 
 class FavoriteStylistScreen extends StatefulWidget {
   final List<FavoriteStylist>? favoriteStylists;
@@ -151,7 +153,10 @@ class _FavoriteStylistScreenState extends State<FavoriteStylistScreen>
         separatorBuilder: (_, __) => const SizedBox(height: 18),
         itemBuilder: (context, index) {
           final stylist = favoriteStylists[index];
-          return _FavoriteStylistCard(stylist: stylist);
+          return _FavoriteStylistCard(
+            stylist: stylist,
+            onReturn: _loadFavoriteStylists,
+          );
         },
       ),
     );
@@ -178,7 +183,10 @@ class _FavoriteStylistScreenState extends State<FavoriteStylistScreen>
         separatorBuilder: (_, __) => const SizedBox(height: 18),
         itemBuilder: (context, index) {
           final service = favoriteServices[index];
-          return _FavoriteServiceCard(service: service);
+          return _FavoriteServiceCard(
+            service: service,
+            onReturn: _loadFavoriteServices,
+          );
         },
       ),
     );
@@ -187,8 +195,9 @@ class _FavoriteStylistScreenState extends State<FavoriteStylistScreen>
 
 class _FavoriteStylistCard extends StatelessWidget {
   final FavoriteStylist stylist;
+  final VoidCallback onReturn;
 
-  const _FavoriteStylistCard({required this.stylist});
+  const _FavoriteStylistCard({required this.stylist, required this.onReturn});
 
   @override
   Widget build(BuildContext context) {
@@ -205,6 +214,7 @@ class _FavoriteStylistCard extends StatelessWidget {
             ),
           ),
         );
+        onReturn();
       },
       child: Container(
         decoration: BoxDecoration(
@@ -302,117 +312,140 @@ class _FavoriteStylistCard extends StatelessWidget {
 
 class _FavoriteServiceCard extends StatelessWidget {
   final user_profile.FavoriteService service;
+  final VoidCallback onReturn;
 
-  const _FavoriteServiceCard({required this.service});
+  const _FavoriteServiceCard({required this.service, required this.onReturn});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: kCharcoalColor.withOpacity(0.06),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+    return GestureDetector(
+      onTap: () async {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ServiceDetailScreen(
+              serviceId: service.id,
+              title: service.name,
+              price: service.price.toString(),
+              duration: service.duration.toString(),
+              imageUrl: "https://sidi.mobilegear.co.in${service.image2}",
+            ),
           ),
-        ],
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(18),
-                child: _buildServiceImage(service.image1, service.name),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      service.name,
-                      style: GoogleFonts.cormorantGaramond(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: kCharcoalColor,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${service.duration} mins',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: kWarmGrey600,
-                      ),
-                    ),
-                    if (service.category != null &&
-                        service.category!.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+        );
+
+        // 🔥 THIS WAS MISSING
+        onReturn();
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [
+            BoxShadow(
+              color: kCharcoalColor.withOpacity(0.06),
+              blurRadius: 22,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: _buildServiceImage(
+                    "https://sidi.mobilegear.co.in${service.image1}",
+                    service.name,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        'Category: ${service.category}',
+                        service.name,
+                        style: GoogleFonts.cormorantGaramond(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: kCharcoalColor,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${service.duration} mins',
                         style: GoogleFonts.inter(
-                          fontSize: 11,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
                           color: kWarmGrey600,
-                          fontStyle: FontStyle.italic,
                         ),
                       ),
+                      if (service.category != null &&
+                          service.category!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Category: ${service.category}',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: kWarmGrey600,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Icon(Icons.favorite, color: kAccentGold, size: 24),
-            ],
-          ),
-          const SizedBox(height: 12),
+                const SizedBox(width: 10),
+                Icon(Icons.favorite, color: kAccentGold, size: 24),
+              ],
+            ),
+            const SizedBox(height: 12),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '\$${service.price.toStringAsFixed(2)}',
-                style: GoogleFonts.cormorantGaramond(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: kAccentGold,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '\$${service.price.toStringAsFixed(2)}',
+                  style: GoogleFonts.cormorantGaramond(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: kAccentGold,
+                  ),
                 ),
-              ),
-              TextButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Service added to cart'),
-                      duration: Duration(seconds: 2),
+                TextButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Service added to cart'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    backgroundColor: kAccentGold,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  );
-                },
-                style: TextButton.styleFrom(
-                  backgroundColor: kAccentGold,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'BOOK',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: kIvoryColor,
+                    ),
                   ),
                 ),
-                child: Text(
-                  'BOOK',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: kIvoryColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

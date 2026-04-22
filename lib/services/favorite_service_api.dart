@@ -165,6 +165,14 @@ class FavoriteServiceApi {
     }
   }
 
+  static Future<bool> isFavoriteService(String serviceId) async {
+    final favorites = await getFavoriteServices();
+
+    return favorites.any((item) {
+      return item['_id']?.toString() == serviceId;
+    });
+  }
+
   static Future<Map<String, dynamic>> getAllFavorites() async {
     final token = await TokenStorage.getToken();
     if (token == null || token.isEmpty) {

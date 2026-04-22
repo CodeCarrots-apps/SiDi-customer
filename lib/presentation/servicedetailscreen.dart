@@ -13,6 +13,7 @@ class ServiceDetailScreen extends StatefulWidget {
     required this.price,
     required this.duration,
     required this.imageUrl,
+    this.showFavButton = true,
   });
 
   final String serviceId;
@@ -20,6 +21,7 @@ class ServiceDetailScreen extends StatefulWidget {
   final String price;
   final String duration;
   final String imageUrl;
+  final bool showFavButton;
 
   @override
   State<ServiceDetailScreen> createState() => _ServiceDetailScreenState();
@@ -33,6 +35,33 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _loadFavoriteStatus();
+  }
+
+  Future<void> _loadFavoriteStatus() async {
+    setState(() {
+      isLoadingFavorite = true;
+    });
+
+    try {
+      final result = await FavoriteServiceApi.isFavoriteService(
+        widget.serviceId,
+      );
+
+      if (mounted) {
+        setState(() {
+          isFavorite = result;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading favorite status: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoadingFavorite = false;
+        });
+      }
+    }
   }
 
   Future<void> _toggleFavorite() async {
@@ -174,16 +203,24 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
         ),
       ),
       actions: [
-        GestureDetector(
-          onTap: isLoadingFavorite ? null : _toggleFavorite,
-          child: Icon(
-            isFavorite ? Icons.favorite : Icons.favorite_border,
-            color: isFavorite ? kChampagneColor : Colors.black,
-            size: 20,
+        if (widget.showFavButton)
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: isLoadingFavorite
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : GestureDetector(
+                    onTap: _toggleFavorite,
+                    child: Icon(
+                      isFavorite ? Icons.favorite : Icons.favorite_border,
+                      color: isFavorite ? kChampagneColor : Colors.black,
+                      size: 20,
+                    ),
+                  ),
           ),
-        ),
-        const SizedBox(width: 12),
-        _circleButton(Icons.share),
         const SizedBox(width: 16),
       ],
       flexibleSpace: FlexibleSpaceBar(

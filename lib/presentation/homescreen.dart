@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:dio/dio.dart';
 import 'detailedservicescreen.dart';
-// import 'servicedetailscreen.dart';
+import 'servicedetailscreen.dart';
 import 'locationsearchscreen.dart';
 import 'notificationsscreen.dart';
 
@@ -19,12 +19,14 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedLocation = 'KOCHI';
   late Future<List<Map<String, dynamic>>> _categoriesFuture;
   late Future<List<Map<String, dynamic>>> _bannersFuture;
+  late Future<List<Map<String, dynamic>>> _curatedServicesFuture;
 
   @override
   void initState() {
     super.initState();
     _categoriesFuture = _fetchCategories();
     _bannersFuture = _fetchBanners();
+    _curatedServicesFuture = _fetchCuratedServices();
   }
 
   Future<List<Map<String, dynamic>>> _fetchCategories() async {
@@ -104,6 +106,27 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchCuratedServices() async {
+    try {
+      final dio = Dio();
+      final response = await dio.get(
+        'https://sidi.mobilegear.co.in/api/curated-services',
+      );
+      if (response.statusCode == 200 &&
+          response.data is Map &&
+          response.data['curatedServices'] is List) {
+        return List<Map<String, dynamic>>.from(
+          response.data['curatedServices'],
+        );
+      } else {
+        throw Exception('Failed to load curated services');
+      }
+    } catch (e) {
+      print('Error fetching curated services: $e');
+      rethrow;
+    }
   }
 
   @override
@@ -315,12 +338,30 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Stack(
                     children: [
                       Positioned.fill(
-                        child: Image.network(
-                          banner["image"] ?? '',
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.error),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ServiceDetailScreen(
+                                  serviceId:
+                                      banner['serviceId']?.toString() ?? '',
+                                  title: banner['title'] ?? '',
+                                  price: banner['price']?.toString() ?? '',
+                                  duration:
+                                      banner['duration']?.toString() ?? '',
+                                  imageUrl: banner['image'] ?? '',
+                                ),
+                              ),
+                            );
+                          },
+                          child: Image.network(
+                            banner["image"] ?? '',
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: Colors.grey[300],
+                              child: const Icon(Icons.error),
+                            ),
                           ),
                         ),
                       ),
@@ -386,9 +427,21 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                               onPressed: () {
-                                if ((banner["link"] ?? '').isNotEmpty) {
-                                  _openDetailedServices(query: banner["title"]);
-                                }
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ServiceDetailScreen(
+                                      serviceId:
+                                          banner['serviceId']?.toString() ?? '',
+                                      title: banner['title'] ?? '',
+                                      price: banner['price']?.toString() ?? '',
+                                      duration:
+                                          banner['duration']?.toString() ?? '',
+                                      imageUrl: banner['image'] ?? '',
+                                      showFavButton: false,
+                                    ),
+                                  ),
+                                );
                               },
                               child: Text(
                                 "EXPLORE",
@@ -550,108 +603,155 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCuratedSection() {
-    final items = [
-      {
-        "tag": "Morning Glow",
-        "title": "The 60-Minute Refresh",
-        "subtitle": "Facial & Lymphatic Massage",
-        "image":
-            "https://lh3.googleusercontent.com/aida-public/AB6AXuCjD3Idcb9NwaKXy001FZBgWYb-DgyMVlYrDj7uZOEaJj6AVbNvATlq8Ivohs072AF9MuIquo9xyLLPMepeVLRbrZvshrVePIJ9vLLfQH7eghBjNqedHkwCNgascLhoJ0i5xGz2gmkT1wpCSGgp1J9U12Dk_DldmNTzrPfoHXqNHWurJJr0v2ARZF3ujQDcunGu3OJI9ib9MUKXg_uCntevkfCLnkbeZxRagDq1yx2F8Lt1qJlk8hZT9Q1NhTYeqrHG6JcDm0JpAUE",
-      },
-      {
-        "tag": "Night Routine",
-        "title": "Deep Sleep Therapy",
-        "subtitle": "Full Body Relaxation",
-        "image":
-            "https://lh3.googleusercontent.com/aida-public/AB6AXuAak35w8RQZUxL5yYqAE1NHnvj8xEqXP3aTEY38GDI0k3rdA8Kj6zayxBazwKLFmv-Q-HTZ-9_AhtjV0lYkbE6kR5A8N3FLacPhanDY9AFaAdeDYrtwMG9MGoEtX-32zmFpIKa0ShusjITSMVFVd19-L2h6xvTXijda9zXEoPyVOoXlJOjhc8BzBb67kfjY0YE4lqnaGxjxzsnCBfOmtua4cOyXv7ScN_hUh4CwhJ-1J6F2kalpWt1bDKpeu9yJzwHiWweufPhij1A",
-      },
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Text(
-            "Curated for You",
-            style: GoogleFonts.cormorantGaramond(
-              fontSize: 32,
-              fontStyle: FontStyle.italic,
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _curatedServicesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: SizedBox(
+              height: 320,
+              child: Center(child: CircularProgressIndicator()),
             ),
-          ),
-        ),
-        const SizedBox(height: 24),
-        SizedBox(
-          height: 320,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final itemWidth = (constraints.maxWidth * 0.72).clamp(
-                230.0,
-                320.0,
-              );
-              return ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                scrollDirection: Axis.horizontal,
-                itemCount: items.length,
-                separatorBuilder: (_, index) => const SizedBox(width: 24),
-                itemBuilder: (context, index) {
-                  final item = items[index];
-                  return InkWell(
-                    borderRadius: BorderRadius.circular(6),
-                    onTap: () => _openDetailedServices(query: item['title']),
-                    child: SizedBox(
-                      width: itemWidth,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: AspectRatio(
-                              aspectRatio: 16 / 10,
-                              child: Image.network(
-                                item["image"]!,
-                                fit: BoxFit.cover,
+          );
+        }
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Text('Error loading curated services'),
+          );
+        }
+        final curated = snapshot.data ?? [];
+        if (curated.isEmpty) {
+          return SizedBox.shrink();
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                "Curated for You",
+                style: GoogleFonts.cormorantGaramond(
+                  fontSize: 32,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              height: 320,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final itemWidth = (constraints.maxWidth * 0.72).clamp(
+                    230.0,
+                    320.0,
+                  );
+                  return ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: curated.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 24),
+                    itemBuilder: (context, index) {
+                      final item = curated[index];
+                      final imageUrl =
+                          item["image1"] != null &&
+                              item["image1"].toString().isNotEmpty
+                          ? "https://sidi.mobilegear.co.in/uploads/" +
+                                item["image1"]
+                          : null;
+                      final imageUrl2 =
+                          item["image2"] != null &&
+                              item["image2"].toString().isNotEmpty
+                          ? "https://sidi.mobilegear.co.in/uploads/" +
+                                item["image2"]
+                          : null;
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(6),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ServiceDetailScreen(
+                                serviceId: item['_id']?.toString() ?? '',
+                                title: item['curatedServiceTitle'] ?? '',
+                                price: item['price']?.toString() ?? '',
+                                duration: item['duration']?.toString() ?? '',
+                                imageUrl: imageUrl2 ?? '',
+                                showFavButton: false,
                               ),
                             ),
+                          );
+                        },
+                        child: SizedBox(
+                          width: itemWidth,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(6),
+                                child: AspectRatio(
+                                  aspectRatio: 16 / 10,
+                                  child: imageUrl != null
+                                      ? Image.network(
+                                          imageUrl,
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (context, error, stackTrace) {
+                                                return Container(
+                                                  color: Colors.grey[300],
+                                                  child: const Icon(
+                                                    Icons.error,
+                                                  ),
+                                                );
+                                              },
+                                        )
+                                      : Container(
+                                          color: Colors.grey[300],
+                                          child: const Icon(Icons.image),
+                                        ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                item["curatedServiceName"] ?? '',
+                                style: GoogleFonts.inter(
+                                  fontSize: 10,
+                                  letterSpacing: 3,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                item["curatedServiceTitle"] ?? '',
+                                style: GoogleFonts.cormorantGaramond(
+                                  fontSize: 20,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                item["description"] ?? '',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w300,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            item["tag"]!,
-                            style: GoogleFonts.inter(
-                              fontSize: 10,
-                              letterSpacing: 3,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            item["title"]!,
-                            style: GoogleFonts.cormorantGaramond(
-                              fontSize: 20,
-                              fontStyle: FontStyle.italic,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            item["subtitle"]!,
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w300,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
+                        ),
+                      );
+                    },
                   );
                 },
-              );
-            },
-          ),
-        ),
-      ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

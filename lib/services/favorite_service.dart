@@ -1,129 +1,143 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sidi/utils/token_storage.dart';
 
 class FavoriteService {
-  static const String _favoritesUrl =
+  static const String _baseUrl =
       'https://sidi.mobilegear.co.in/api/mobileapp/user/favorites';
 
-  static Dio _createDio(String token) {
-    return Dio(
-      BaseOptions(
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 20),
-        sendTimeout: const Duration(seconds: 20),
-        headers: <String, dynamic>{
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      ),
-    );
+  static final Dio _dio =
+      Dio(
+          BaseOptions(
+            connectTimeout: const Duration(seconds: 15),
+            receiveTimeout: const Duration(seconds: 20),
+            sendTimeout: const Duration(seconds: 20),
+            headers: {'Content-Type': 'application/json'},
+          ),
+        )
+        ..interceptors.add(
+          InterceptorsWrapper(
+            onRequest: (options, handler) async {
+              final token = await TokenStorage.getToken();
+              if (token != null && token.isNotEmpty) {
+                options.headers['Authorization'] = 'Bearer $token';
+              }
+              debugPrint('[API] ${options.method} ${options.path}');
+              return handler.next(options);
+            },
+            onResponse: (response, handler) {
+              debugPrint(
+                '[API RESPONSE] ${response.statusCode} => ${response.data}',
+              );
+              return handler.next(response);
+            },
+            onError: (DioException e, handler) {
+              debugPrint('[API ERROR] ${e.message}');
+              return handler.next(e);
+            },
+          ),
+        );
+
+  // ------------------------
+  // Common Response Handler
+  // ------------------------
+  static List<Map<String, dynamic>> _parseListResponse(Response response) {
+    if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+      final data = response.data as Map<String, dynamic>;
+      if (data['success'] == true && data['favorites'] is List) {
+        return List<Map<String, dynamic>>.from(data['favorites']);
+      }
+    }
+    return [];
   }
 
+  static Map<String, dynamic> _parseMapResponse(Response response) {
+    if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+      return response.data as Map<String, dynamic>;
+    }
+    return {'success': false, 'message': 'Invalid server response'};
+  }
+
+  static Map<String, dynamic> _handleError(DioException error) {
+    String message = 'Something went wrong';
+
+    if (error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.receiveTimeout) {
+      message = 'Connection timeout. Please try again.';
+    } else if (error.type == DioExceptionType.badResponse) {
+      final data = error.response?.data;
+      if (data is Map<String, dynamic> && data['message'] != null) {
+        message = data['message'];
+      } else {
+        message = 'Server error (${error.response?.statusCode})';
+      }
+    } else if (error.type == DioExceptionType.unknown) {
+      message = 'No internet connection';
+    }
+
+    return {'success': false, 'message': message};
+  }
+
+  // ------------------------
+  // API METHODS
+  // ------------------------
+
   static Future<List<Map<String, dynamic>>> getFavorites() async {
-    final token = await TokenStorage.getToken();
-    if (token == null || token.isEmpty) {
-      debugPrint('[FavoriteService] Token missing when fetching favorites.');
+    try {
+      final response = await _dio.get(_baseUrl);
+      return _parseListResponse(response);
+    } on DioException catch (e) {
+      debugPrint('[getFavorites] ${_handleError(e)}');
       return [];
     }
-    final dio = _createDio(token);
-    debugPrint('[FavoriteService] Sending GET to $_favoritesUrl');
+  }
+
+  static Future<bool> isFavorite(String beauticianId) async {
     try {
-      final response = await dio.get(_favoritesUrl);
-      debugPrint(
-        '[FavoriteService] Response: status=${response.statusCode}, data=${response.data}',
-      );
+      final response = await _dio.get('$_baseUrl/$beauticianId');
+
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         final data = response.data as Map<String, dynamic>;
+
         if (data['success'] == true && data['favorites'] is List) {
-          return List<Map<String, dynamic>>.from(data['favorites']);
+          final List favorites = data['favorites'];
+          return favorites.isNotEmpty; // ✅ CORRECT LOGIC
         }
       }
-      return [];
-    } on DioException catch (error) {
-      debugPrint(
-        '[FavoriteService] DioException: status=${error.response?.statusCode}, data=${error.response?.data}, message=${error.message}',
-      );
-      return [];
-    } catch (error) {
-      debugPrint('[FavoriteService] Error: $error');
-      return [];
+
+      return false;
+    } catch (e) {
+      debugPrint('[isFavorite] Error: $e');
+      return false;
     }
   }
 
   static Future<Map<String, dynamic>> addToFavorites(
     String beauticianId,
   ) async {
-    final token = await TokenStorage.getToken();
-    if (token == null || token.isEmpty) {
-      debugPrint('[FavoriteService] Token missing when adding to favorites.');
-      return {'success': false, 'message': 'Authentication token is missing.'};
-    }
-    final dio = _createDio(token);
-    debugPrint(
-      '[FavoriteService] Sending POST to $_favoritesUrl with beauticianId: $beauticianId',
-    );
     try {
-      final response = await dio.post(
-        _favoritesUrl,
+      final response = await _dio.post(
+        _baseUrl,
         data: {'beauticianId': beauticianId},
       );
-      debugPrint(
-        '[FavoriteService] Response: status=${response.statusCode}, data=${response.data}',
-      );
-      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
-        return response.data as Map<String, dynamic>;
-      }
-      return {'success': false, 'message': 'Failed to add to favorites.'};
-    } on DioException catch (error) {
-      debugPrint(
-        '[FavoriteService] DioException: status=${error.response?.statusCode}, data=${error.response?.data}, message=${error.message}',
-      );
-      return {
-        'success': false,
-        'message': error.response?.data['message'] ?? error.message,
-      };
-    } catch (error) {
-      debugPrint('[FavoriteService] Error: $error');
-      return {'success': false, 'message': error.toString()};
+      return _parseMapResponse(response);
+    } on DioException catch (e) {
+      return _handleError(e);
     }
   }
 
   static Future<Map<String, dynamic>> removeFromFavorites(
     String beauticianId,
   ) async {
-    final token = await TokenStorage.getToken();
-    if (token == null || token.isEmpty) {
-      debugPrint(
-        '[FavoriteService] Token missing when removing from favorites.',
-      );
-      return {'success': false, 'message': 'Authentication token is missing.'};
-    }
-    final dio = _createDio(token);
-    debugPrint(
-      '[FavoriteService] Sending DELETE to $_favoritesUrl/$beauticianId',
-    );
     try {
-      final response = await dio.delete('$_favoritesUrl/$beauticianId');
-      debugPrint(
-        '[FavoriteService] Response: status=${response.statusCode}, data=${response.data}',
+      final response = await _dio.delete(
+        _baseUrl,
+        data: {'beauticianId': beauticianId}, // ✅ IMPORTANT FIX
       );
-      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
-        return response.data as Map<String, dynamic>;
-      }
-      return {'success': false, 'message': 'Failed to remove from favorites.'};
-    } on DioException catch (error) {
-      debugPrint(
-        '[FavoriteService] DioException: status=${error.response?.statusCode}, data=${error.response?.data}, message=${error.message}',
-      );
-      return {
-        'success': false,
-        'message': error.response?.data['message'] ?? error.message,
-      };
-    } catch (error) {
-      debugPrint('[FavoriteService] Error: $error');
-      return {'success': false, 'message': error.toString()};
+
+      return _parseMapResponse(response);
+    } on DioException catch (e) {
+      return _handleError(e);
     }
   }
 }

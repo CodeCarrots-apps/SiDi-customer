@@ -9,10 +9,9 @@ class DetailedArtistScreen extends StatefulWidget {
   const DetailedArtistScreen({
     super.key,
     this.artistId = "",
-    this.artistName = 'Elena Rossi',
-    this.role = 'Master Stylist',
-    this.imageUrl =
-        'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80',
+    this.artistName = '',
+    this.role = '',
+    this.imageUrl = '',
   });
 
   final String artistId;
@@ -26,6 +25,7 @@ class DetailedArtistScreen extends StatefulWidget {
 
 class _DetailedArtistScreenState extends State<DetailedArtistScreen> {
   bool isFavorited = false;
+  bool isLoadingFavorite = false;
 
   @override
   void initState() {
@@ -34,30 +34,65 @@ class _DetailedArtistScreenState extends State<DetailedArtistScreen> {
   }
 
   Future<void> _checkIfFavorited() async {
-    final favorites = await FavoriteService.getFavorites();
     setState(() {
-      isFavorited = favorites.any((fav) => fav['id'] == widget.artistId);
+      isLoadingFavorite = true;
     });
+
+    try {
+      final result = await FavoriteService.isFavorite(widget.artistId);
+
+      if (mounted) {
+        setState(() {
+          isFavorited = result;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error checking favorite: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoadingFavorite = false;
+        });
+      }
+    }
   }
 
   Future<void> _toggleFavorite() async {
-    final response = isFavorited
-        ? await FavoriteService.removeFromFavorites(widget.artistId)
-        : await FavoriteService.addToFavorites(widget.artistId);
-    if (response['success'] == true) {
-      setState(() {
-        isFavorited = !isFavorited;
-      });
-    }
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response['message'] ?? 'Unknown error'),
-          backgroundColor: response['success'] == true
-              ? Colors.green
-              : Colors.red,
-        ),
-      );
+    if (isLoadingFavorite) return;
+
+    setState(() {
+      isLoadingFavorite = true;
+    });
+
+    try {
+      final response = isFavorited
+          ? await FavoriteService.removeFromFavorites(widget.artistId)
+          : await FavoriteService.addToFavorites(widget.artistId);
+
+      if (response['success'] == true) {
+        setState(() {
+          isFavorited = !isFavorited;
+        });
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? ''),
+            backgroundColor: response['success'] == true
+                ? Colors.green
+                : Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Toggle error: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoadingFavorite = false;
+        });
+      }
     }
   }
 
@@ -110,12 +145,22 @@ class _DetailedArtistScreenState extends State<DetailedArtistScreen> {
               onPressed: () => Navigator.pop(context),
             ),
             actions: [
-              IconButton(
-                icon: Icon(
-                  isFavorited ? Icons.favorite : Icons.favorite_border,
-                  color: kEspressoColor,
-                ),
-                onPressed: _toggleFavorite,
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: isLoadingFavorite
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : GestureDetector(
+                        onTap: _toggleFavorite,
+                        child: Icon(
+                          isFavorited ? Icons.favorite : Icons.favorite_border,
+                          color: isFavorited ? Colors.red : kEspressoColor,
+                          size: 22,
+                        ),
+                      ),
               ),
               const SizedBox(width: 12),
               IconButton(
