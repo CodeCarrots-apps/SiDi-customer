@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
+import 'package:sidi/presentation/widgets/stylistcard.dart';
 import 'package:sidi/services/favorite_service_api.dart';
 
 import 'timeslotscreen.dart';
+
+import 'package:sidi/models/stylist.dart';
 
 class ServiceDetailScreen extends StatefulWidget {
   const ServiceDetailScreen({
@@ -13,6 +16,7 @@ class ServiceDetailScreen extends StatefulWidget {
     required this.price,
     required this.duration,
     required this.imageUrl,
+    this.stylists = const [],
     this.showFavButton = true,
   });
 
@@ -21,6 +25,7 @@ class ServiceDetailScreen extends StatefulWidget {
   final String price;
   final String duration;
   final String imageUrl;
+  final List<Stylist> stylists;
   final bool showFavButton;
 
   @override
@@ -31,6 +36,8 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   // Colors are provided by lib/constant/constants.dart
   late bool isFavorite = false;
   late bool isLoadingFavorite = false;
+
+  int? selectedStylistIndex;
 
   @override
   void initState() {
@@ -171,6 +178,54 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                   _buildDescription(),
                   const SizedBox(height: 40),
                   _buildFeatures(),
+                  const SizedBox(height: 40),
+                  if (widget.stylists.isNotEmpty) ...[
+                    _buildSection(title: "Stylists", scale: 1.4),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: widget.stylists.length,
+                      itemBuilder: (context, index) {
+                        final stylist = widget.stylists[index];
+                        final isSelected = selectedStylistIndex == index;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedStylistIndex = index;
+                              });
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: isSelected
+                                      ? kChampagneColor
+                                      : Colors.transparent,
+                                  width: isSelected ? 2 : 0,
+                                ),
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              child: StylistsCard(stylist: stylist),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    if (widget.stylists.length > 1)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: Text(
+                          selectedStylistIndex == null
+                              ? 'Please select a stylist.'
+                              : 'Selected: \\${widget.stylists[selectedStylistIndex!].fullName}',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: kEspressoColor,
+                          ),
+                        ),
+                      ),
+                  ],
                   const SizedBox(height: 220),
                 ],
               ),
@@ -391,7 +446,36 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     );
   }
 
+  Widget _buildSection({
+    required String title,
+    // required List<_ProfileItemData> items,
+    required double scale,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(top: 24 * scale),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 28 * scale),
+            child: Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 9 * scale,
+                letterSpacing: 4,
+                color: kAccentGold,
+              ),
+            ),
+          ),
+          SizedBox(height: 12 * scale),
+          // ...items.map((item) => _buildSectionRow(item, scale)),
+        ],
+      ),
+    );
+  }
+
   Widget _buildBottomSection() {
+    final hasMultipleStylists = widget.stylists.length > 1;
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
       decoration: BoxDecoration(
@@ -411,6 +495,15 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
               ),
             ),
             onPressed: () {
+              if (hasMultipleStylists && selectedStylistIndex == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please select a stylist before booking.'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+                return;
+              }
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -420,6 +513,13 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                     price: widget.price,
                     duration: widget.duration,
                     imageUrl: widget.imageUrl,
+                    stylist:
+                        (widget.stylists.isNotEmpty &&
+                            selectedStylistIndex != null)
+                        ? widget.stylists[selectedStylistIndex!]
+                        : (widget.stylists.isNotEmpty
+                              ? widget.stylists.first
+                              : null),
                   ),
                 ),
               );

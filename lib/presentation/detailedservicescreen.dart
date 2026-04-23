@@ -1,9 +1,12 @@
 // ignore_for_file: curly_braces_in_flow_control_structures
 
 import 'package:flutter/material.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:dio/dio.dart';
+import 'package:sidi/models/stylist.dart';
+import 'dart:async';
 
 import 'servicedetailscreen.dart';
 
@@ -29,10 +32,13 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
   late final TextEditingController _searchController;
   late Future<List<Map<String, dynamic>>> _categoriesFuture;
   late Future<List<Map<String, dynamic>>> _subcategoriesFuture;
-  late Future<List<Map<String, dynamic>>> _servicesFuture;
+  late Stream<List<Map<String, dynamic>>> _servicesStream;
   List<Map<String, dynamic>> _allCategories = [];
   List<Map<String, dynamic>> _allSubcategories = [];
   List<Map<String, dynamic>> _allServices = [];
+  final _servicesStreamController =
+      StreamController<List<Map<String, dynamic>>>.broadcast();
+  Timer? _pollingTimer;
 
   bool get _hasSearchQuery =>
       _currentSearchQuery != null && _currentSearchQuery!.isNotEmpty;
@@ -54,7 +60,38 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
     _isSearchActive = _currentSearchQuery?.isNotEmpty ?? false;
     _categoriesFuture = _fetchCategories();
     _subcategoriesFuture = _fetchSubcategories();
-    _servicesFuture = _fetchServices();
+    _servicesStream = _servicesStreamController.stream;
+    _startPollingServices();
+  }
+
+  void _startPollingServices() {
+    // Fetch immediately, then every 5 seconds
+    _fetchServicesToStream();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      debugPrint('[DetailedServiceScreen] Polling for latest services...');
+      _fetchServicesToStream();
+    });
+  }
+
+  Future<void> _fetchServicesToStream() async {
+    try {
+      final dio = Dio();
+      final response = await dio.get(
+        'https://sidi.mobilegear.co.in/api/services',
+      );
+      if (response.statusCode == 200 && response.data is List) {
+        final data = List<Map<String, dynamic>>.from(response.data);
+        setState(() {
+          _allServices = data;
+        });
+        _servicesStreamController.add(data);
+      } else {
+        _servicesStreamController.addError('Failed to load services');
+      }
+    } catch (e) {
+      debugPrint('Error fetching services: $e');
+      _servicesStreamController.addError(e);
+    }
   }
 
   Future<List<Map<String, dynamic>>> _fetchCategories() async {
@@ -108,31 +145,11 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _fetchServices() async {
-    try {
-      final dio = Dio();
-      final response = await dio.get(
-        'https://sidi.mobilegear.co.in/api/services',
-      );
-
-      if (response.statusCode == 200 && response.data is List) {
-        final data = List<Map<String, dynamic>>.from(response.data);
-        setState(() {
-          _allServices = data;
-        });
-        return data;
-      } else {
-        throw Exception('Failed to load services');
-      }
-    } catch (e) {
-      print('Error fetching services: $e');
-      rethrow;
-    }
-  }
-
   @override
   void dispose() {
     _searchController.dispose();
+    _pollingTimer?.cancel();
+    _servicesStreamController.close();
     super.dispose();
   }
 
@@ -211,14 +228,6 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
     return ['All', ...subCategoryNames];
   }
 
-  List<Map<String, dynamic>> get _filteredServices {
-    if (_hasSearchQuery) {
-      return _searchFilteredServices;
-    }
-
-    return _categoryServices;
-  }
-
   String get _screenTitle {
     if (_hasSearchQuery) {
       return 'SEARCH RESULTS';
@@ -230,6 +239,59 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
   }
 
   void _openServiceDetails(Map<String, dynamic> service) {
+    // Support multiple beauticians (stylists) if available
+    List<Stylist> stylists = [];
+    if (service['beauticians'] is List) {
+      stylists = (service['beauticians'] as List)
+          .whereType<Map<String, dynamic>>()
+          .map(
+            (beauticianMap) => Stylist(
+              id: beauticianMap['_id'] ?? '',
+              fullName: beauticianMap['fullName'] ?? '',
+              phoneNumber: beauticianMap['phoneNumber'] ?? '',
+              bio: beauticianMap['bio'] ?? '',
+              skills: beauticianMap['skills'] != null
+                  ? List<String>.from(beauticianMap['skills'])
+                  : <String>[],
+              experience: beauticianMap['experience'] ?? 0,
+              tier: beauticianMap['tier'] ?? '',
+              isVerified: beauticianMap['isVerified'] ?? false,
+              status: beauticianMap['status'] ?? '',
+              rating: (beauticianMap['rating'] ?? 0).toDouble(),
+              profileImage:
+                  (beauticianMap['profileImage'] != null &&
+                      beauticianMap['profileImage'].toString().isNotEmpty)
+                  ? 'https://sidi.mobilegear.co.in${beauticianMap['profileImage']}'
+                  : '',
+              city: beauticianMap['city'] ?? '',
+            ),
+          )
+          .toList();
+    } else if (service['beautician'] is Map<String, dynamic>) {
+      final beauticianMap = service['beautician'] as Map<String, dynamic>;
+      stylists.add(
+        Stylist(
+          id: beauticianMap['_id'] ?? '',
+          fullName: beauticianMap['fullName'] ?? '',
+          phoneNumber: beauticianMap['phoneNumber'] ?? '',
+          bio: beauticianMap['bio'] ?? '',
+          skills: beauticianMap['skills'] != null
+              ? List<String>.from(beauticianMap['skills'])
+              : <String>[],
+          experience: beauticianMap['experience'] ?? 0,
+          tier: beauticianMap['tier'] ?? '',
+          isVerified: beauticianMap['isVerified'] ?? false,
+          status: beauticianMap['status'] ?? '',
+          rating: (beauticianMap['rating'] ?? 0).toDouble(),
+          profileImage:
+              (beauticianMap['profileImage'] != null &&
+                  beauticianMap['profileImage'].toString().isNotEmpty)
+              ? 'https://sidi.mobilegear.co.in${beauticianMap['profileImage']}'
+              : '',
+          city: beauticianMap['city'] ?? '',
+        ),
+      );
+    }
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -239,6 +301,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
           price: '₹${service['price'] ?? '0'}',
           duration: '${service['duration'] ?? 'N/A'} mins',
           imageUrl: service['image2'] ?? '',
+          stylists: stylists,
         ),
       ),
     );
@@ -381,8 +444,8 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
             },
           ),
           SliverToBoxAdapter(child: SizedBox(height: 8)),
-          FutureBuilder<List<Map<String, dynamic>>>(
-            future: _servicesFuture,
+          StreamBuilder<List<Map<String, dynamic>>>(
+            stream: _servicesStream,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return SliverToBoxAdapter(
@@ -403,8 +466,57 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
               }
               if (snapshot.hasError) {
                 print('Error loading services: ${snapshot.error}');
+                return SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 30,
+                    ),
+                    child: Text(
+                      'Error loading services.',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: kWarmGrey600,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                );
               }
-              if (_filteredServices.isEmpty)
+              final services = snapshot.data ?? [];
+              final filtered = _hasSearchQuery
+                  ? services.where((service) {
+                      final title = (service['name'] ?? '')
+                          .toString()
+                          .toLowerCase();
+                      final price = (service['price'] ?? '')
+                          .toString()
+                          .toLowerCase();
+                      final duration = (service['duration'] ?? '')
+                          .toString()
+                          .toLowerCase();
+                      final categoryName = service['category'] is Map
+                          ? (service['category']['name'] ?? '')
+                                .toString()
+                                .toLowerCase()
+                          : (service['category'] ?? '')
+                                .toString()
+                                .toLowerCase();
+                      final query = _searchQuery;
+                      return title.contains(query) ||
+                          price.contains(query) ||
+                          duration.contains(query) ||
+                          categoryName.contains(query);
+                    }).toList()
+                  : _selectedFilterIndex == 0
+                  ? services
+                  : services.where((service) {
+                      final categoryName = service['category'] is Map
+                          ? service['category']['name']
+                          : service['category'];
+                      return categoryName == filters[_selectedFilterIndex];
+                    }).toList();
+              if (filtered.isEmpty) {
                 return SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
@@ -423,6 +535,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
                     ),
                   ),
                 );
+              }
               return SliverPadding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
@@ -430,8 +543,8 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
                 ),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
-                    return _buildServiceCard(_filteredServices[index]);
-                  }, childCount: _filteredServices.length),
+                    return _buildServiceCard(filtered[index]);
+                  }, childCount: filtered.length),
                 ),
               );
             },

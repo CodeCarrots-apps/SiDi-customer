@@ -5,13 +5,8 @@ import 'package:sidi/models/booking_models.dart';
 import 'package:sidi/presentation/mainscreen.dart';
 
 class ConfirmationScreen extends StatefulWidget {
-  const ConfirmationScreen({
-    super.key,
-    required this.service,
-    required this.response,
-  });
+  const ConfirmationScreen({super.key, required this.response});
 
-  final String service;
   final BookingCreateResponse response;
 
   @override
@@ -34,6 +29,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
       );
     }
 
+    final screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
       backgroundColor: const Color(0xFFF9F5EE),
       body: SafeArea(
@@ -48,6 +44,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                     icon: const Icon(
                       Icons.arrow_back_ios_new,
                       color: Colors.black87,
+                      semanticLabel: 'Back',
                     ),
                   ),
                   const Spacer(),
@@ -73,13 +70,13 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Container(
-                        height: 300,
+                        height: screenHeight * 0.32, // Responsive height
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(28),
                           image: DecorationImage(
                             image: NetworkImage(
-                              response.booking?.image.isNotEmpty == true
-                                  ? response.booking!.image
+                              (response.booking?.image?.isNotEmpty ?? false)
+                                  ? response.booking!.image!
                                   : 'https://via.placeholder.com/600x420',
                             ),
                             fit: BoxFit.cover,
@@ -183,10 +180,13 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                             CircleAvatar(
                               radius: 32,
                               backgroundImage: NetworkImage(
-                                response.booking?.image.isNotEmpty == true
-                                    ? response.booking!.image
+                                (response.booking?.image?.isNotEmpty ?? false)
+                                    ? response.booking!.image!
                                     : 'https://via.placeholder.com/120',
                               ),
+                              foregroundImage: null,
+                              // Accessibility label
+                              child: Semantics(label: 'Stylist profile image'),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
@@ -194,8 +194,9 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    response.booking?.stylist.isNotEmpty == true
-                                        ? response.booking!.stylist
+                                    (response.booking?.stylist?.isNotEmpty ??
+                                            false)
+                                        ? response.booking!.stylist!
                                         : 'Elena Richardson',
                                     style: GoogleFonts.playfairDisplay(
                                       fontSize: 18,
@@ -229,8 +230,11 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                       Icons.chat_bubble_outline,
                                       size: 18,
                                       color: Color(0xFF1A1A1A),
+                                      semanticLabel: 'Chat',
                                     ),
-                                    onPressed: () {},
+                                    onPressed:
+                                        null, // Disabled until implemented
+                                    tooltip: 'Chat (coming soon)',
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -246,8 +250,11 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                       Icons.call,
                                       size: 18,
                                       color: Color(0xFF1A1A1A),
+                                      semanticLabel: 'Call',
                                     ),
-                                    onPressed: () {},
+                                    onPressed:
+                                        null, // Disabled until implemented
+                                    tooltip: 'Call (coming soon)',
                                   ),
                                 ),
                               ],
@@ -370,9 +377,9 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                       ],
                                     ),
                                     child: Text(
-                                      response.booking?.stylist.isNotEmpty ==
-                                              true
-                                          ? '${response.booking!.stylist} is near'
+                                      (response.booking?.stylist?.isNotEmpty ??
+                                              false)
+                                          ? '${response.booking!.stylist!} is near'
                                           : 'Elena is near',
                                       style: GoogleFonts.inter(
                                         fontSize: 12,

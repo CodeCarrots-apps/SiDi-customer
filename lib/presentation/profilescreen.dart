@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/controller/logoutcontroller.dart';
 import 'package:sidi/presentation/appointments_screen.dart';
+import 'package:sidi/presentation/changepasswordscreen.dart';
 import 'package:sidi/presentation/editprofilescreen.dart';
 import 'package:sidi/presentation/loginscreen.dart';
 import 'package:sidi/models/user_profile.dart';
@@ -243,9 +244,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SliverToBoxAdapter(
               child: _buildSection(
                 title: 'APPLICATION',
-                items: const [
-                  _ProfileItemData(Icons.tune, 'Settings'),
-                  _ProfileItemData(Icons.help_outline, 'Support Center'),
+                items: [
+                  _ProfileItemData(
+                    Icons.tune,
+                    'Change Password',
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ChangePasswordScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const _ProfileItemData(Icons.help_outline, 'Support Center'),
                 ],
                 scale: scale,
               ),

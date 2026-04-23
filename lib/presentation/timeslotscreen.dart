@@ -8,6 +8,8 @@ import '../models/booking_models.dart';
 import '../services/local_storage_service.dart';
 import 'appointmentbooking.dart';
 
+import '../models/stylist.dart';
+
 class SelectTimeSlotScreen extends StatefulWidget {
   const SelectTimeSlotScreen({
     super.key,
@@ -17,6 +19,7 @@ class SelectTimeSlotScreen extends StatefulWidget {
     required this.duration,
     required this.imageUrl,
     this.description = '',
+    this.stylist,
   });
 
   final String serviceId;
@@ -25,6 +28,7 @@ class SelectTimeSlotScreen extends StatefulWidget {
   final String duration;
   final String imageUrl;
   final String description;
+  final Stylist? stylist;
 
   @override
   State<SelectTimeSlotScreen> createState() => _SelectTimeSlotScreenState();
