@@ -473,10 +473,13 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (_) => SelectAddressScreen(
+                          serviceImage: widget.imageUrl,
+                          serviceTitle: widget.title,
                           selectedDateDisplay: selectedTime,
                           selectedDateIso: selectedDateIso,
                           selectedTime: selectedTime,
                           serviceId: widget.serviceId,
+                          stylist: widget.stylist,
                         ),
                       ),
                     );

@@ -5,9 +5,27 @@ import 'package:sidi/models/booking_models.dart';
 import 'package:sidi/presentation/mainscreen.dart';
 
 class ConfirmationScreen extends StatefulWidget {
-  const ConfirmationScreen({super.key, required this.response});
+  const ConfirmationScreen({
+    super.key,
+    required this.response,
+    required this.serviceTitle,
+    required this.serviceImage,
+    required this.selectedTime,
+    required this.selectedDate,
+
+    this.stylistName,
+    required this.stylistImage,
+    this.stylistTag,
+  });
 
   final BookingCreateResponse response;
+  final String serviceTitle;
+  final String serviceImage;
+  final String selectedTime;
+  final String selectedDate;
+  final String? stylistName;
+  final String? stylistImage;
+  final String? stylistTag;
 
   @override
   State<ConfirmationScreen> createState() => _ConfirmationScreenState();
@@ -75,8 +93,8 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                           borderRadius: BorderRadius.circular(28),
                           image: DecorationImage(
                             image: NetworkImage(
-                              (response.booking?.image?.isNotEmpty ?? false)
-                                  ? response.booking!.image!
+                              (widget.serviceImage.isNotEmpty)
+                                  ? widget.serviceImage
                                   : 'https://via.placeholder.com/600x420',
                             ),
                             fit: BoxFit.cover,
@@ -117,7 +135,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                   borderRadius: BorderRadius.circular(50),
                                 ),
                                 child: Text(
-                                  'ARRIVING IN 5 MINS',
+                                  'ARRIVING IN 30 MINS',
                                   style: GoogleFonts.inter(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
@@ -180,11 +198,10 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                             CircleAvatar(
                               radius: 32,
                               backgroundImage: NetworkImage(
-                                (response.booking?.image?.isNotEmpty ?? false)
-                                    ? response.booking!.image!
-                                    : 'https://via.placeholder.com/120',
+                                widget.stylistImage ??
+                                    'https://i.pinimg.com/736x/f0/01/8d/f0018d672659d93315b051cf95246bb7.jpg',
                               ),
-                              foregroundImage: null,
+                              // foregroundImage: null,
                               // Accessibility label
                               child: Semantics(label: 'Stylist profile image'),
                             ),
@@ -194,10 +211,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    (response.booking?.stylist?.isNotEmpty ??
-                                            false)
-                                        ? response.booking!.stylist!
-                                        : 'Elena Richardson',
+                                    widget.stylistName ?? 'Your Stylist',
                                     style: GoogleFonts.playfairDisplay(
                                       fontSize: 18,
                                       fontStyle: FontStyle.italic,
@@ -206,7 +220,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    'Master Stylist & Colorist',
+                                    widget.stylistTag ?? 'Beautician',
                                     style: GoogleFonts.inter(
                                       fontSize: 12,
                                       color: const Color(0xFF8C8C8C),
@@ -216,49 +230,49 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                 ],
                               ),
                             ),
-                            Row(
-                              children: [
-                                Container(
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: const Color(0xFFDDD6C3),
-                                    ),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: IconButton(
-                                    icon: const Icon(
-                                      Icons.chat_bubble_outline,
-                                      size: 18,
-                                      color: Color(0xFF1A1A1A),
-                                      semanticLabel: 'Chat',
-                                    ),
-                                    onPressed:
-                                        null, // Disabled until implemented
-                                    tooltip: 'Chat (coming soon)',
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: const Color(0xFFDDD6C3),
-                                    ),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: IconButton(
-                                    icon: const Icon(
-                                      Icons.call,
-                                      size: 18,
-                                      color: Color(0xFF1A1A1A),
-                                      semanticLabel: 'Call',
-                                    ),
-                                    onPressed:
-                                        null, // Disabled until implemented
-                                    tooltip: 'Call (coming soon)',
-                                  ),
-                                ),
-                              ],
-                            ),
+                            // Row(
+                            //   children: [
+                            //     Container(
+                            //       decoration: BoxDecoration(
+                            //         border: Border.all(
+                            //           color: const Color(0xFFDDD6C3),
+                            //         ),
+                            //         shape: BoxShape.circle,
+                            //       ),
+                            //       child: IconButton(
+                            //         icon: const Icon(
+                            //           Icons.chat_bubble_outline,
+                            //           size: 18,
+                            //           color: Color(0xFF1A1A1A),
+                            //           semanticLabel: 'Chat',
+                            //         ),
+                            //         onPressed:
+                            //             null, // Disabled until implemented
+                            //         tooltip: 'Chat (coming soon)',
+                            //       ),
+                            //     ),
+                            //     const SizedBox(width: 8),
+                            //     Container(
+                            //       decoration: BoxDecoration(
+                            //         border: Border.all(
+                            //           color: const Color(0xFFDDD6C3),
+                            //         ),
+                            //         shape: BoxShape.circle,
+                            //       ),
+                            //       child: IconButton(
+                            //         icon: const Icon(
+                            //           Icons.call,
+                            //           size: 18,
+                            //           color: Color(0xFF1A1A1A),
+                            //           semanticLabel: 'Call',
+                            //         ),
+                            //         onPressed:
+                            //             null, // Disabled until implemented
+                            //         tooltip: 'Call (coming soon)',
+                            //       ),
+                            //     ),
+                            //   ],
+                            // ),
                           ],
                         ),
                       ),
@@ -269,7 +283,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Colors.transparent,
                           borderRadius: BorderRadius.circular(28),
                           boxShadow: [
                             BoxShadow(
@@ -282,43 +296,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Booking Timeline',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                letterSpacing: 2,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF8C8C8C),
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-                            _buildTimelineRow(
-                              title: 'Booking Confirmed',
-                              time: response.booking?.time ?? '10:00 AM',
-                              active: false,
-                            ),
-                            const SizedBox(height: 18),
-                            _buildTimelineRow(
-                              title: 'Stylist Assigned',
-                              time: '10:15 AM',
-                              active: false,
-                            ),
-                            const SizedBox(height: 18),
-                            _buildTimelineRow(
-                              title: 'Stylist is on the way',
-                              time: response.booking?.time.isNotEmpty == true
-                                  ? response.booking!.time
-                                  : '10:42 AM',
-                              active: true,
-                              subtitle: 'CURRENT • ETA 10:42 AM',
-                            ),
-                            const SizedBox(height: 18),
-                            _buildTimelineRow(
-                              title: 'Service in Progress',
-                              time: 'Expected 11:00 AM',
-                              active: false,
-                              dimmed: true,
-                            ),
+                            // Booking Timeline removed
                           ],
                         ),
                       ),
@@ -329,67 +307,13 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                       child: Container(
                         height: 190,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Colors.transparent,
                           borderRadius: BorderRadius.circular(28),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.04),
                               blurRadius: 28,
                               offset: const Offset(0, 14),
-                            ),
-                          ],
-                        ),
-                        child: Stack(
-                          children: [
-                            Positioned.fill(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(28),
-                                  color: const Color(0xFFF4EEE5),
-                                ),
-                              ),
-                            ),
-                            Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.location_on,
-                                    size: 32,
-                                    color: const Color(
-                                      0xFFC5A059,
-                                    ).withOpacity(0.9),
-                                  ),
-                                  const SizedBox(height: 14),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 10,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(50),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.05),
-                                          blurRadius: 12,
-                                        ),
-                                      ],
-                                    ),
-                                    child: Text(
-                                      (response.booking?.stylist?.isNotEmpty ??
-                                              false)
-                                          ? '${response.booking!.stylist!} is near'
-                                          : 'Elena is near',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: 1.2,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
                             ),
                           ],
                         ),
@@ -436,86 +360,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
     );
   }
 
-  Widget _buildTimelineRow({
-    required String title,
-    required String time,
-    bool active = false,
-    bool dimmed = false,
-    String? subtitle,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Column(
-          children: [
-            Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: active ? const Color(0xFFC5A059) : Colors.white,
-                border: Border.all(
-                  color: active
-                      ? const Color(0xFFC5A059)
-                      : const Color(0xFFCCCCCC),
-                  width: 2,
-                ),
-                shape: BoxShape.circle,
-              ),
-            ),
-            if (!dimmed)
-              Container(
-                width: 2,
-                height: 58,
-                margin: const EdgeInsets.only(top: 2),
-                color: const Color(0xFFE4D8C2),
-              )
-            else
-              Container(
-                width: 2,
-                height: 58,
-                margin: const EdgeInsets.only(top: 2),
-                color: const Color(0xFFEDE6DD),
-              ),
-          ],
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: active ? FontWeight.w700 : FontWeight.w600,
-                  color: dimmed
-                      ? const Color(0xFFB5B0A4)
-                      : const Color(0xFF1A1A1A),
-                ),
-              ),
-              const SizedBox(height: 4),
-              if (subtitle != null)
-                Text(
-                  subtitle,
-                  style: GoogleFonts.inter(
-                    fontSize: 10,
-                    letterSpacing: 1.2,
-                    color: const Color(0xFF8C8C8C),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        Text(
-          time,
-          style: GoogleFonts.inter(
-            fontSize: 11,
-            color: dimmed ? const Color(0xFFB5B0A4) : const Color(0xFF8C8C8C),
-          ),
-        ),
-      ],
-    );
-  }
+  // Booking Timeline widget and method removed
 
   Widget _buildError({
     required String message,

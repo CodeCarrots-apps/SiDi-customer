@@ -250,6 +250,7 @@ class _BookingScreenState extends State<BookingScreen> {
                                 ? "https://sidi.mobilegear.co.in/uploads/" +
                                       showCurated[0]['image2']
                                 : '',
+                            curatedServiceId: showCurated[0]['_id']?.toString(),
                           ),
                         ),
                       );
@@ -300,6 +301,8 @@ class _BookingScreenState extends State<BookingScreen> {
                                       ? "https://sidi.mobilegear.co.in/uploads/" +
                                             showCurated[1]['image2']
                                       : '',
+                                  curatedServiceId: showCurated[1]['_id']
+                                      ?.toString(),
                                 ),
                               ),
                             );
@@ -347,6 +350,8 @@ class _BookingScreenState extends State<BookingScreen> {
                                       ? "https://sidi.mobilegear.co.in/uploads/" +
                                             showCurated[2]['image2']
                                       : '',
+                                  curatedServiceId: showCurated[2]['_id']
+                                      ?.toString(),
                                 ),
                               ),
                             );
@@ -571,37 +576,6 @@ class _BookingScreenState extends State<BookingScreen> {
             ),
           ),
           SizedBox(height: 10 * scale),
-          // Text(
-          //   'A 90-minute immersion into cellular regeneration. Utilizes cool-tone light therapy and organic botanical extracts.',
-          //   style: GoogleFonts.inter(
-          //     fontSize: 13 * scale,
-          //     height: 1.5,
-          //     color: kCharcoalColor,
-          //   ),
-          // ),
-          // SizedBox(height: 14 * scale),
-          // FilledButton(
-          //   onPressed: () {},
-          //   style: FilledButton.styleFrom(
-          //     backgroundColor: kEspressoColor,
-          //     foregroundColor: Colors.white,
-          //     padding: EdgeInsets.symmetric(
-          //       horizontal: 18 * scale,
-          //       vertical: 10 * scale,
-          //     ),
-          //     shape: RoundedRectangleBorder(
-          //       borderRadius: BorderRadius.circular(12),
-          //     ),
-          //   ),
-          //   child: Text(
-          //     'RESERVE SPACE',
-          //     style: GoogleFonts.inter(
-          //       fontSize: 9 * scale,
-          //       letterSpacing: 1.5,
-          //       fontWeight: FontWeight.w500,
-          //     ),
-          //   ),
-          // ),
         ],
       ),
     );

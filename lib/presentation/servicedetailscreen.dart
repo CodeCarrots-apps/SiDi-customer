@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/presentation/widgets/stylistcard.dart';
+
 import 'package:sidi/services/favorite_service_api.dart';
+import 'package:sidi/controller/ratingcontroller.dart';
 
 import 'timeslotscreen.dart';
 
@@ -19,6 +21,7 @@ class ServiceDetailScreen extends StatefulWidget {
     this.stylists = const [],
     this.showFavButton = true,
     this.description = '',
+    this.curatedServiceId,
   });
 
   final String serviceId;
@@ -29,6 +32,7 @@ class ServiceDetailScreen extends StatefulWidget {
   final String imageUrl;
   final List<Stylist> stylists;
   final bool showFavButton;
+  final String? curatedServiceId;
 
   @override
   State<ServiceDetailScreen> createState() => _ServiceDetailScreenState();
@@ -40,6 +44,8 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   late bool isLoadingFavorite = false;
 
   int? selectedStylistIndex;
+  int selectedRating = 0;
+  bool isSubmittingRating = false;
 
   @override
   void initState() {
@@ -309,16 +315,91 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   }
 
   Widget _buildTitle() {
-    return Text(
-      widget.title,
-      style: GoogleFonts.cormorantGaramond(
-        fontSize: 56,
-        fontStyle: FontStyle.italic,
-        fontWeight: FontWeight.w300,
-        height: 1.1,
-        color: kEspressoColor,
-      ),
+    return Row(
+      children: [
+        Text(
+          widget.title,
+          style: GoogleFonts.cormorantGaramond(
+            fontSize: 40,
+            fontStyle: FontStyle.italic,
+            fontWeight: FontWeight.w300,
+            height: 1.1,
+            color: kEspressoColor,
+          ),
+        ),
+        const Spacer(),
+        Row(
+          children: List.generate(5, (index) {
+            final starIndex = index + 1;
+            return GestureDetector(
+              onTap: () => _submitRating(starIndex),
+              child: Icon(
+                Icons.star,
+                color: selectedRating >= starIndex
+                    ? Colors.amber
+                    : Colors.grey[300],
+                size: 22,
+              ),
+            );
+          }),
+        ),
+        if (isSubmittingRating)
+          const Padding(
+            padding: EdgeInsets.only(left: 8.0),
+            child: SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+      ],
     );
+  }
+
+  Future<void> _submitRating(int rating) async {
+    if (isSubmittingRating) return;
+    setState(() {
+      isSubmittingRating = true;
+      selectedRating = rating;
+    });
+    try {
+      final response = widget.curatedServiceId != null
+          ? await RatingController.submitCuratedServiceRating(
+              curatedServiceId: widget.curatedServiceId!,
+              rating: rating,
+            )
+          : await RatingController.submitServiceRating(
+              serviceId: widget.serviceId,
+              rating: rating,
+            );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              response != null && response.statusCode == 200
+                  ? 'Thank you for rating!'
+                  : 'Failed to submit rating',
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error submitting rating: ${e.toString()}'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSubmittingRating = false;
+        });
+      }
+    }
   }
 
   Widget _buildInfoRow() {

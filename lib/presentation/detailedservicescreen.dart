@@ -35,7 +35,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
   late Stream<List<Map<String, dynamic>>> _servicesStream;
   List<Map<String, dynamic>> _allCategories = [];
   List<Map<String, dynamic>> _allSubcategories = [];
-  List<Map<String, dynamic>> _allServices = [];
+  // Removed unused _allServices field
   final _servicesStreamController =
       StreamController<List<Map<String, dynamic>>>.broadcast();
   Timer? _pollingTimer;
@@ -81,9 +81,6 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
       );
       if (response.statusCode == 200 && response.data is List) {
         final data = List<Map<String, dynamic>>.from(response.data);
-        setState(() {
-          _allServices = data;
-        });
         _servicesStreamController.add(data);
       } else {
         _servicesStreamController.addError('Failed to load services');
@@ -169,38 +166,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
     });
   }
 
-  List<Map<String, dynamic>> get _searchFilteredServices {
-    if (!_hasSearchQuery) return [];
-    return _allServices.where((service) {
-      final title = (service['name'] ?? '').toString().toLowerCase();
-      final price = (service['price'] ?? '').toString().toLowerCase();
-      final duration = (service['duration'] ?? '').toString().toLowerCase();
-      final categoryName = service['category'] is Map
-          ? (service['category']['name'] ?? '').toString().toLowerCase()
-          : (service['category'] ?? '').toString().toLowerCase();
-      final query = _searchQuery;
-      return title.contains(query) ||
-          price.contains(query) ||
-          duration.contains(query) ||
-          categoryName.contains(query);
-    }).toList();
-  }
-
   // Colors are provided by lib/constant/constants.dart
-
-  List<Map<String, dynamic>> get _categoryServices {
-    if (_selectedFilterIndex == 0) {
-      return _allServices;
-    }
-
-    final selectedCategory = filters[_selectedFilterIndex];
-    return _allServices.where((service) {
-      final categoryName = service['category'] is Map
-          ? service['category']['name']
-          : service['category'];
-      return categoryName == selectedCategory;
-    }).toList();
-  }
 
   List<String> get _subFilters {
     if (_allSubcategories.isEmpty) {
@@ -296,9 +262,9 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => ServiceDetailScreen(
-          description: service['description'] ?? '',
           serviceId: service['_id'] ?? '6600',
           title: service['name'] ?? 'Service',
+          description: service['description'] ?? 'No description available.',
           price: '₹${service['price'] ?? '0'}',
           duration: '${service['duration'] ?? 'N/A'} mins',
           imageUrl: service['image2'] ?? '',
@@ -485,38 +451,73 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
                 );
               }
               final services = snapshot.data ?? [];
-              final filtered = _hasSearchQuery
-                  ? services.where((service) {
-                      final title = (service['name'] ?? '')
-                          .toString()
-                          .toLowerCase();
-                      final price = (service['price'] ?? '')
-                          .toString()
-                          .toLowerCase();
-                      final duration = (service['duration'] ?? '')
-                          .toString()
-                          .toLowerCase();
-                      final categoryName = service['category'] is Map
-                          ? (service['category']['name'] ?? '')
-                                .toString()
-                                .toLowerCase()
-                          : (service['category'] ?? '')
-                                .toString()
-                                .toLowerCase();
-                      final query = _searchQuery;
-                      return title.contains(query) ||
-                          price.contains(query) ||
-                          duration.contains(query) ||
-                          categoryName.contains(query);
-                    }).toList()
-                  : _selectedFilterIndex == 0
-                  ? services
-                  : services.where((service) {
-                      final categoryName = service['category'] is Map
-                          ? service['category']['name']
-                          : service['category'];
-                      return categoryName == filters[_selectedFilterIndex];
+              // Filter services by search, category, and subcategory
+              List<Map<String, dynamic>> filtered = services;
+              if (_hasSearchQuery) {
+                final query = _searchQuery;
+                filtered = filtered.where((service) {
+                  final title = (service['name'] ?? '')
+                      .toString()
+                      .toLowerCase();
+                  final price = (service['price'] ?? '')
+                      .toString()
+                      .toLowerCase();
+                  final duration = (service['duration'] ?? '')
+                      .toString()
+                      .toLowerCase();
+                  final categoryName = service['category'] is Map
+                      ? (service['category']['name'] ?? '')
+                            .toString()
+                            .toLowerCase()
+                      : (service['category'] ?? '').toString().toLowerCase();
+                  return title.contains(query) ||
+                      price.contains(query) ||
+                      duration.contains(query) ||
+                      categoryName.contains(query);
+                }).toList();
+              } else {
+                // Category filter
+                if (_selectedFilterIndex != 0) {
+                  final selectedCategory = filters[_selectedFilterIndex];
+                  filtered = filtered.where((service) {
+                    final categoryName = service['category'] is Map
+                        ? service['category']['name']
+                        : service['category'];
+                    return categoryName == selectedCategory;
+                  }).toList();
+                }
+                // Subcategory filter (by subcategory id)
+                if (_selectedSubFilterIndex != 0 &&
+                    _subFilters.length > _selectedSubFilterIndex) {
+                  // Find the subcategory id for the selected subfilter name
+                  final selectedSubcategoryName =
+                      _subFilters[_selectedSubFilterIndex];
+                  Map<String, dynamic>? subcategoryObj;
+                  try {
+                    subcategoryObj = _allSubcategories.firstWhere(
+                      (sub) =>
+                          (sub['name'] as String? ?? '') ==
+                          selectedSubcategoryName,
+                    );
+                  } catch (_) {
+                    subcategoryObj = null;
+                  }
+                  if (subcategoryObj != null) {
+                    final selectedSubcategoryId = subcategoryObj['_id'];
+                    filtered = filtered.where((service) {
+                      final subcat =
+                          service['subCategory'] ?? service['subcategory'];
+                      if (subcat == null) return false;
+                      if (subcat is Map && subcat['_id'] != null) {
+                        return subcat['_id'] == selectedSubcategoryId;
+                      } else if (subcat is String) {
+                        return subcat == selectedSubcategoryId;
+                      }
+                      return false;
                     }).toList();
+                  }
+                }
+              }
               if (filtered.isEmpty) {
                 return SliverToBoxAdapter(
                   child: Padding(

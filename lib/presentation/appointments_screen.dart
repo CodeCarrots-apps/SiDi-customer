@@ -191,6 +191,12 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
             width: 66 * scale,
             height: 78 * scale,
             fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Container(
+              width: 66 * scale,
+              height: 78 * scale,
+              color: Colors.grey[300],
+              child: Icon(Icons.image_not_supported, color: Colors.grey[600]),
+            ),
           ),
         ),
         SizedBox(width: 12 * scale),
@@ -199,7 +205,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                title,
+                title.isNotEmpty ? title : 'No Title',
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.cormorantGaramond(
@@ -210,7 +216,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               ),
               SizedBox(height: 2 * scale),
               Text(
-                time,
+                time.isNotEmpty ? time : 'No Time',
                 style: GoogleFonts.inter(
                   fontSize: 11 * scale,
                   color: kWarmGrey600,
@@ -218,7 +224,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               ),
               SizedBox(height: 8 * scale),
               Text(
-                stylist,
+                stylist.isNotEmpty ? stylist : 'No Stylist',
                 style: GoogleFonts.inter(
                   fontSize: 9 * scale,
                   letterSpacing: 1.6,
@@ -249,6 +255,12 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               width: 38 * scale,
               height: 38 * scale,
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                width: 38 * scale,
+                height: 38 * scale,
+                color: Colors.grey[300],
+                child: Icon(Icons.image_not_supported, color: Colors.grey[600]),
+              ),
             ),
           ),
           SizedBox(width: 10 * scale),
@@ -257,7 +269,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  title.isNotEmpty ? title : 'No Title',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.cormorantGaramond(
@@ -267,7 +279,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                   ),
                 ),
                 Text(
-                  subtitle,
+                  subtitle.isNotEmpty ? subtitle : 'No Stylist',
                   style: GoogleFonts.inter(
                     fontSize: 10 * scale,
                     color: kWarmGrey600,

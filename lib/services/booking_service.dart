@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 // import 'package:sidi/models/booking.dart';
 import 'package:sidi/models/booking_models.dart';
-import 'package:sidi/services/local_storage_service.dart';
+// import 'package:sidi/services/local_storage_service.dart';
 import 'package:sidi/utils/token_storage.dart';
 
 class BookingService {
@@ -96,12 +96,11 @@ class BookingService {
     final token = await TokenStorage.getToken();
 
     if (token == null || token.isEmpty) {
-      final cached = await LocalStorageService.loadCachedBookings();
       return MyBookingsResponse(
-        success: cached.isNotEmpty,
-        message: 'Offline mode - showing cached bookings',
-        bookings: cached,
-        total: cached.length,
+        success: false,
+        message: 'Authentication token is missing.',
+        bookings: [],
+        total: 0,
         currentPage: page,
       );
     }
@@ -120,19 +119,15 @@ class BookingService {
 
       final result = MyBookingsResponse.fromJson(response.data);
 
-      if (result.bookings.isNotEmpty) {
-        await LocalStorageService.saveCachedBookings(result.bookings);
-      }
+      // No local caching
 
       return result;
     } catch (e) {
-      final cached = await LocalStorageService.loadCachedBookings();
-
       return MyBookingsResponse(
-        success: cached.isNotEmpty,
-        message: 'Network error - showing cached bookings',
-        bookings: cached,
-        total: cached.length,
+        success: false,
+        message: 'Network error - unable to load bookings',
+        bookings: [],
+        total: 0,
         currentPage: page,
       );
     }
