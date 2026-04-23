@@ -388,6 +388,7 @@ class DetailedArtistScreen extends StatefulWidget {
     required this.imageUrl,
     this.description = '',
     this.services = const [],
+    this.rating = 0.0,
   });
 
   final String artistId;
@@ -396,7 +397,7 @@ class DetailedArtistScreen extends StatefulWidget {
   final String imageUrl;
   final String description;
   final List<Map<String, dynamic>> services;
-
+  final double rating;
   @override
   State<DetailedArtistScreen> createState() => _DetailedArtistScreenState();
 }
@@ -526,6 +527,47 @@ class _DetailedArtistScreenState extends State<DetailedArtistScreen> {
                 const SizedBox(height: 32),
 
                 /// ROLE
+                const SizedBox(height: 8),
+
+                /// NAME
+                Row(
+                  children: [
+                    Text(
+                      widget.artistName,
+                      style: GoogleFonts.cormorantGaramond(
+                        fontSize: 32,
+                        fontStyle: FontStyle.italic,
+                        color: kEspressoColor,
+                      ),
+                    ),
+                    Spacer(),
+                    // Rating
+                    Row(
+                      children: List.generate(5, (index) {
+                        if (widget.rating >= index + 1) {
+                          return const Icon(
+                            Icons.star,
+                            color: Colors.amber,
+                            size: 22,
+                          );
+                        } else if (widget.rating > index &&
+                            widget.rating < index + 1) {
+                          return const Icon(
+                            Icons.star_half,
+                            color: Colors.amber,
+                            size: 22,
+                          );
+                        } else {
+                          return const Icon(
+                            Icons.star_border,
+                            color: Colors.amber,
+                            size: 22,
+                          );
+                        }
+                      }),
+                    ),
+                  ],
+                ),
                 Text(
                   widget.role.toUpperCase(),
                   style: GoogleFonts.inter(
@@ -533,18 +575,6 @@ class _DetailedArtistScreenState extends State<DetailedArtistScreen> {
                     letterSpacing: 2,
                     color: kWarmGrey600,
                     fontWeight: FontWeight.w600,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                /// NAME
-                Text(
-                  widget.artistName,
-                  style: GoogleFonts.cormorantGaramond(
-                    fontSize: 44,
-                    fontStyle: FontStyle.italic,
-                    color: kEspressoColor,
                   ),
                 ),
 

@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import '../models/booking.dart';
 import '../services/booking_service.dart';
-import '../services/local_storage_service.dart';
+// import '../services/local_storage_service.dart';
 
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
@@ -13,22 +13,19 @@ class AppointmentsScreen extends StatefulWidget {
 }
 
 class _AppointmentsScreenState extends State<AppointmentsScreen> {
+  // late Future<List<Booking>> _futureBookings;
+
   late Future<List<Booking>> _futureBookings;
 
   @override
   void initState() {
     super.initState();
-    _futureBookings = LocalStorageService.loadCachedBookings();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _refreshBookings();
-    });
+    _futureBookings = _loadBookings();
   }
 
   Future<List<Booking>> _loadBookings() async {
-    final bookings = await BookingService.fetchBookings();
-    await LocalStorageService.saveCachedBookings(bookings);
-    return bookings;
+    final response = await BookingService.getMyBookings();
+    return response.bookings;
   }
 
   Future<void> _refreshBookings() async {
@@ -128,7 +125,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                                 child: _buildRecentAppointment(
                                   image: b.image.isNotEmpty
                                       ? b.image
-                                      : 'https://via.placeholder.com/66x78',
+                                      : 'https://i.pinimg.com/1200x/8b/9a/ec/8b9aeceef93905e3b619889c2b0b7111.jpg',
                                   title: b.title,
                                   time: b.time,
                                   stylist: b.stylist,
@@ -147,7 +144,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                               (b) => _buildEarlierAppointment(
                                 image: b.image.isNotEmpty
                                     ? b.image
-                                    : 'https://via.placeholder.com/38',
+                                    : 'https://sidi.mobilegear.co.in${b.image}',
                                 title: b.title,
                                 subtitle: b.stylist,
                                 scale: scale,

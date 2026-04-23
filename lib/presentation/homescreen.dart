@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_interpolation_to_compose_strings
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
@@ -191,106 +193,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Widget _buildHeroSection() {
-  //   return Padding(
-  //     padding: const EdgeInsets.symmetric(horizontal: 24),
-  //     child: ClipRRect(
-  //       borderRadius: BorderRadius.circular(16),
-  //       child: Stack(
-  //         children: [
-  //           AspectRatio(
-  //             aspectRatio: 4 / 5,
-  //             child: Image.network(
-  //               "https://lh3.googleusercontent.com/aida-public/AB6AXuAhaWq1M13518DNZyCPQ9g4KOQRTAht8dZj5D874IbfzvkqszpLXlucjRhYezVs-_lJLiWAVHI9qI03t19Y8J7k2BgdDzQWlEngeqMMV1VLwhE0APclHMHm1VZCRX1lb-FVx6KM61B6XsFJZN8ft8CwzFZVTZo2xGzdp0GlXvaPbhZFTDVh_MfrckXWfO8Ahzcqi-KhgaMct57N4TmBn7L22sCcgVACr_9Mgi9SS8GgHQGRIjPFSj_MzAUg7B25s1FLULVBmrCCIcg",
-  //               fit: BoxFit.cover,
-  //             ),
-  //           ),
-  //           Container(
-  //             decoration: BoxDecoration(
-  //               gradient: LinearGradient(
-  //                 colors: [
-  //                   Colors.black.withValues(alpha: 0.6),
-  //                   Colors.black.withValues(alpha: 0.2),
-  //                   Colors.transparent,
-  //                 ],
-  //                 begin: Alignment.bottomCenter,
-  //                 end: Alignment.topCenter,
-  //               ),
-  //             ),
-  //           ),
-  //           Positioned(
-  //             bottom: 32,
-  //             left: 24,
-  //             right: 24,
-  //             child: Column(
-  //               crossAxisAlignment: CrossAxisAlignment.start,
-  //               children: [
-  //                 Text(
-  //                   "SUMMER EDITORIAL",
-  //                   style: GoogleFonts.inter(
-  //                     color: Colors.white70,
-  //                     fontSize: 10,
-  //                     letterSpacing: 4,
-  //                     fontWeight: FontWeight.w500,
-  //                   ),
-  //                 ),
-  //                 const SizedBox(height: 8),
-  //                 Text(
-  //                   "Effortless luxury,\ndelivered to you.",
-  //                   style: GoogleFonts.cormorantGaramond(
-  //                     color: Colors.white,
-  //                     fontSize: 36,
-  //                     fontStyle: FontStyle.italic,
-  //                     fontWeight: FontWeight.w300,
-  //                     height: 1.1,
-  //                   ),
-  //                 ),
-  //                 const SizedBox(height: 24),
-  //                 ElevatedButton(
-  //                   style: ElevatedButton.styleFrom(
-  //                     backgroundColor: kEspressoColor,
-  //                     shape: RoundedRectangleBorder(
-  //                       borderRadius: BorderRadius.circular(50),
-  //                     ),
-  //                     padding: const EdgeInsets.symmetric(
-  //                       horizontal: 32,
-  //                       vertical: 14,
-  //                     ),
-  //                   ),
-  //                   onPressed: () {
-  //                     Navigator.push(
-  //                       context,
-  //                       MaterialPageRoute(
-  //                         builder: (context) => const ServiceDetailScreen(
-  //                           serviceId: '6652',
-  //                           title: 'Luxury Service',
-  //                           price: '₹1200',
-  //                           duration: '45 mins',
-  //                           imageUrl:
-  //                               'https://lh3.googleusercontent.com/aida-public/AB6AXuAhaWq1M13518DNZyCPQ9g4KOQRTAht8dZj5D874IbfzvkqszpLXlucjRhYezVs-_lJLiWAVHI9qI03t19Y8J7k2BgdDzQWlEngeqMMV1VLwhE0APclHMHm1VZCRX1lb-FVx6KM61B6XsFJZN8ft8CwzFZVTZo2xGzdp0GlXvaPbhZFTDVh_MfrckXWfO8Ahzcqi-KhgaMct57N4TmBn7L22sCcgVACr_9Mgi9SS8GgHQGRIjPFSj_MzAUg7B25s1FLULVBmrCCIcg',
-  //                         ),
-  //                       ),
-  //                     );
-  //                   },
-  //                   child: Text(
-  //                     "BOOK NOW",
-  //                     style: GoogleFonts.inter(
-  //                       fontSize: 12,
-  //                       letterSpacing: 2,
-  //                       fontWeight: FontWeight.w500,
-  //                       color: Colors.white,
-  //                     ),
-  //                   ),
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
-
   Widget _buildHeroSection() {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _bannersFuture,
@@ -344,6 +246,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (_) => ServiceDetailScreen(
+                                  description: banner['description'] ?? '',
                                   serviceId:
                                       banner['serviceId']?.toString() ?? '',
                                   title: banner['title'] ?? '',
@@ -431,6 +334,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => ServiceDetailScreen(
+                                      description: banner['description'] ?? '',
                                       serviceId:
                                           banner['serviceId']?.toString() ?? '',
                                       title: banner['title'] ?? '',
@@ -673,6 +577,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (_) => ServiceDetailScreen(
+                                description: item['description'] ?? '',
                                 serviceId: item['_id']?.toString() ?? '',
                                 title: item['curatedServiceTitle'] ?? '',
                                 price: item['price']?.toString() ?? '',

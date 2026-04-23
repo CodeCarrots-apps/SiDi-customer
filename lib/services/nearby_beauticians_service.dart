@@ -1,12 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../utils/token_storage.dart';
+import '../models/nearby_beauticians_response.dart';
 
 class NearbyBeauticiansService {
   static const String _baseUrl =
       'https://sidi.mobilegear.co.in/api/beauticians';
 
-  static Future<List<Map<String, dynamic>>> getNearbyBeauticians({
+  static Future<NearbyBeauticiansResponse> getNearbyBeauticians({
     required double latitude,
     required double longitude,
     String? serviceId,
@@ -35,16 +36,19 @@ class NearbyBeauticiansService {
       final response = await dio.get(_baseUrl, queryParameters: queryParams);
 
       debugPrint(
-        '[NearbyBeauticiansService] Response: ${response.statusCode} - ${response.data}',
+        '[NearbyBeauticiansService] Response: [200m${response.statusCode} - ${response.data}',
       );
 
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         final data = response.data as Map<String, dynamic>;
-        if (data['beauticians'] is List) {
-          return List<Map<String, dynamic>>.from(data['beauticians']);
-        }
+        return NearbyBeauticiansResponse.fromJson(data);
       }
-      return [];
+      return NearbyBeauticiansResponse(
+        beauticians: [],
+        total: 0,
+        page: 1,
+        totalPages: 1,
+      );
     } on DioException catch (error) {
       debugPrint(
         '[NearbyBeauticiansService] DioException: status=${error.response?.statusCode}, message=${error.message}',
@@ -52,10 +56,20 @@ class NearbyBeauticiansService {
       debugPrint(
         '[NearbyBeauticiansService] Response body: ${error.response?.data}',
       );
-      return [];
+      return NearbyBeauticiansResponse(
+        beauticians: [],
+        total: 0,
+        page: 1,
+        totalPages: 1,
+      );
     } catch (error) {
       debugPrint('[NearbyBeauticiansService] Error: $error');
-      return [];
+      return NearbyBeauticiansResponse(
+        beauticians: [],
+        total: 0,
+        page: 1,
+        totalPages: 1,
+      );
     }
   }
 }

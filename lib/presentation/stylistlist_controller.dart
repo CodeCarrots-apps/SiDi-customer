@@ -81,12 +81,15 @@ class StylistListController extends GetxController {
       const double latitude = 9.9312;
       const double longitude = 76.2673;
 
-      final data = await NearbyBeauticiansService.getNearbyBeauticians(
+      final response = await NearbyBeauticiansService.getNearbyBeauticians(
         latitude: latitude,
         longitude: longitude,
       );
 
-      stylists.value = data.map((e) => Stylist.fromJson(e)).toList();
+      stylists.value = response.beauticians
+          .map((e) => Stylist.fromJson(e))
+          .toList();
+      // Optionally, you can access response.total, response.page, response.totalPages here
     } catch (e) {
       error.value = 'Failed to load stylists';
     } finally {

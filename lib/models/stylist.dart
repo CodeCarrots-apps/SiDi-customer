@@ -1,35 +1,3 @@
-// class Stylist {
-//   final String id;
-//   final String name;
-//   final String role;
-//   final String image;
-//   final double rating;
-//   final String city;
-
-//   Stylist({
-//     required this.id,
-//     required this.name,
-//     required this.role,
-//     required this.image,
-//     required this.rating,
-//     required this.city,
-//   });
-
-//   factory Stylist.fromJson(Map<String, dynamic> json) {
-//     return Stylist(
-//       id: json['_id'] ?? '',
-//       name: json['fullName'] ?? 'Unknown',
-//       role: (json['skills'] as List?)?.join(', ') ?? 'Beautician',
-//       image:
-//           (json['profileImage'] != null &&
-//               json['profileImage'].toString().isNotEmpty)
-//           ? 'https://sidi.mobilegear.co.in${json['profileImage']}'
-//           : '',
-//       rating: (json['rating'] ?? 0).toDouble(),
-//       city: json['location']?['city'] ?? '',
-//     );
-//   }
-// }
 class Stylist {
   final String id;
   final String fullName;

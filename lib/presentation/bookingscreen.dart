@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
+import 'package:dio/dio.dart';
+import 'package:sidi/models/stylist.dart';
+import 'package:sidi/services/nearby_beauticians_service.dart';
 
 import 'detailedartistscreen.dart';
 import 'servicedetailscreen.dart';
@@ -15,75 +19,51 @@ class BookingScreen extends StatefulWidget {
 class _BookingScreenState extends State<BookingScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  late Future<List<Map<String, dynamic>>> _curatedServicesFuture;
+  late Future<List<Stylist>> _topStylistsFuture;
 
-  final List<Map<String, String>> _searchData = [
-    {
-      'type': 'service',
-      'id': '6605',
-      'title': 'Glow Facial',
-      'subtitle': 'Signature facial treatment',
-      'price': '₹240',
-      'duration': '75 mins',
-      'imageUrl':
-          'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80',
-    },
-    {
-      'type': 'service',
-      'id': '6602',
-      'title': 'Silk Press',
-      'subtitle': 'Smooth hair styling',
-      'price': '₹95',
-      'duration': '70 mins',
-      'imageUrl':
-          'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=800&q=80',
-    },
-    {
-      'type': 'service',
-      'id': '6606',
-      'title': 'Moonlight Ritual',
-      'subtitle': 'Botanical skin therapy',
-      'price': '₹110',
-      'duration': '90 mins',
-      'imageUrl':
-          'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80',
-    },
-    {
-      'type': 'artist',
-      'id': '6651',
-      'title': 'Julianne Vough',
-      'subtitle': 'MASTER COLORIST',
-      'role': 'MASTER COLORIST',
-      'imageUrl':
-          'https://i.pinimg.com/736x/36/2d/70/362d7087b1b8367db1c98d3f73f3be3a.jpg',
-    },
-    {
-      'type': 'artist',
-      'id': '6652',
-      'title': 'Marcus Chen',
-      'subtitle': 'SKIN SCULPTOR',
-      'role': 'SKIN SCULPTOR',
-      'imageUrl':
-          'https://i.pinimg.com/736x/e3/52/30/e3523011d5dd97b97709e1d83ca75e5b.jpg',
-    },
-    {
-      'type': 'artist',
-      'id': '6653',
-      'title': 'Elena Rodriguez',
-      'subtitle': 'ARTISTIC DIRECTOR',
-      'role': 'ARTISTIC DIRECTOR',
-      'imageUrl':
-          'https://i.pinimg.com/1200x/b5/af/0f/b5af0f1fdc01adb5cd55609e7b302de1.jpg',
-    },
-  ];
-
-  List<Map<String, String>> get _filteredSearchResults {
-    final query = _searchQuery.trim().toLowerCase();
-    if (query.isEmpty) return [];
-    return _searchData.where((item) {
-      return item['title']!.toLowerCase().contains(query) ||
-          item['subtitle']!.toLowerCase().contains(query);
-    }).toList();
+  @override
+  void initState() {
+    super.initState();
+    _curatedServicesFuture = _fetchCuratedServices();
+    _topStylistsFuture = _fetchTopStylists();
   }
+
+  Future<List<Stylist>> _fetchTopStylists() async {
+    try {
+      final response = await NearbyBeauticiansService.getNearbyBeauticians(
+        latitude: 9.9312, // Default to Kochi, or use user location
+        longitude: 76.2673,
+      );
+      return response.beauticians.map((e) => Stylist.fromJson(e)).toList();
+    } catch (e) {
+      print('Error fetching stylists: $e');
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchCuratedServices() async {
+    try {
+      final dio = Dio();
+      final response = await dio.get(
+        'https://sidi.mobilegear.co.in/api/curated-services',
+      );
+      if (response.statusCode == 200 &&
+          response.data is Map &&
+          response.data['curatedServices'] is List) {
+        return List<Map<String, dynamic>>.from(
+          response.data['curatedServices'],
+        );
+      } else {
+        throw Exception('Failed to load curated services');
+      }
+    } catch (e) {
+      print('Error fetching curated services: $e');
+      rethrow;
+    }
+  }
+
+  // Removed _searchData and _filteredSearchResults since curated services are now fetched from API.
 
   @override
   void dispose() {
@@ -146,7 +126,7 @@ class _BookingScreenState extends State<BookingScreen> {
                     ],
                   ),
                   SizedBox(height: 10 * scale),
-                  _buildStylistsRow(scale),
+                  _buildTopStylistsRow(scale),
                   SizedBox(height: 20 * scale),
                   _buildRecommendationCard(scale),
                 ],
@@ -203,132 +183,8 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Widget _buildSearchResults(double scale) {
-    final results = _filteredSearchResults;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'SEARCH RESULTS',
-          style: GoogleFonts.inter(
-            fontSize: 9 * scale,
-            letterSpacing: 2,
-            color: kWarmGrey600,
-          ),
-        ),
-        SizedBox(height: 8 * scale),
-        if (results.isEmpty)
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 12 * scale),
-            child: Text(
-              'No matching services or stylists found.',
-              style: GoogleFonts.inter(
-                fontSize: 12 * scale,
-                color: kWarmGrey600,
-              ),
-            ),
-          )
-        else
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: results.length,
-            separatorBuilder: (_, __) => SizedBox(height: 6 * scale),
-            itemBuilder: (context, index) {
-              final item = results[index];
-              final isArtist = item['type'] == 'artist';
-              return GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) {
-                        if (isArtist) {
-                          return DetailedArtistScreen(
-                            artistId: item['id'] ?? '',
-                            artistName: item['title']!,
-                            role: item['role'] ?? item['subtitle']!,
-                            imageUrl:
-                                item['imageUrl'] ??
-                                'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80',
-                          );
-                        }
-                        return ServiceDetailScreen(
-                          serviceId: item['id'] ?? '6600',
-                          title: item['title']!,
-                          price: item['price'] ?? '₹0',
-                          duration: item['duration'] ?? 'N/A',
-                          imageUrl:
-                              item['imageUrl'] ??
-                              'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80',
-                        );
-                      },
-                    ),
-                  );
-                },
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    vertical: 8 * scale,
-                    horizontal: 12 * scale,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: kWarmGrey200),
-                    borderRadius: BorderRadius.circular(12),
-                    color: Colors.white,
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 34 * scale,
-                        height: 34 * scale,
-                        decoration: BoxDecoration(
-                          color: isArtist ? kEspressoColor : kWarmGrey200,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          isArtist ? Icons.person : Icons.brush,
-                          color: Colors.white,
-                          size: 20 * scale,
-                        ),
-                      ),
-                      SizedBox(width: 10 * scale),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item['title']!,
-                              style: GoogleFonts.inter(
-                                fontSize: 14 * scale,
-                                color: kCharcoalColor,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            SizedBox(height: 2 * scale),
-                            Text(
-                              item['subtitle']!,
-                              style: GoogleFonts.inter(
-                                fontSize: 11 * scale,
-                                color: kWarmGrey600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        isArtist ? 'Artist' : 'Service',
-                        style: GoogleFonts.inter(
-                          fontSize: 9 * scale,
-                          color: kWarmGrey600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-      ],
-    );
+    // Search results UI removed since curated services are now fetched from API.
+    return SizedBox.shrink();
   }
 
   Widget _buildSectionTitle(String text, double scale) {
@@ -343,95 +199,181 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Widget _buildCuratedGrid(double scale) {
-    return SizedBox(
-      height: 300 * scale,
-      child: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ServiceDetailScreen(
-                      serviceId: '6610',
-                      title: 'Editorial Hair',
-                      price: '₹220',
-                      duration: '60 mins',
-                      imageUrl:
-                          'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=800&q=80',
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _curatedServicesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return SizedBox(
+            height: 300 * scale,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError) {
+          return SizedBox(
+            height: 300 * scale,
+            child: Center(child: Text('Error loading curated services')),
+          );
+        }
+        final curated = snapshot.data ?? [];
+        if (curated.isEmpty) {
+          return SizedBox(
+            height: 300 * scale,
+            child: Center(child: Text('No curated services available')),
+          );
+        }
+        final showCurated = curated.take(3).toList();
+        return SizedBox(
+          height: 300 * scale,
+          child: Row(
+            children: [
+              // Left tall card
+              if (showCurated.length > 0)
+                Expanded(
+                  flex: 2,
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ServiceDetailScreen(
+                            description: showCurated[0]['description'] ?? '',
+                            serviceId: showCurated[0]['_id']?.toString() ?? '',
+                            title: showCurated[0]['curatedServiceTitle'] ?? '',
+                            price: showCurated[0]['price']?.toString() ?? '',
+                            duration:
+                                showCurated[0]['duration']?.toString() ?? '',
+                            imageUrl:
+                                showCurated[0]['image2'] != null &&
+                                    showCurated[0]['image2']
+                                        .toString()
+                                        .isNotEmpty
+                                ? "https://sidi.mobilegear.co.in/uploads/" +
+                                      showCurated[0]['image2']
+                                : '',
+                          ),
+                        ),
+                      );
+                    },
+                    child: _categoryTile(
+                      image:
+                          showCurated[0]['image1'] != null &&
+                              showCurated[0]['image1'].toString().isNotEmpty
+                          ? "https://sidi.mobilegear.co.in/uploads/" +
+                                showCurated[0]['image1']
+                          : '',
+                      title: showCurated[0]['curatedServiceTitle'] ?? '',
+                      subtitle: showCurated[0]['subtitle'] ?? '',
+                      height: double.infinity,
+                      scale: scale,
                     ),
                   ),
-                );
-              },
-              child: _categoryTile(
-                image:
-                    'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=800&q=80',
-                title: 'Editorial Hair',
-                subtitle: 'THE COLLECTION',
-                height: double.infinity,
-                scale: scale,
+                ),
+              SizedBox(width: 8 * scale),
+              // Right column with two stacked cards
+              Expanded(
+                flex: 2,
+                child: Column(
+                  children: [
+                    if (showCurated.length > 1)
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ServiceDetailScreen(
+                                  serviceId:
+                                      showCurated[1]['_id']?.toString() ?? '',
+                                  title:
+                                      showCurated[1]['curatedServiceTitle'] ??
+                                      '',
+                                  price:
+                                      showCurated[1]['price']?.toString() ?? '',
+                                  duration:
+                                      showCurated[1]['duration']?.toString() ??
+                                      '',
+                                  imageUrl:
+                                      showCurated[1]['image2'] != null &&
+                                          showCurated[1]['image2']
+                                              .toString()
+                                              .isNotEmpty
+                                      ? "https://sidi.mobilegear.co.in/uploads/" +
+                                            showCurated[1]['image2']
+                                      : '',
+                                ),
+                              ),
+                            );
+                          },
+                          child: _categoryTile(
+                            image:
+                                showCurated[1]['image1'] != null &&
+                                    showCurated[1]['image1']
+                                        .toString()
+                                        .isNotEmpty
+                                ? "https://sidi.mobilegear.co.in/uploads/" +
+                                      showCurated[1]['image1']
+                                : '',
+                            title: showCurated[1]['curatedServiceTitle'] ?? '',
+                            subtitle: showCurated[1]['subtitle'] ?? '',
+                            height: double.infinity,
+                            scale: scale,
+                          ),
+                        ),
+                      ),
+                    SizedBox(height: 8 * scale),
+                    if (showCurated.length > 2)
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ServiceDetailScreen(
+                                  serviceId:
+                                      showCurated[2]['_id']?.toString() ?? '',
+                                  title:
+                                      showCurated[2]['curatedServiceTitle'] ??
+                                      '',
+                                  price:
+                                      showCurated[2]['price']?.toString() ?? '',
+                                  duration:
+                                      showCurated[2]['duration']?.toString() ??
+                                      '',
+                                  imageUrl:
+                                      showCurated[2]['image2'] != null &&
+                                          showCurated[2]['image2']
+                                              .toString()
+                                              .isNotEmpty
+                                      ? "https://sidi.mobilegear.co.in/uploads/" +
+                                            showCurated[2]['image2']
+                                      : '',
+                                ),
+                              ),
+                            );
+                          },
+                          child: _categoryTile(
+                            image:
+                                showCurated[2]['image1'] != null &&
+                                    showCurated[2]['image1']
+                                        .toString()
+                                        .isNotEmpty
+                                ? "https://sidi.mobilegear.co.in/uploads/" +
+                                      showCurated[2]['image1']
+                                : '',
+                            title: showCurated[2]['curatedServiceTitle'] ?? '',
+                            subtitle: showCurated[2]['subtitle'] ?? '',
+                            height: double.infinity,
+                            scale: scale,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
-          SizedBox(width: 6 * scale),
-          Expanded(
-            child: Column(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ServiceDetailScreen(
-                          serviceId: '6611',
-                          title: 'Signature Facials',
-                          price: '₹250',
-                          duration: '75 mins',
-                          imageUrl:
-                              'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80',
-                        ),
-                      ),
-                    );
-                  },
-                  child: _categoryTile(
-                    image:
-                        'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80',
-                    title: 'Signature Facials',
-                    height: 147 * scale,
-                    scale: scale,
-                  ),
-                ),
-                SizedBox(height: 6 * scale),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ServiceDetailScreen(
-                          serviceId: '6612',
-                          title: 'Bridal Atelier',
-                          price: '₹380',
-                          duration: '90 mins',
-                          imageUrl:
-                              'https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=800&q=80',
-                        ),
-                      ),
-                    );
-                  },
-                  child: _categoryTile(
-                    image:
-                        'https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=800&q=80',
-                    title: 'Bridal Atelier',
-                    height: 147 * scale,
-                    scale: scale,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -497,97 +439,104 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  Widget _buildStylistsRow(double scale) {
-    final stylists = [
-      {
-        'id': '6652',
-        'imageUrl':
-            'https://i.pinimg.com/736x/36/2d/70/362d7087b1b8367db1c98d3f73f3be3a.jpg',
-        'name': 'Julianne Vough',
-        'role': 'MASTER COLORIST',
-      },
-      {
-        'id': '6652',
-        'imageUrl':
-            'https://i.pinimg.com/736x/e3/52/30/e3523011d5dd97b97709e1d83ca75e5b.jpg',
-        'name': 'Marcus Chen',
-        'role': 'SKIN SCULPTOR',
-      },
-      {
-        'id': '6652',
-        'imageUrl':
-            'https://i.pinimg.com/1200x/b5/af/0f/b5af0f1fdc01adb5cd55609e7b302de1.jpg',
-        'name': 'Elena Rodriguez',
-        'role': 'ARTISTIC DIRECTOR',
-      },
-    ];
-
-    return SizedBox(
-      height: 136 * scale,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: stylists.length,
-        separatorBuilder: (_, index) => SizedBox(width: 10 * scale),
-        itemBuilder: (context, index) {
-          final stylist = stylists[index];
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => DetailedArtistScreen(
-                    artistName: stylist['name']!,
-                    role: stylist['role']!,
-                    imageUrl: stylist['imageUrl']!,
-                    artistId: stylist['id'] ?? '',
+  Widget _buildTopStylistsRow(double scale) {
+    return FutureBuilder<List<Stylist>>(
+      future: _topStylistsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return SizedBox(
+            height: 136 * scale,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError) {
+          return SizedBox(
+            height: 136 * scale,
+            child: Center(child: Text('Error loading stylists')),
+          );
+        }
+        final stylists = snapshot.data ?? [];
+        if (stylists.isEmpty) {
+          return SizedBox(
+            height: 136 * scale,
+            child: Center(child: Text('No stylists found.')),
+          );
+        }
+        final showStylists = stylists.take(3).toList();
+        return SizedBox(
+          height: 136 * scale,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: showStylists.length,
+            separatorBuilder: (_, __) => SizedBox(width: 10 * scale),
+            itemBuilder: (context, index) {
+              final stylist = showStylists[index];
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DetailedArtistScreen(
+                        artistId: stylist.id,
+                        artistName: stylist.fullName,
+                        role: stylist.tier.isNotEmpty
+                            ? stylist.tier
+                            : 'Beautician',
+                        imageUrl: stylist.displayImage,
+                        rating: stylist.rating,
+                        description: stylist.bio,
+                        services:
+                            const [], // Optionally pass services if available
+                      ),
+                    ),
+                  );
+                },
+                child: SizedBox(
+                  width: 78 * scale,
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 76 * scale,
+                        height: 76 * scale,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: kWarmGrey200),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            stylist.displayImage,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 6 * scale),
+                      Text(
+                        stylist.fullName,
+                        style: GoogleFonts.inter(
+                          fontSize: 11 * scale,
+                          color: kCharcoalColor,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 2 * scale),
+                      Text(
+                        stylist.tier.isNotEmpty ? stylist.tier : 'Beautician',
+                        style: GoogleFonts.inter(
+                          fontSize: 8 * scale,
+                          letterSpacing: 1.3,
+                          color: kWarmGrey600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );
             },
-            child: SizedBox(
-              width: 78 * scale,
-              child: Column(
-                children: [
-                  Container(
-                    width: 76 * scale,
-                    height: 76 * scale,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: kWarmGrey200),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        stylist['imageUrl']!,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 6 * scale),
-                  Text(
-                    stylist['name']!,
-                    style: GoogleFonts.inter(
-                      fontSize: 11 * scale,
-                      color: kCharcoalColor,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 2 * scale),
-                  Text(
-                    stylist['role']!,
-                    style: GoogleFonts.inter(
-                      fontSize: 8 * scale,
-                      letterSpacing: 1.3,
-                      color: kWarmGrey600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -614,7 +563,7 @@ class _BookingScreenState extends State<BookingScreen> {
           ),
           SizedBox(height: 10 * scale),
           Text(
-            'The Moonlight Ritual Facial',
+            'Coming Soon: Personalized recommendations based on your style and past bookings.',
             style: GoogleFonts.cormorantGaramond(
               fontSize: 30 * scale,
               fontStyle: FontStyle.italic,
@@ -622,37 +571,37 @@ class _BookingScreenState extends State<BookingScreen> {
             ),
           ),
           SizedBox(height: 10 * scale),
-          Text(
-            'A 90-minute immersion into cellular regeneration. Utilizes cool-tone light therapy and organic botanical extracts.',
-            style: GoogleFonts.inter(
-              fontSize: 13 * scale,
-              height: 1.5,
-              color: kCharcoalColor,
-            ),
-          ),
-          SizedBox(height: 14 * scale),
-          FilledButton(
-            onPressed: () {},
-            style: FilledButton.styleFrom(
-              backgroundColor: kEspressoColor,
-              foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(
-                horizontal: 18 * scale,
-                vertical: 10 * scale,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(
-              'RESERVE SPACE',
-              style: GoogleFonts.inter(
-                fontSize: 9 * scale,
-                letterSpacing: 1.5,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
+          // Text(
+          //   'A 90-minute immersion into cellular regeneration. Utilizes cool-tone light therapy and organic botanical extracts.',
+          //   style: GoogleFonts.inter(
+          //     fontSize: 13 * scale,
+          //     height: 1.5,
+          //     color: kCharcoalColor,
+          //   ),
+          // ),
+          // SizedBox(height: 14 * scale),
+          // FilledButton(
+          //   onPressed: () {},
+          //   style: FilledButton.styleFrom(
+          //     backgroundColor: kEspressoColor,
+          //     foregroundColor: Colors.white,
+          //     padding: EdgeInsets.symmetric(
+          //       horizontal: 18 * scale,
+          //       vertical: 10 * scale,
+          //     ),
+          //     shape: RoundedRectangleBorder(
+          //       borderRadius: BorderRadius.circular(12),
+          //     ),
+          //   ),
+          //   child: Text(
+          //     'RESERVE SPACE',
+          //     style: GoogleFonts.inter(
+          //       fontSize: 9 * scale,
+          //       letterSpacing: 1.5,
+          //       fontWeight: FontWeight.w500,
+          //     ),
+          //   ),
+          // ),
         ],
       ),
     );

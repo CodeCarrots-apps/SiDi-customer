@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
-import 'detailedartistscreen.dart';
-import '../models/stylist.dart';
 import 'package:get/get.dart';
 import 'widgets/stylistcard.dart';
 import 'locationsearchscreen.dart';

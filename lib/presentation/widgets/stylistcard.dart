@@ -20,7 +20,8 @@ class StylistsCard extends StatelessWidget {
           child: Image.network(
             stylist.profileImage.isNotEmpty
                 ? stylist.profileImage
-                : 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(stylist.fullName)}',
+                // : 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(stylist.fullName)}',
+                : 'https://i.pinimg.com/736x/f0/01/8d/f0018d672659d93315b051cf95246bb7.jpg',
             width: 64,
             height: 64,
             fit: BoxFit.cover,
@@ -68,7 +69,7 @@ class StylistsCard extends StatelessWidget {
                                 : 'Beautician',
                             imageUrl: stylist.profileImage.isNotEmpty
                                 ? stylist.profileImage
-                                : 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(stylist.fullName)}',
+                                : 'https://i.pinimg.com/736x/f0/01/8d/f0018d672659d93315b051cf95246bb7.jpg',
                             // Optionally pass description, services, etc.
                           ),
                         ),
@@ -94,13 +95,14 @@ class StylistsCard extends StatelessWidget {
                             artistId: stylist.id,
                             artistName: stylist.fullName,
                             description: stylist.bio,
+                            rating: stylist.rating,
                             services: [],
                             role: stylist.skills.isNotEmpty
                                 ? stylist.skills.join(', ')
                                 : 'Beautician',
                             imageUrl: stylist.profileImage.isNotEmpty
                                 ? stylist.profileImage
-                                : 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(stylist.fullName)}',
+                                : 'https://i.pinimg.com/736x/f0/01/8d/f0018d672659d93315b051cf95246bb7.jpg',
                             // Optionally pass description, services, etc.
                           ),
                         ),

@@ -18,11 +18,13 @@ class ServiceDetailScreen extends StatefulWidget {
     required this.imageUrl,
     this.stylists = const [],
     this.showFavButton = true,
+    this.description = '',
   });
 
   final String serviceId;
   final String title;
   final String price;
+  final String description;
   final String duration;
   final String imageUrl;
   final List<Stylist> stylists;
@@ -369,9 +371,10 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
 
   Widget _buildDescription() {
     return Text(
-      "Experience a bespoke nail care ritual designed for the modern minimalist. "
-      "Our signature treatment includes detailed cuticle care, a soothing hand massage "
-      "with organic botanical oils, and a flawless finish with our curated palette of premium editorial shades.",
+      // "Experience a bespoke nail care ritual designed for the modern minimalist. "
+      // "Our signature treatment includes detailed cuticle care, a soothing hand massage "
+      // "with organic botanical oils, and a flawless finish with our curated palette of premium editorial shades.",
+      widget.description,
       style: GoogleFonts.inter(
         fontSize: 17,
         height: 1.8,

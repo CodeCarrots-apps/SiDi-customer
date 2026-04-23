@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
-import 'package:sidi/models/booking.dart';
+import 'package:flutter/foundation.dart';
+// import 'package:sidi/models/booking.dart';
 import 'package:sidi/models/booking_models.dart';
 import 'package:sidi/services/local_storage_service.dart';
 import 'package:sidi/utils/token_storage.dart';
@@ -8,16 +8,14 @@ import 'package:sidi/utils/token_storage.dart';
 class BookingService {
   static const String _baseUrl =
       'https://sidi.mobilegear.co.in/api/mobileapp/bookings';
-  static const String _myBookingsUrl = '$_baseUrl/my-bookings';
-  static const String _availableSlotsUrl = '$_baseUrl/available-slots';
 
-  static Dio _createDio(String token) {
+  static Dio _dio(String token) {
     return Dio(
       BaseOptions(
+        baseUrl: _baseUrl,
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 20),
-        sendTimeout: const Duration(seconds: 20),
-        headers: <String, dynamic>{
+        headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
@@ -25,104 +23,9 @@ class BookingService {
     );
   }
 
-  static Future<List<Booking>> fetchBookings({
-    int page = 1,
-    int limit = 20,
-    String? status,
-  }) async {
-    final response = await fetchBookingsResponse(
-      page: page,
-      limit: limit,
-      status: status,
-    );
-    return response.bookings;
-  }
-
-  static Future<MyBookingsResponse> fetchBookingsResponse({
-    int page = 1,
-    int limit = 20,
-    String? status,
-  }) async {
-    final token = await TokenStorage.getToken();
-    if (token == null || token.isEmpty) {
-      final cached = await LocalStorageService.loadCachedBookings();
-      return MyBookingsResponse(
-        success: cached.isNotEmpty,
-        message: 'Authentication token is missing. Showing saved appointments.',
-        bookings: cached,
-        total: cached.length,
-        currentPage: page,
-      );
-    }
-
-    final dio = _createDio(token);
-    final queryParameters = <String, dynamic>{'page': page, 'limit': limit};
-    if (status != null && status.isNotEmpty) {
-      queryParameters['status'] = status;
-    }
-
-    try {
-      final response = await dio.get(
-        _myBookingsUrl,
-        queryParameters: queryParameters,
-      );
-      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
-        final result = MyBookingsResponse.fromJson(
-          response.data as Map<String, dynamic>,
-        );
-        final cached = await LocalStorageService.loadCachedBookings();
-        if (result.bookings.isNotEmpty) {
-          await LocalStorageService.saveCachedBookings(result.bookings);
-          return result;
-        }
-        if (cached.isNotEmpty) {
-          return MyBookingsResponse(
-            success: true,
-            message: 'Showing saved local appointments.',
-            bookings: cached,
-            total: cached.length,
-            currentPage: page,
-          );
-        }
-        return result;
-      }
-
-      final cached = await LocalStorageService.loadCachedBookings();
-      return MyBookingsResponse(
-        success: cached.isNotEmpty,
-        message: 'Failed to fetch bookings. Showing saved appointments.',
-        bookings: cached,
-        total: cached.length,
-        currentPage: page,
-      );
-    } on DioException catch (error) {
-      debugPrint(
-        'BookingService.fetchBookingsResponse DioException: '
-        'status=${error.response?.statusCode}, '
-        'data=${error.response?.data}, '
-        'message=${error.message}',
-      );
-      final cached = await LocalStorageService.loadCachedBookings();
-      return MyBookingsResponse(
-        success: cached.isNotEmpty,
-        message: 'Failed to fetch bookings. Showing saved appointments.',
-        bookings: cached,
-        total: cached.length,
-        currentPage: page,
-      );
-    } catch (error) {
-      debugPrint('BookingService.fetchBookingsResponse error: $error');
-      final cached = await LocalStorageService.loadCachedBookings();
-      return MyBookingsResponse(
-        success: cached.isNotEmpty,
-        message: 'Failed to fetch bookings. Showing saved appointments.',
-        bookings: cached,
-        total: cached.length,
-        currentPage: page,
-      );
-    }
-  }
-
+  /// ---------------------------
+  /// CREATE BOOKING
+  /// ---------------------------
   static Future<BookingCreateResponse> createBooking({
     required String serviceId,
     String? beauticianId,
@@ -135,6 +38,7 @@ class BookingService {
     List<String>? addonIds,
   }) async {
     final token = await TokenStorage.getToken();
+
     if (token == null || token.isEmpty) {
       return BookingCreateResponse(
         success: false,
@@ -142,217 +46,224 @@ class BookingService {
       );
     }
 
-    final dio = _createDio(token);
-    final payload = <String, dynamic>{
-      'serviceId': serviceId,
-      'bookingDate': bookingDate,
-      'bookingTime': bookingTime,
-      'locationType': locationType,
-      'address': address.toJson(),
-    };
+    final dio = _dio(token);
 
-    if (beauticianId != null && beauticianId.isNotEmpty) {
-      payload['beauticianId'] = beauticianId;
-    }
-    if (notes != null && notes.isNotEmpty) {
-      payload['notes'] = notes;
-    }
-    if (preferredGender != null && preferredGender.isNotEmpty) {
-      payload['preferredGender'] = preferredGender;
-    }
-    if (addonIds != null && addonIds.isNotEmpty) {
-      payload['addonIds'] = addonIds;
-    }
-
-    debugPrint('BookingService.createBooking payload: $payload');
+    final payload = {
+      "serviceId": serviceId,
+      "beauticianId": beauticianId,
+      "bookingDate": bookingDate,
+      "bookingTime": bookingTime,
+      "locationType": locationType,
+      "address": address.toJson(),
+      "notes": notes,
+      "preferredGender": preferredGender,
+      "addonIds": addonIds,
+    }..removeWhere((key, value) => value == null);
 
     try {
-      final response = await dio.post('$_baseUrl/create', data: payload);
-      debugPrint(
-        'BookingService.createBooking response: status=${response.statusCode}, data=${response.data}',
-      );
-      if ((response.statusCode == 200 || response.statusCode == 201) &&
-          response.data is Map<String, dynamic>) {
-        return BookingCreateResponse.fromJson(
-          response.data as Map<String, dynamic>,
-        );
-      }
+      final response = await dio.post('/create', data: payload);
 
       if (response.data is Map<String, dynamic>) {
-        return BookingCreateResponse.fromJson(
-          response.data as Map<String, dynamic>,
-        );
-      }
-    } on DioException catch (error) {
-      debugPrint(
-        'BookingService.createBooking DioException: '
-        'status=${error.response?.statusCode}, '
-        'data=${error.response?.data}, '
-        'message=${error.message}',
-      );
-      if (error.response?.data is Map<String, dynamic>) {
-        return BookingCreateResponse.fromJson(
-          error.response!.data as Map<String, dynamic>,
-        );
+        return BookingCreateResponse.fromJson(response.data);
       }
 
       return BookingCreateResponse(
         success: false,
-        message: error.message ?? 'Failed to create booking.',
+        message: 'Invalid server response',
+      );
+    } on DioException catch (e) {
+      debugPrint("CREATE BOOKING ERROR: ${e.response?.data}");
+
+      if (e.response?.data is Map<String, dynamic>) {
+        return BookingCreateResponse.fromJson(e.response!.data);
+      }
+
+      return BookingCreateResponse(
+        success: false,
+        message: e.message ?? 'Failed to create booking',
+      );
+    }
+  }
+
+  /// ---------------------------
+  /// MY BOOKINGS
+  /// ---------------------------
+  static Future<MyBookingsResponse> getMyBookings({
+    int page = 1,
+    int limit = 20,
+    String? status,
+  }) async {
+    final token = await TokenStorage.getToken();
+
+    if (token == null || token.isEmpty) {
+      final cached = await LocalStorageService.loadCachedBookings();
+      return MyBookingsResponse(
+        success: cached.isNotEmpty,
+        message: 'Offline mode - showing cached bookings',
+        bookings: cached,
+        total: cached.length,
+        currentPage: page,
       );
     }
 
-    return BookingCreateResponse(
-      success: false,
-      message: 'Failed to create booking.',
-    );
+    final dio = _dio(token);
+
+    try {
+      final response = await dio.get(
+        '/my-bookings',
+        queryParameters: {
+          "page": page,
+          "limit": limit,
+          if (status != null) "status": status,
+        },
+      );
+
+      final result = MyBookingsResponse.fromJson(response.data);
+
+      if (result.bookings.isNotEmpty) {
+        await LocalStorageService.saveCachedBookings(result.bookings);
+      }
+
+      return result;
+    } catch (e) {
+      final cached = await LocalStorageService.loadCachedBookings();
+
+      return MyBookingsResponse(
+        success: cached.isNotEmpty,
+        message: 'Network error - showing cached bookings',
+        bookings: cached,
+        total: cached.length,
+        currentPage: page,
+      );
+    }
   }
 
+  /// ---------------------------
+  /// BOOKING DETAILS
+  /// ---------------------------
   static Future<BookingDetailResponse> getBookingDetails(
     String bookingId,
   ) async {
     final token = await TokenStorage.getToken();
+
     if (token == null || token.isEmpty) {
       return BookingDetailResponse(
         success: false,
-        message: 'Authentication token is missing.',
+        message: 'Authentication required',
       );
     }
 
-    final dio = _createDio(token);
-    final response = await dio.get('$_baseUrl/$bookingId');
-    if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
-      return BookingDetailResponse.fromJson(
-        response.data as Map<String, dynamic>,
-      );
-    }
+    final dio = _dio(token);
 
-    return BookingDetailResponse(
-      success: false,
-      message: 'Failed to load booking details.',
-    );
-  }
+    try {
+      final response = await dio.get('/$bookingId');
 
-  static Future<GenericBookingActionResponse> cancelBooking(
-    String bookingId,
-    String reason,
-  ) async {
-    final token = await TokenStorage.getToken();
-    if (token == null || token.isEmpty) {
-      return GenericBookingActionResponse(
+      return BookingDetailResponse.fromJson(response.data);
+    } on DioException catch (e) {
+      return BookingDetailResponse(
         success: false,
-        message: 'Authentication token is missing.',
+        message:
+            e.response?.data?['message'] ??
+            e.message ??
+            'Failed to load booking',
       );
     }
-
-    final dio = _createDio(token);
-    final response = await dio.put(
-      '$_baseUrl/$bookingId/cancel',
-      data: {'reason': reason},
-    );
-    if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
-      return GenericBookingActionResponse.fromJson(
-        response.data as Map<String, dynamic>,
-      );
-    }
-
-    return GenericBookingActionResponse(
-      success: false,
-      message: 'Failed to cancel booking.',
-    );
   }
 
-  static Future<GenericBookingActionResponse> rescheduleBooking(
-    String bookingId,
-    String newDate,
-    String newTime,
-  ) async {
-    final token = await TokenStorage.getToken();
-    if (token == null || token.isEmpty) {
-      return GenericBookingActionResponse(
-        success: false,
-        message: 'Authentication token is missing.',
-      );
-    }
-
-    final dio = _createDio(token);
-    final response = await dio.put(
-      '$_baseUrl/$bookingId/reschedule',
-      data: {'newDate': newDate, 'newTime': newTime},
-    );
-    if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
-      return GenericBookingActionResponse.fromJson(
-        response.data as Map<String, dynamic>,
-      );
-    }
-
-    return GenericBookingActionResponse(
-      success: false,
-      message: 'Failed to reschedule booking.',
-    );
-  }
-
-  static Future<AvailableSlotsResponse> getAvailableSlots({
-    required String serviceId,
-    required String date,
-    String? beauticianId,
+  /// ---------------------------
+  /// CANCEL BOOKING
+  /// ---------------------------
+  static Future<GenericBookingActionResponse> cancelBooking({
+    required String bookingId,
+    required String reason,
   }) async {
-    final dio = Dio(
-      BaseOptions(
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 20),
-        sendTimeout: const Duration(seconds: 20),
-        headers: <String, dynamic>{'Content-Type': 'application/json'},
-      ),
-    );
+    final token = await TokenStorage.getToken();
 
-    final queryParameters = <String, dynamic>{
-      'serviceId': serviceId,
-      'date': date,
-    };
-    if (beauticianId != null && beauticianId.isNotEmpty) {
-      queryParameters['beauticianId'] = beauticianId;
-    }
-
-    final response = await dio.get(
-      _availableSlotsUrl,
-      queryParameters: queryParameters,
-    );
-    if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
-      return AvailableSlotsResponse.fromJson(
-        response.data as Map<String, dynamic>,
+    if (token == null || token.isEmpty) {
+      return GenericBookingActionResponse(
+        success: false,
+        message: 'Authentication required',
       );
     }
 
-    return AvailableSlotsResponse(
-      success: false,
-      message: 'Failed to load available slots.',
-      availableSlots: [],
-    );
+    final dio = _dio(token);
+
+    try {
+      final response = await dio.put(
+        '/$bookingId/cancel',
+        data: {"reason": reason},
+      );
+
+      return GenericBookingActionResponse.fromJson(response.data);
+    } on DioException catch (e) {
+      return GenericBookingActionResponse(
+        success: false,
+        message: e.response?.data?['message'] ?? e.message ?? 'Cancel failed',
+      );
+    }
   }
 
+  /// ---------------------------
+  /// RESCHEDULE BOOKING
+  /// ---------------------------
+  static Future<GenericBookingActionResponse> rescheduleBooking({
+    required String bookingId,
+    required String newDate,
+    required String newTime,
+  }) async {
+    final token = await TokenStorage.getToken();
+
+    if (token == null || token.isEmpty) {
+      return GenericBookingActionResponse(
+        success: false,
+        message: 'Authentication required',
+      );
+    }
+
+    final dio = _dio(token);
+
+    try {
+      final response = await dio.put(
+        '/$bookingId/reschedule',
+        data: {"newDate": newDate, "newTime": newTime},
+      );
+
+      return GenericBookingActionResponse.fromJson(response.data);
+    } on DioException catch (e) {
+      return GenericBookingActionResponse(
+        success: false,
+        message:
+            e.response?.data?['message'] ?? e.message ?? 'Reschedule failed',
+      );
+    }
+  }
+
+  /// ---------------------------
+  /// COMPLETE BOOKING
+  /// ---------------------------
   static Future<GenericBookingActionResponse> completeBooking(
     String bookingId,
   ) async {
     final token = await TokenStorage.getToken();
+
     if (token == null || token.isEmpty) {
       return GenericBookingActionResponse(
         success: false,
-        message: 'Authentication token is missing.',
+        message: 'Authentication required',
       );
     }
 
-    final dio = _createDio(token);
-    final response = await dio.post('$_baseUrl/$bookingId/complete');
-    if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
-      return GenericBookingActionResponse.fromJson(
-        response.data as Map<String, dynamic>,
+    final dio = _dio(token);
+
+    try {
+      final response = await dio.post('/$bookingId/complete');
+
+      return GenericBookingActionResponse.fromJson(response.data);
+    } on DioException catch (e) {
+      return GenericBookingActionResponse(
+        success: false,
+        message: e.response?.data?['message'] ?? e.message ?? 'Complete failed',
       );
     }
-
-    return GenericBookingActionResponse(
-      success: false,
-      message: 'Failed to complete booking.',
-    );
   }
 }

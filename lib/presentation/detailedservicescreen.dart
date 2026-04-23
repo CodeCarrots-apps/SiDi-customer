@@ -296,6 +296,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => ServiceDetailScreen(
+          description: service['description'] ?? '',
           serviceId: service['_id'] ?? '6600',
           title: service['name'] ?? 'Service',
           price: '₹${service['price'] ?? '0'}',

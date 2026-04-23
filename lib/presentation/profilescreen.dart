@@ -25,7 +25,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final LogoutController _logoutController = LogoutController();
-  final ImagePicker _imagePicker = ImagePicker();
+  // final ImagePicker _imagePicker = ImagePicker();
   final Dio _dio = Dio();
   File? _avatarImage;
   bool _isLoading = true;
@@ -373,7 +373,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 fit: BoxFit.cover,
                               )
                             : Image.network(
-                                'https://randomuser.me/api/portraits/women/44.jpg',
+                                'https://i.pinimg.com/736x/32/9b/54/329b54d07444f009b0634f438db9a449.jpg',
                                 fit: BoxFit.cover,
                               )),
                 ),
