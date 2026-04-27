@@ -254,11 +254,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: CachedNetworkImage(
                             imageUrl: banner["image"] ?? '',
                             fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(
-                              color: Colors.grey[300],
-                              child: const Center(
-                                child: CircularProgressIndicator(),
-                              ),
+                            placeholder: (context, url) => Shimmer.fromColors(
+                              baseColor: Colors.grey[300]!,
+                              highlightColor: Colors.grey[100]!,
+                              child: Container(color: Colors.grey[300]),
                             ),
                             errorWidget: (context, url, error) => Container(
                               color: Colors.grey[300],

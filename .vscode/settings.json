@@ -3,6 +3,7 @@
         "/^cd '/Users/codecarrots/flutter proj/SiDi-customer' && python3 - <<'PY'\nfrom pathlib import Path\nlines = Path\\('lib/presentation/selectaddress\\.dart'\\)\\.read_text\\(errors='replace'\\)\\.splitlines\\(\\)\nprint\\(len\\(lines\\)\\)\nPY$/": {
             "approve": true,
             "matchCommandLine": true
-        }
+        },
+        "dart": true
     }
 }

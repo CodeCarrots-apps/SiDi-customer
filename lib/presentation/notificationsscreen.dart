@@ -322,7 +322,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           if (actionLabel != null) ...[
             const SizedBox(height: 18),
             FilledButton(
-              onPressed: () {},
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('$actionLabel claimed successfully!'),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              },
               style: FilledButton.styleFrom(
                 backgroundColor: kEspressoColor,
                 foregroundColor: Colors.white,

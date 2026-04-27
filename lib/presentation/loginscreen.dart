@@ -4,6 +4,7 @@ import 'package:sidi/controller/logincontroller.dart';
 import 'package:sidi/presentation/mainscreen.dart';
 import 'package:sidi/presentation/signupscreen.dart';
 import 'package:sidi/presentation/widgets/animationtilke.dart';
+import 'package:sidi/presentation/forgotpasswordscreen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -190,7 +191,14 @@ class _LoginScreenState extends State<LoginScreen> {
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ForgotPasswordScreen(),
+                ),
+              );
+            },
             style: TextButton.styleFrom(
               padding: EdgeInsets.zero,
               minimumSize: const Size(0, 0),

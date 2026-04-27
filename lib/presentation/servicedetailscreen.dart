@@ -315,43 +315,51 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   }
 
   Widget _buildTitle() {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          widget.title,
-          style: GoogleFonts.cormorantGaramond(
-            fontSize: 40,
-            fontStyle: FontStyle.italic,
-            fontWeight: FontWeight.w300,
-            height: 1.1,
-            color: kEspressoColor,
-          ),
-        ),
-        const Spacer(),
         Row(
-          children: List.generate(5, (index) {
-            final starIndex = index + 1;
-            return GestureDetector(
-              onTap: () => _submitRating(starIndex),
-              child: Icon(
-                Icons.star,
-                color: selectedRating >= starIndex
-                    ? Colors.amber
-                    : Colors.grey[300],
-                size: 22,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(
+                widget.title,
+                style: GoogleFonts.cormorantGaramond(
+                  fontSize: 40,
+                  fontStyle: FontStyle.italic,
+                  fontWeight: FontWeight.w300,
+                  height: 1.1,
+                  color: kEspressoColor,
+                ),
               ),
-            );
-          }),
-        ),
-        if (isSubmittingRating)
-          const Padding(
-            padding: EdgeInsets.only(left: 8.0),
-            child: SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
             ),
-          ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(5, (index) {
+                final starIndex = index + 1;
+                return GestureDetector(
+                  onTap: () => _submitRating(starIndex),
+                  child: Icon(
+                    Icons.star,
+                    color: selectedRating >= starIndex
+                        ? Colors.amber
+                        : Colors.grey[300],
+                    size: 22,
+                  ),
+                );
+              }),
+            ),
+            if (isSubmittingRating)
+              const Padding(
+                padding: EdgeInsets.only(left: 8.0),
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+          ],
+        ),
       ],
     );
   }

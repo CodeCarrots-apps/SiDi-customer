@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_interpolation_to_compose_strings, unused_local_variable
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
@@ -366,9 +368,10 @@ class _BookingScreenState extends State<BookingScreen> {
                     width: 50,
                     height: 50,
                     fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      color: Colors.grey[300],
-                      child: const SizedBox.expand(),
+                    placeholder: (context, url) => Shimmer.fromColors(
+                      baseColor: Colors.grey[300]!,
+                      highlightColor: Colors.grey[100]!,
+                      child: Container(color: Colors.grey[300]),
                     ),
                     errorWidget: (context, url, error) => Container(
                       color: Colors.grey[300],
@@ -625,9 +628,10 @@ class _BookingScreenState extends State<BookingScreen> {
             child: CachedNetworkImage(
               imageUrl: image,
               fit: BoxFit.cover,
-              placeholder: (context, url) => Container(
-                color: Colors.grey[300],
-                child: const Center(child: CircularProgressIndicator()),
+              placeholder: (context, url) => Shimmer.fromColors(
+                baseColor: Colors.grey[300]!,
+                highlightColor: Colors.grey[100]!,
+                child: Container(color: Colors.grey[300]),
               ),
               errorWidget: (context, url, error) => Container(
                 color: Colors.grey[300],
