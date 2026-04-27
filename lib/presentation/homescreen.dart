@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:dio/dio.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'detailedservicescreen.dart';
 import 'servicedetailscreen.dart';
 import 'locationsearchscreen.dart';
@@ -34,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<List<Map<String, dynamic>>> _fetchCategories() async {
     try {
-      await Future.delayed(const Duration(seconds: 5));
+      await Future.delayed(const Duration(seconds: 3));
       final dio = Dio();
       final response = await dio.get(
         'https://sidi.mobilegear.co.in/api/categories',
@@ -82,7 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<List<Map<String, dynamic>>> _fetchBanners() async {
     try {
-      await Future.delayed(const Duration(seconds: 5));
+      await Future.delayed(const Duration(seconds: 3));
       final dio = Dio();
       final response = await dio.get(
         'https://sidi.mobilegear.co.in/api/banners',
@@ -115,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<List<Map<String, dynamic>>> _fetchCuratedServices() async {
     try {
-      await Future.delayed(const Duration(seconds: 5));
+      await Future.delayed(const Duration(seconds: 3));
       final dio = Dio();
       final response = await dio.get(
         'https://sidi.mobilegear.co.in/api/curated-services',
@@ -250,10 +251,16 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             );
                           },
-                          child: Image.network(
-                            banner["image"] ?? '',
+                          child: CachedNetworkImage(
+                            imageUrl: banner["image"] ?? '',
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
+                            placeholder: (context, url) => Container(
+                              color: Colors.grey[300],
+                              child: const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
                               color: Colors.grey[300],
                               child: const Icon(Icons.error),
                             ),
@@ -442,16 +449,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: SizedBox(
                               height: 160,
                               width: 160,
-                              child: Image.network(
-                                service["image"] ?? '',
+                              child: CachedNetworkImage(
+                                imageUrl: service["image"] ?? '',
                                 fit: BoxFit.cover,
-                                width: double.infinity,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    color: Colors.grey[300],
-                                    child: const Icon(Icons.error),
-                                  );
-                                },
+                                placeholder: (context, url) => Container(
+                                  color: Colors.grey[300],
+                                  child: const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  color: Colors.grey[300],
+                                  child: const Icon(Icons.error),
+                                ),
                               ),
                             ),
                           ),

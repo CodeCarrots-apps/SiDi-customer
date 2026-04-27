@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:dio/dio.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:sidi/models/stylist.dart';
 import 'package:sidi/services/nearby_beauticians_service.dart';
 import 'dart:async';
@@ -41,6 +43,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
   Future<List<Stylist>> _fetchTopStylists() async {
     try {
+      await Future.delayed(const Duration(seconds: 3));
       final response = await NearbyBeauticiansService.getNearbyBeauticians(
         latitude: 9.9312, // Default to Kochi, or use user location
         longitude: 76.2673,
@@ -60,6 +63,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
   Future<List<Map<String, dynamic>>> _fetchAllServices() async {
     try {
+      await Future.delayed(const Duration(seconds: 3));
       final dio = Dio();
       final response = await dio.get(
         'https://sidi.mobilegear.co.in/api/services',
@@ -81,6 +85,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
   Future<List<Map<String, dynamic>>> _fetchCuratedServices() async {
     try {
+      await Future.delayed(const Duration(seconds: 3));
       final dio = Dio();
       final response = await dio.get(
         'https://sidi.mobilegear.co.in/api/curated-services',
@@ -356,11 +361,19 @@ class _BookingScreenState extends State<BookingScreen> {
           leading: image.isNotEmpty
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(6),
-                  child: Image.network(
-                    image,
+                  child: CachedNetworkImage(
+                    imageUrl: image,
                     width: 50,
                     height: 50,
                     fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      color: Colors.grey[300],
+                      child: const SizedBox.expand(),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.error),
+                    ),
                   ),
                 )
               : const Icon(Icons.image_not_supported),
@@ -419,10 +432,7 @@ class _BookingScreenState extends State<BookingScreen> {
       future: _curatedServicesFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return SizedBox(
-            height: 300 * scale,
-            child: Center(child: CircularProgressIndicator()),
-          );
+          return _buildCuratedGridShimmer(scale);
         }
         if (snapshot.hasError) {
           return SizedBox(
@@ -612,7 +622,18 @@ class _BookingScreenState extends State<BookingScreen> {
           SizedBox(
             height: height,
             width: double.infinity,
-            child: Image.network(image, fit: BoxFit.cover),
+            child: CachedNetworkImage(
+              imageUrl: image,
+              fit: BoxFit.cover,
+              placeholder: (context, url) => Container(
+                color: Colors.grey[300],
+                child: const Center(child: CircularProgressIndicator()),
+              ),
+              errorWidget: (context, url, error) => Container(
+                color: Colors.grey[300],
+                child: const Icon(Icons.error),
+              ),
+            ),
           ),
           Positioned.fill(
             child: DecoratedBox(
@@ -665,10 +686,7 @@ class _BookingScreenState extends State<BookingScreen> {
       future: _topStylistsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return SizedBox(
-            height: 136 * scale,
-            child: Center(child: CircularProgressIndicator()),
-          );
+          return _buildTopStylistsShimmer(scale);
         }
         if (snapshot.hasError) {
           return SizedBox(
@@ -793,6 +811,78 @@ class _BookingScreenState extends State<BookingScreen> {
           ),
           SizedBox(height: 10 * scale),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCuratedGridShimmer(double scale) {
+    return SizedBox(
+      height: 300 * scale,
+      child: Shimmer.fromColors(
+        baseColor: Colors.grey[300]!,
+        highlightColor: Colors.grey[100]!,
+        child: Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            SizedBox(width: 8 * scale),
+            Expanded(
+              flex: 2,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 8 * scale),
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopStylistsShimmer(double scale) {
+    return SizedBox(
+      height: 136 * scale,
+      child: Shimmer.fromColors(
+        baseColor: Colors.grey[300]!,
+        highlightColor: Colors.grey[100]!,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: 3,
+          separatorBuilder: (_, __) => SizedBox(width: 10 * scale),
+          itemBuilder: (context, index) {
+            return Container(
+              width: 100 * scale,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(12),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

@@ -4,6 +4,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/controller/logoutcontroller.dart';
 import 'package:sidi/presentation/appointments_screen.dart';
@@ -43,6 +45,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _isLoading = true;
       _errorMessage = null;
     });
+
+    await Future.delayed(const Duration(seconds: 3));
 
     final token = await _getToken();
     if (token == null || token.isEmpty) {
@@ -133,9 +137,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (_isLoading)
             SliverFillRemaining(
               hasScrollBody: false,
-              child: Center(
-                child: CircularProgressIndicator(color: kEspressoColor),
-              ),
+              child: _buildProfileShimmer(scale),
             )
           else if (_errorMessage != null)
             SliverFillRemaining(
@@ -365,16 +367,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: _avatarImage != null
                       ? Image.file(_avatarImage!, fit: BoxFit.cover)
                       : (_profile?.user.profileImage.isNotEmpty == true
-                            ? Image.network(
-                                _profile!.user.profileImage.startsWith('http')
+                            ? CachedNetworkImage(
+                                imageUrl:
+                                    _profile!.user.profileImage.startsWith(
+                                      'http',
+                                    )
                                     ? _profile!.user.profileImage
                                     : 'https://sidi.mobilegear.co.in${_profile!.user.profileImage}',
-                                // : 'https://i.pinimg.com/736x/8b/f4/d6/8bf4d6706d34d799dcc6a6c8cde495ed.jpg',
                                 fit: BoxFit.cover,
+                                placeholder: (context, url) =>
+                                    Container(color: Colors.grey[300]),
+                                errorWidget: (context, url, error) =>
+                                    CachedNetworkImage(
+                                      imageUrl:
+                                          'https://i.pinimg.com/736x/32/9b/54/329b54d07444f009b0634f438db9a449.jpg',
+                                      fit: BoxFit.cover,
+                                    ),
                               )
-                            : Image.network(
-                                'https://i.pinimg.com/736x/32/9b/54/329b54d07444f009b0634f438db9a449.jpg',
+                            : CachedNetworkImage(
+                                imageUrl:
+                                    'https://i.pinimg.com/736x/32/9b/54/329b54d07444f009b0634f438db9a449.jpg',
                                 fit: BoxFit.cover,
+                                placeholder: (context, url) =>
+                                    Container(color: Colors.grey[300]),
                               )),
                 ),
               ),
@@ -582,6 +597,156 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (_) {
       return value.split('T').first;
     }
+  }
+
+  Widget _buildProfileShimmer(double scale) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                24 * scale,
+                14 * scale,
+                24 * scale,
+                20 * scale,
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: 92 * scale,
+                    height: 92 * scale,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  SizedBox(height: 18 * scale),
+                  Container(
+                    height: 34 * scale,
+                    width: 200,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  SizedBox(height: 12 * scale),
+                  Container(
+                    height: 20 * scale,
+                    width: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  SizedBox(height: 12 * scale),
+                  Container(
+                    height: 12 * scale,
+                    width: 180,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  SizedBox(height: 12 * scale),
+                  Container(
+                    height: 12 * scale,
+                    width: 200,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.symmetric(
+                vertical: 18 * scale,
+                horizontal: 20 * scale,
+              ),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: Colors.grey[300]!),
+                  bottom: BorderSide(color: Colors.grey[300]!),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Container(
+                          height: 26 * scale,
+                          width: 50,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        SizedBox(height: 8 * scale),
+                        Container(
+                          height: 12 * scale,
+                          width: 70,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Container(
+                          height: 26 * scale,
+                          width: 50,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        SizedBox(height: 8 * scale),
+                        Container(
+                          height: 12 * scale,
+                          width: 70,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 24 * scale),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24 * scale),
+              child: Column(
+                children: List.generate(
+                  4,
+                  (_) => Padding(
+                    padding: EdgeInsets.only(bottom: 12 * scale),
+                    child: Container(
+                      height: 50 * scale,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

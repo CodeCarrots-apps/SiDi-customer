@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:dio/dio.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:sidi/models/stylist.dart';
 import 'dart:async';
 
@@ -67,7 +68,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
   void _startPollingServices() {
     // Fetch immediately, then every 5 seconds
     _fetchServicesToStream();
-    _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+    _pollingTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       debugPrint('[DetailedServiceScreen] Polling for latest services...');
       _fetchServicesToStream();
     });
@@ -75,6 +76,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
 
   Future<void> _fetchServicesToStream() async {
     try {
+      await Future.delayed(const Duration(seconds: 1));
       final dio = Dio();
       final response = await dio.get(
         'https://sidi.mobilegear.co.in/api/services',
@@ -93,6 +95,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
 
   Future<List<Map<String, dynamic>>> _fetchCategories() async {
     try {
+      await Future.delayed(const Duration(seconds: 1));
       final dio = Dio();
       final response = await dio.get(
         'https://sidi.mobilegear.co.in/api/categories',
@@ -122,6 +125,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
 
   Future<List<Map<String, dynamic>>> _fetchSubcategories() async {
     try {
+      await Future.delayed(const Duration(seconds: 1));
       final dio = Dio();
       final response = await dio.get(
         'https://sidi.mobilegear.co.in/api/subcategories',
@@ -367,18 +371,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
             future: _categoriesFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: 52,
-                    child: Center(
-                      child: SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                  ),
-                );
+                return SliverToBoxAdapter(child: _buildFilterShimmer());
               }
               if (snapshot.hasError) {
                 print('Error loading categories: ${snapshot.error}');
@@ -391,18 +384,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
             future: _subcategoriesFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: 46,
-                    child: Center(
-                      child: SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                  ),
-                );
+                return SliverToBoxAdapter(child: _buildSubFilterShimmer());
               }
               if (snapshot.hasError) {
                 print('Error loading subcategories: ${snapshot.error}');
@@ -415,19 +397,15 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
             stream: _servicesStream,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 30,
-                    ),
-                    child: Center(
-                      child: SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
+                return SliverPadding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      return _buildServiceCardShimmer();
+                    }, childCount: 4),
                   ),
                 );
               }
@@ -724,6 +702,101 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
                   ),
                 ],
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterShimmer() {
+    return SizedBox(
+      height: 52,
+      child: Shimmer.fromColors(
+        baseColor: Colors.grey[300]!,
+        highlightColor: Colors.grey[100]!,
+        child: ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          scrollDirection: Axis.horizontal,
+          itemCount: 5,
+          separatorBuilder: (_, index) => const SizedBox(width: 10),
+          itemBuilder: (context, index) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(20),
+              ),
+              width: 80,
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubFilterShimmer() {
+    return SizedBox(
+      height: 46,
+      child: Shimmer.fromColors(
+        baseColor: Colors.grey[300]!,
+        highlightColor: Colors.grey[100]!,
+        child: ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          scrollDirection: Axis.horizontal,
+          itemCount: 4,
+          separatorBuilder: (_, index) => const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(16),
+              ),
+              width: 70,
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildServiceCardShimmer() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Shimmer.fromColors(
+        baseColor: Colors.grey[300]!,
+        highlightColor: Colors.grey[100]!,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+          decoration: BoxDecoration(
+            color: Colors.grey[300],
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: AspectRatio(
+                  aspectRatio: 16 / 11,
+                  child: Container(color: Colors.grey[300]),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                height: 24,
+                width: double.infinity,
+                color: Colors.grey[300],
+                margin: const EdgeInsets.only(bottom: 8),
+              ),
+              Container(height: 20, width: 100, color: Colors.grey[300]),
+              const SizedBox(height: 10),
+              Divider(color: Colors.grey.shade300, height: 1),
+              const SizedBox(height: 8),
+              Container(height: 16, width: 80, color: Colors.grey[300]),
             ],
           ),
         ),
