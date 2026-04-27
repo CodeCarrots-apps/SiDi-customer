@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/controller/signupcontroller.dart';
 import 'package:sidi/presentation/loginscreen.dart';
@@ -11,7 +12,8 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  final RegisterController _registerController = RegisterController();
+  // final RegisterController _registerController = RegisterController();
+  final RegisterController _registerController = Get.put(RegisterController());
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
@@ -62,7 +64,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     _registerController.name = name;
     _registerController.email = email;
-    _registerController.phone = phone;
+    // _registerController.phone = phone;
+    _registerController.phone = _phoneController.text.trim();
     _registerController.password = password;
     _registerController.confirmPassword = confirmPassword;
 
