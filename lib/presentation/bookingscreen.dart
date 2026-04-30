@@ -53,6 +53,7 @@ class _BookingScreenState extends State<BookingScreen> {
       final stylists = response.beauticians
           .map((e) => Stylist.fromJson(e))
           .toList();
+      if (!mounted) return stylists;
       setState(() {
         _topStylists = stylists;
       });
@@ -72,6 +73,7 @@ class _BookingScreenState extends State<BookingScreen> {
       );
       if (response.statusCode == 200 && response.data is List) {
         final services = List<Map<String, dynamic>>.from(response.data);
+        if (!mounted) return services;
         setState(() {
           _allServices = services;
         });
@@ -98,6 +100,7 @@ class _BookingScreenState extends State<BookingScreen> {
         final services = List<Map<String, dynamic>>.from(
           response.data['curatedServices'],
         );
+        if (!mounted) return services;
         setState(() {
           _curatedServices = services;
         });
@@ -121,12 +124,14 @@ class _BookingScreenState extends State<BookingScreen> {
   void _debounceSearch(String value) {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
       _search(value.trim());
     });
   }
 
   Future<void> _search(String keyword) async {
     if (keyword.isEmpty || keyword.length < 3) {
+      if (!mounted) return;
       setState(() {
         _searchResults.clear();
         _isLoading = false;
@@ -134,6 +139,7 @@ class _BookingScreenState extends State<BookingScreen> {
       return;
     }
 
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
@@ -201,6 +207,7 @@ class _BookingScreenState extends State<BookingScreen> {
       _searchResults = tempResults;
       _isLoading = false;
     });
+    // No need to check mounted here, as this is always called after previous mounted checks
   }
 
   @override

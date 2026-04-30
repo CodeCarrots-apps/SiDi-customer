@@ -451,12 +451,16 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: CachedNetworkImage(
                                 imageUrl: service["image"] ?? '',
                                 fit: BoxFit.cover,
-                                placeholder: (context, url) => Container(
-                                  color: Colors.grey[300],
-                                  child: const Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                ),
+                                placeholder: (context, url) =>
+                                    Shimmer.fromColors(
+                                      baseColor: Colors.grey[300]!,
+                                      highlightColor: Colors.grey[100]!,
+                                      child: Container(
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                        color: Colors.grey[300],
+                                      ),
+                                    ),
                                 errorWidget: (context, url, error) => Container(
                                   color: Colors.grey[300],
                                   child: const Icon(Icons.error),
@@ -574,18 +578,25 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: AspectRatio(
                                   aspectRatio: 16 / 10,
                                   child: imageUrl != null
-                                      ? Image.network(
-                                          imageUrl,
+                                      ? CachedNetworkImage(
+                                          imageUrl: imageUrl,
                                           fit: BoxFit.cover,
-                                          errorBuilder:
-                                              (context, error, stackTrace) {
-                                                return Container(
+                                          placeholder: (context, url) =>
+                                              Shimmer.fromColors(
+                                                baseColor: Colors.grey[300]!,
+                                                highlightColor:
+                                                    Colors.grey[100]!,
+                                                child: Container(
+                                                  width: double.infinity,
+                                                  height: double.infinity,
                                                   color: Colors.grey[300],
-                                                  child: const Icon(
-                                                    Icons.error,
-                                                  ),
-                                                );
-                                              },
+                                                ),
+                                              ),
+                                          errorWidget: (context, url, error) =>
+                                              Container(
+                                                color: Colors.grey[300],
+                                                child: const Icon(Icons.error),
+                                              ),
                                         )
                                       : Container(
                                           color: Colors.grey[300],

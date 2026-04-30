@@ -193,6 +193,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.1"
+  fizzybutton:
+    dependency: "direct main"
+    description:
+      name: fizzybutton
+      sha256: aa249ca9cde5cafc294f141f6ebcebdfab3bb22250eeda0eb65ced7d9e1d534f
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.2"
   flutter:
     dependency: "direct main"
     description: flutter

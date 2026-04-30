@@ -57,15 +57,33 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
     'December',
   ];
 
-  final DateTime initialDate = DateTime.now();
+  DateTime initialDate = DateTime.now();
   late DateTime selectedDate = initialDate;
   String selectedTime = "10:30 AM";
   int bottomIndex = 1;
 
-  late final List<DateTime> days = List.generate(
-    DateTime(initialDate.year, initialDate.month + 1, 0).day,
-    (index) => DateTime(initialDate.year, initialDate.month, index + 1),
-  );
+  late List<DateTime> days = _generateDays(initialDate.year, initialDate.month);
+
+  static List<DateTime> _generateDays(int year, int month) {
+    final daysInMonth = DateTime(year, month + 1, 0).day;
+    return List.generate(
+      daysInMonth,
+      (index) => DateTime(year, month, index + 1),
+    );
+  }
+
+  void _changeMonth(int delta) {
+    setState(() {
+      initialDate = DateTime(initialDate.year, initialDate.month + delta, 1);
+      days = _generateDays(initialDate.year, initialDate.month);
+      // If selectedDate is not in the new month, reset to first day
+      if (selectedDate.month != initialDate.month ||
+          selectedDate.year != initialDate.year) {
+        selectedDate = DateTime(initialDate.year, initialDate.month, 1);
+        selectedTime = _firstAvailableTimeForDate(selectedDate) ?? '';
+      }
+    });
+  }
 
   DateTime get _today =>
       DateTime(initialDate.year, initialDate.month, initialDate.day);
@@ -279,13 +297,28 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "$headerMonth $headerYear",
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              letterSpacing: 3,
-              fontWeight: FontWeight.w500,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_left),
+                onPressed: () => _changeMonth(-1),
+                tooltip: 'Previous month',
+              ),
+              Text(
+                "$headerMonth $headerYear",
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  letterSpacing: 3,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.arrow_right),
+                onPressed: () => _changeMonth(1),
+                tooltip: 'Next month',
+              ),
+            ],
           ),
           const SizedBox(height: 20),
           GridView.builder(
@@ -300,9 +333,9 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
             itemBuilder: (context, index) {
               final day = days[index];
               final today = DateTime(
-                initialDate.year,
-                initialDate.month,
-                initialDate.day,
+                DateTime.now().year,
+                DateTime.now().month,
+                DateTime.now().day,
               );
               final isPast = day.isBefore(today);
               final isSelected =
@@ -315,7 +348,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                 onTap: isPast
                     ? null
                     : () {
-                        _logAction('Date selected: ${day.toIso8601String()}');
+                        _logAction('Date selected: \\${day.toIso8601String()}');
                         setState(() {
                           selectedDate = day;
                           selectedTime = _firstAvailableTimeForDate(day) ?? '';

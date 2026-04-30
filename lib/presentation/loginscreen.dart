@@ -5,6 +5,7 @@ import 'package:sidi/presentation/mainscreen.dart';
 import 'package:sidi/presentation/signupscreen.dart';
 import 'package:sidi/presentation/widgets/animationtilke.dart';
 import 'package:sidi/presentation/forgotpasswordscreen.dart';
+import 'package:sidi/presentation/widgets/loginbutton.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -26,27 +27,80 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _handleLoginTap() async {
-    if (_isLoading) {
-      return;
-    }
+  // Future<void> _handleLoginTap() async {
+  //   if (_isLoading) {
+  //     return;
+  //   }
 
+  //   final identifier = _identifierController.text.trim();
+  //   final password = _passwordController.text;
+
+  //   debugPrint('[Login] Sign in button tapped');
+  //   debugPrint(
+  //     '[Login] Identifier entered: ${identifier.isEmpty ? '<empty>' : identifier}',
+  //   );
+  //   debugPrint('[Login] Password entered: ${password.isEmpty ? 'no' : 'yes'}');
+
+  //   if (identifier.isEmpty || password.isEmpty) {
+  //     debugPrint(
+  //       '[Login] Validation failed: missing email/username/phone or password',
+  //     );
+  //     if (!mounted) {
+  //       return;
+  //     }
+
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(
+  //         content: Text('Enter both email/username/phone and password.'),
+  //       ),
+  //     );
+  //     return;
+  //   }
+
+  //   setState(() {
+  //     _isLoading = true;
+  //   });
+
+  //   _loginController.identifier = identifier;
+  //   _loginController.password = password;
+  //   debugPrint('[Login] Starting login request');
+
+  //   try {
+  //     final result = await _loginController.login();
+  //     debugPrint(
+  //       '[Login] Request finished. success=${result.isSuccess}, message=${result.message}, user=${result.username.isEmpty ? '<unknown>' : result.username}',
+  //     );
+
+  //     if (!mounted) {
+  //       return;
+  //     }
+
+  //     if (result.isSuccess) {
+  //       Navigator.pushReplacement(
+  //         context,
+  //         MaterialPageRoute(builder: (context) => const MainScreen()),
+  //       );
+  //       return;
+  //     }
+
+  //     ScaffoldMessenger.of(
+  //       context,
+  //     ).showSnackBar(SnackBar(content: Text(result.message)));
+  //   } finally {
+  //     if (mounted) {
+  //       setState(() {
+  //         _isLoading = false;
+  //       });
+  //     }
+  //   }
+  // }
+
+  Future<void> _handleLoginTap() async {
     final identifier = _identifierController.text.trim();
     final password = _passwordController.text;
 
-    debugPrint('[Login] Sign in button tapped');
-    debugPrint(
-      '[Login] Identifier entered: ${identifier.isEmpty ? '<empty>' : identifier}',
-    );
-    debugPrint('[Login] Password entered: ${password.isEmpty ? 'no' : 'yes'}');
-
     if (identifier.isEmpty || password.isEmpty) {
-      debugPrint(
-        '[Login] Validation failed: missing email/username/phone or password',
-      );
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -56,41 +110,25 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    // ⏳ delay handled by button loading state
+    await Future.delayed(const Duration(seconds: 3));
 
     _loginController.identifier = identifier;
     _loginController.password = password;
-    debugPrint('[Login] Starting login request');
 
-    try {
-      final result = await _loginController.login();
-      debugPrint(
-        '[Login] Request finished. success=${result.isSuccess}, message=${result.message}, user=${result.username.isEmpty ? '<unknown>' : result.username}',
+    final result = await _loginController.login();
+
+    if (!mounted) return;
+
+    if (result.isSuccess) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainScreen()),
       );
-
-      if (!mounted) {
-        return;
-      }
-
-      if (result.isSuccess) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MainScreen()),
-        );
-        return;
-      }
-
+    } else {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(result.message)));
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
@@ -211,25 +249,12 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         const SizedBox(height: 24),
-        SizedBox(
-          width: double.infinity,
-          height: kInputFieldHeight,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _handleLoginTap,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kEspressoColor,
-              foregroundColor: kIvoryColor,
-              shape: RoundedRectangleBorder(borderRadius: kFullBorderRadius),
-              textStyle: kButtonTextStyle,
-            ),
-            child: _isLoading
-                ? const SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('LOG IN'),
-          ),
+        LoadingButton(
+          text: 'LOG IN',
+          color: kEspressoColor,
+          onPressed: () async {
+            await _handleLoginTap();
+          },
         ),
       ],
     );
