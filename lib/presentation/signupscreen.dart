@@ -134,7 +134,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget _buildHeader() {
     return Column(
       children: [
-        Container(
+        SizedBox(
           width: 68,
           height: 68,
           child: Image.asset('assets/images/logo.png', width: 24, height: 24),

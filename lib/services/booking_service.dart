@@ -113,7 +113,7 @@ class BookingService {
         queryParameters: {
           "page": page,
           "limit": limit,
-          if (status != null) "status": status,
+          "status": ?status,
         },
       );
 

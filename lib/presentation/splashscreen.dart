@@ -294,7 +294,7 @@ class _SplashScreenState extends State<SplashScreen>
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 600),
         pageBuilder: (_, _, _) => destination,
-        transitionsBuilder: (_, animation, __, child) {
+        transitionsBuilder: (_, animation, _, child) {
           return FadeTransition(
             opacity: animation,
             child: ScaleTransition(
@@ -323,7 +323,7 @@ class _SplashScreenState extends State<SplashScreen>
         children: [
           AnimatedBuilder(
             animation: _haloRotation,
-            builder: (_, __) {
+            builder: (_, _) {
               return Transform.rotate(
                 angle: _haloRotation.value * 2 * 3.1416,
                 child: const _SplashBackdrop(),

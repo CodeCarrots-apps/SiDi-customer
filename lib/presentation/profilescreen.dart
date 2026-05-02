@@ -33,6 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   UserProfile? _profile;
+  bool _hasLoadedOnce = false;
 
   @override
   void initState() {
@@ -40,13 +41,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _fetchUserProfile();
   }
 
-  Future<void> _fetchUserProfile() async {
+  Future<void> _fetchUserProfile({bool forceRefresh = false}) async {
+    if (!forceRefresh && _hasLoadedOnce && _profile != null) {
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
-
-    await Future.delayed(const Duration(seconds: 3));
 
     final token = await _getToken();
     if (token == null || token.isEmpty) {
@@ -77,6 +80,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _profile = profile;
           _avatarImage = null;
           _isLoading = false;
+          _hasLoadedOnce = true;
         });
       } else {
         final message =
@@ -157,7 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     SizedBox(height: 20 * scale),
                     OutlinedButton(
-                      onPressed: _fetchUserProfile,
+                      onPressed: () => _fetchUserProfile(forceRefresh: true),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: kWarmGrey200),
                         shape: RoundedRectangleBorder(
@@ -209,7 +213,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         setState(() {
                           _profile = updatedProfile;
                         });
-                        await _fetchUserProfile();
+                        await _fetchUserProfile(forceRefresh: true);
                       }
                     },
                   ),
@@ -330,9 +334,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<String?> _getToken() async {
     final token = await TokenStorage.getToken();
-    debugPrint(
-      '[ProfileScreen] Stored auth token: ${token == null ? '<null>' : token}',
-    );
+    debugPrint('[ProfileScreen] Stored auth token: ${token ?? '<null>'}');
     return token;
   }
 

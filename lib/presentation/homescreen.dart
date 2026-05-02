@@ -6,6 +6,7 @@ import 'package:sidi/constant/constants.dart';
 import 'package:dio/dio.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/services.dart';
 import 'detailedservicescreen.dart';
 import 'servicedetailscreen.dart';
 import 'locationsearchscreen.dart';
@@ -24,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late Future<List<Map<String, dynamic>>> _categoriesFuture;
   late Future<List<Map<String, dynamic>>> _bannersFuture;
   late Future<List<Map<String, dynamic>>> _curatedServicesFuture;
+  DateTime? _lastUpdatedAt;
 
   @override
   void initState() {
@@ -136,64 +138,150 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _refreshHomeData() async {
+    await HapticFeedback.mediumImpact();
+
+    setState(() {
+      _categoriesFuture = _fetchCategories();
+      _bannersFuture = _fetchBanners();
+      _curatedServicesFuture = _fetchCuratedServices();
+    });
+
+    try {
+      await Future.wait([
+        _categoriesFuture,
+        _bannersFuture,
+        _curatedServicesFuture,
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _lastUpdatedAt = DateTime.now();
+      });
+      await HapticFeedback.selectionClick();
+    } catch (_) {
+      await HapticFeedback.vibrate();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBackgroundLight,
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            pinned: true,
-            floating: true,
-            snap: true,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            toolbarHeight: 76,
-            backgroundColor: kBackgroundLight,
-            surfaceTintColor: kBackgroundLight,
-            automaticallyImplyLeading: false,
-            titleSpacing: 12,
-            title: Row(
-              children: [
-                IconButton(
-                  icon: Icon(
-                    Icons.location_on_outlined,
-                    size: 20,
-                    color: opacity(kCharcoalColor, 0.7),
+      body: RefreshIndicator(
+        onRefresh: _refreshHomeData,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              pinned: true,
+              floating: true,
+              snap: true,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              toolbarHeight: 76,
+              backgroundColor: kBackgroundLight,
+              surfaceTintColor: kBackgroundLight,
+              automaticallyImplyLeading: false,
+              titleSpacing: 12,
+              title: Row(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.location_on_outlined,
+                      size: 20,
+                      color: opacity(kCharcoalColor, 0.7),
+                    ),
+                    onPressed: _openLocationSearch,
                   ),
-                  onPressed: _openLocationSearch,
-                ),
-                const SizedBox(width: 4),
-                InkWell(
-                  onTap: _openLocationSearch,
+                  const SizedBox(width: 4),
+                  InkWell(
+                    onTap: _openLocationSearch,
 
+                    child: Text(
+                      _selectedLocation,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.w500,
+                        color: kCharcoalColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                IconButton(
+                  onPressed: _openNotifications,
+                  icon: const Icon(Icons.notifications),
+                ),
+                const SizedBox(width: 8),
+              ],
+            ),
+            SliverToBoxAdapter(child: _buildHeroSection()),
+            const SliverToBoxAdapter(child: SizedBox(height: 48)),
+            SliverToBoxAdapter(child: _buildServicesSection()),
+            const SliverToBoxAdapter(child: SizedBox(height: 48)),
+            SliverToBoxAdapter(child: _buildCuratedSection()),
+            if (_lastUpdatedAt != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
                   child: Text(
-                    _selectedLocation,
+                    'Last updated ${_formatLastUpdated(_lastUpdatedAt!)}',
                     style: GoogleFonts.inter(
-                      fontSize: 13,
-                      letterSpacing: 2,
+                      fontSize: 11,
+                      color: kWarmGrey600,
                       fontWeight: FontWeight.w500,
-                      color: kCharcoalColor,
                     ),
                   ),
                 ),
-              ],
-            ),
-            actions: [
-              IconButton(
-                onPressed: _openNotifications,
-                icon: const Icon(Icons.notifications),
               ),
-              const SizedBox(width: 8),
-            ],
-          ),
-          SliverToBoxAdapter(child: _buildHeroSection()),
-          const SliverToBoxAdapter(child: SizedBox(height: 48)),
-          SliverToBoxAdapter(child: _buildServicesSection()),
-          const SliverToBoxAdapter(child: SizedBox(height: 48)),
-          SliverToBoxAdapter(child: _buildCuratedSection()),
-          const SliverToBoxAdapter(child: SizedBox(height: 120)),
-        ],
+            const SliverToBoxAdapter(child: SizedBox(height: 120)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatLastUpdated(DateTime value) {
+    final hour = value.hour % 12 == 0 ? 12 : value.hour % 12;
+    final minute = value.minute.toString().padLeft(2, '0');
+    final period = value.hour >= 12 ? 'PM' : 'AM';
+    return 'at $hour:$minute $period';
+  }
+
+  Widget _buildInlineStateCard({
+    required String title,
+    required String subtitle,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF8F0),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE7D8C2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: kCharcoalColor,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: GoogleFonts.inter(fontSize: 12, color: kWarmGrey600),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -207,9 +295,9 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         if (snapshot.hasError) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text('Error loading banners'),
+          return _buildInlineStateCard(
+            title: 'Banner unavailable right now',
+            subtitle: 'Pull down to refresh and try again.',
           );
         }
 
@@ -378,28 +466,18 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         if (snapshot.hasError) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Our Services",
-                  style: GoogleFonts.cormorantGaramond(
-                    fontSize: 32,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text('Error loading services: ${snapshot.error}'),
-              ],
-            ),
+          return _buildInlineStateCard(
+            title: 'Services are unavailable',
+            subtitle: 'Please pull down to refresh the page.',
           );
         }
 
         final services = snapshot.data ?? [];
         if (services.isEmpty) {
-          return SizedBox.shrink();
+          return _buildInlineStateCard(
+            title: 'No services listed yet',
+            subtitle: 'Check again in a moment.',
+          );
         }
 
         return Column(
@@ -500,14 +578,17 @@ class _HomeScreenState extends State<HomeScreen> {
           return _buildCuratedShimmer();
         }
         if (snapshot.hasError) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text('Error loading curated services'),
+          return _buildInlineStateCard(
+            title: 'Curated section is unavailable',
+            subtitle: 'Pull down to refresh and retry.',
           );
         }
         final curated = snapshot.data ?? [];
         if (curated.isEmpty) {
-          return SizedBox.shrink();
+          return _buildInlineStateCard(
+            title: 'No curated picks right now',
+            subtitle: 'We are preparing fresh recommendations for you.',
+          );
         }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
