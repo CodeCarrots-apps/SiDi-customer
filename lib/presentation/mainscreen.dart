@@ -1,27 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
+// import 'package:sidi/presentation/appointments_screen.dart';
 import 'package:sidi/presentation/bookingscreen.dart';
 import 'package:sidi/presentation/homescreen.dart';
 import 'package:sidi/presentation/profilescreen.dart';
 import 'package:sidi/presentation/stylistlistscreen.dart';
 
-final List<Widget> _tabs = <Widget>[
-  const HomeScreen(),
-  const BookingScreen(),
-  StylistListScreen(),
-  const ProfileScreen(),
-];
-
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  const MainScreen({super.key, this.initialTab = 0});
+
+  final int initialTab;
 
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedTab = 0;
+  late int _selectedTab = widget.initialTab;
+
+  List<Widget> get _tabs => [
+    const HomeScreen(),
+    const BookingScreen(),
+    StylistListScreen(),
+    const ProfileScreen(),
+  ];
 
   void _handleIndexChanged(int i) {
     HapticFeedback.selectionClick();

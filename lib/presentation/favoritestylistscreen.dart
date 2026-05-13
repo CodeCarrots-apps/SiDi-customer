@@ -4,6 +4,7 @@ import 'package:sidi/constant/constants.dart';
 import 'package:sidi/models/user_profile.dart' hide FavoriteService;
 import 'package:sidi/presentation/detailedartistscreen.dart';
 import 'package:sidi/presentation/servicedetailscreen.dart';
+import 'package:sidi/presentation/widgets/premium_route.dart';
 import 'package:sidi/services/favorite_service.dart' as favorite_service;
 import 'package:sidi/services/favorite_service_api.dart';
 import 'package:sidi/models/user_profile.dart'
@@ -205,7 +206,7 @@ class _FavoriteStylistCard extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
+          PremiumPageRoute(
             builder: (_) => DetailedArtistScreen(
               artistId: stylist.id,
               artistName: stylist.fullName,
@@ -320,9 +321,9 @@ class _FavoriteServiceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () async {
-        final result = await Navigator.push(
+        await Navigator.push(
           context,
-          MaterialPageRoute(
+          PremiumPageRoute(
             builder: (_) => ServiceDetailScreen(
               serviceId: service.id,
               title: service.name,

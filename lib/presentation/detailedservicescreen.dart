@@ -10,6 +10,7 @@ import 'package:sidi/models/stylist.dart';
 import 'dart:async';
 
 import 'servicedetailscreen.dart';
+import 'widgets/premium_route.dart';
 
 class DetailedServiceScreen extends StatefulWidget {
   const DetailedServiceScreen({
@@ -264,7 +265,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
     }
     Navigator.push(
       context,
-      MaterialPageRoute(
+      PremiumPageRoute(
         builder: (context) => ServiceDetailScreen(
           serviceId: service['_id'] ?? '6600',
           title: service['name'] ?? 'Service',

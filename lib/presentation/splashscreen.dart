@@ -189,6 +189,8 @@
 // }
 
 import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:sidi/presentation/loginscreen.dart';
@@ -196,12 +198,24 @@ import 'package:sidi/presentation/mainscreen.dart';
 import 'package:sidi/utils/app_constants.dart';
 import 'package:sidi/utils/token_storage.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Theme tokens
+// ─────────────────────────────────────────────────────────────────────────────
+
+abstract final class _Colors {
+  static const background = Color(0xFFFDFCF8);
+  static const gold = Color(0xFFD9AE60);
+  static const goldLight = Color(0xFFF0D498);
+  static const goldDark = Color(0xFFB8903A);
+  static const orbBase = Color(0xFFFAF5E9);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SplashScreen
+// ─────────────────────────────────────────────────────────────────────────────
+
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
-
-  static const Color backgroundColor = Color(0xFFFDFCF8);
-  static const Color haloColor = Color(0xFFFAF5E9);
-  static const Color brandGold = Color(0xFFD9AE60);
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -211,41 +225,71 @@ class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   Timer? _navigationTimer;
 
-  late AnimationController _logoController;
-  late AnimationController _haloController;
+  // Logo entrance
+  late final AnimationController _logoCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  );
+  late final Animation<double> _logoScale = Tween<double>(
+    begin: 0.60,
+    end: 1.0,
+  ).animate(CurvedAnimation(parent: _logoCtrl, curve: Curves.easeOutBack));
+  late final Animation<double> _logoOpacity =
+      Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(
+          parent: _logoCtrl,
+          curve: const Interval(0.0, 0.65, curve: Curves.easeIn),
+        ),
+      );
+  late final Animation<Offset> _logoSlide = Tween<Offset>(
+    begin: const Offset(0, 0.14),
+    end: Offset.zero,
+  ).animate(CurvedAnimation(parent: _logoCtrl, curve: Curves.easeOutCubic));
 
-  late Animation<double> _logoScale;
-  late Animation<double> _logoOpacity;
-  late Animation<double> _haloRotation;
+  // Text entrance (staggered after logo)
+  late final AnimationController _textCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 700),
+  );
+  late final Animation<double> _textOpacity = Tween<double>(
+    begin: 0.0,
+    end: 1.0,
+  ).animate(CurvedAnimation(parent: _textCtrl, curve: Curves.easeIn));
+  late final Animation<Offset> _textSlide = Tween<Offset>(
+    begin: const Offset(0, 0.5),
+    end: Offset.zero,
+  ).animate(CurvedAnimation(parent: _textCtrl, curve: Curves.easeOutCubic));
+
+  // Background orb drift
+  late final AnimationController _orbCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 18),
+  )..repeat();
+
+  // Ambient glow pulse
+  late final AnimationController _glowCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2000),
+  )..repeat(reverse: true);
+  late final Animation<double> _glowOpacity = Tween<double>(
+    begin: 0.28,
+    end: 0.72,
+  ).animate(CurvedAnimation(parent: _glowCtrl, curve: Curves.easeInOut));
+
+  // Loading dots
+  late final AnimationController _dotsCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1400),
+  )..repeat();
 
   @override
   void initState() {
     super.initState();
-
-    _logoController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-
-    _haloController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 6),
-    )..repeat();
-
-    _logoScale = Tween<double>(begin: 0.7, end: 1.0).animate(
-      CurvedAnimation(parent: _logoController, curve: Curves.easeOutBack),
-    );
-
-    _logoOpacity = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(CurvedAnimation(parent: _logoController, curve: Curves.easeIn));
-
-    _haloRotation = Tween<double>(begin: 0, end: 1).animate(_haloController);
-
-    _logoController.forward();
-
-    _navigationTimer = Timer(const Duration(seconds: 3), _navigateFromSplash);
+    // Stagger: logo first, then text
+    _logoCtrl.forward().then((_) {
+      if (mounted) _textCtrl.forward();
+    });
+    _navigationTimer = Timer(const Duration(seconds: 4), _navigateFromSplash);
   }
 
   Future<bool> _isTokenValid(String token) async {
@@ -267,7 +311,6 @@ class _SplashScreenState extends State<SplashScreen>
               },
             ),
           );
-
       return response.statusCode == 200;
     } catch (_) {
       return false;
@@ -281,28 +324,19 @@ class _SplashScreenState extends State<SplashScreen>
     final isValid = token != null && token.isNotEmpty
         ? await _isTokenValid(token)
         : false;
-
-    if (!isValid) {
-      await TokenStorage.deleteToken();
-    }
+    if (!isValid) await TokenStorage.deleteToken();
 
     final destination = isValid ? const MainScreen() : const LoginScreen();
-
     if (!mounted) return;
 
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 600),
-        pageBuilder: (_, _, _) => destination,
-        transitionsBuilder: (_, animation, _, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: ScaleTransition(
-              scale: Tween(begin: 0.95, end: 1.0).animate(animation),
-              child: child,
-            ),
-          );
-        },
+        transitionDuration: const Duration(milliseconds: 700),
+        pageBuilder: (_, __, ___) => destination,
+        transitionsBuilder: (_, animation, __, child) => FadeTransition(
+          opacity: CurvedAnimation(parent: animation, curve: Curves.easeInOut),
+          child: child,
+        ),
       ),
     );
   }
@@ -310,33 +344,92 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _navigationTimer?.cancel();
-    _logoController.dispose();
-    _haloController.dispose();
+    _logoCtrl.dispose();
+    _textCtrl.dispose();
+    _orbCtrl.dispose();
+    _glowCtrl.dispose();
+    _dotsCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SplashScreen.backgroundColor,
+      backgroundColor: _Colors.background,
       body: Stack(
         children: [
+          // Animated soft orbs
           AnimatedBuilder(
-            animation: _haloRotation,
-            builder: (_, _) {
-              return Transform.rotate(
-                angle: _haloRotation.value * 2 * 3.1416,
-                child: const _SplashBackdrop(),
-              );
-            },
+            animation: _orbCtrl,
+            builder: (_, __) => _OrbsLayer(t: _orbCtrl.value),
           ),
+
+          // Logo + arc ring + brand name — all in one centred column
           Center(
-            child: FadeTransition(
-              opacity: _logoOpacity,
-              child: ScaleTransition(
-                scale: _logoScale,
-                child: const _LogoGlyph(),
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Glow halo, arc ring, and logo card share the same centre
+                FadeTransition(
+                  opacity: _logoOpacity,
+                  child: SlideTransition(
+                    position: _logoSlide,
+                    child: ScaleTransition(
+                      scale: _logoScale,
+                      child: SizedBox(
+                        width: 220,
+                        height: 220,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            AnimatedBuilder(
+                              animation: _glowOpacity,
+                              builder: (_, __) =>
+                                  _GlowHalo(opacity: _glowOpacity.value),
+                            ),
+                            const _ArcRing(),
+                            const _LogoCard(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                FadeTransition(
+                  opacity: _textOpacity,
+                  child: SlideTransition(
+                    position: _textSlide,
+                    child: const _BrandText(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Loading indicator
+          Positioned(
+            bottom: 56,
+            left: 0,
+            right: 0,
+            child: Column(
+              children: [
+                _LoadingDots(controller: _dotsCtrl),
+                const SizedBox(height: 10),
+                FadeTransition(
+                  opacity: _textOpacity,
+                  child: Text(
+                    'LOADING',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 10,
+                      letterSpacing: 3.5,
+                      fontWeight: FontWeight.w500,
+                      color: _Colors.goldDark.withValues(alpha: 0.50),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -345,80 +438,334 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-class _SplashBackdrop extends StatelessWidget {
-  const _SplashBackdrop();
+// ─────────────────────────────────────────────────────────────────────────────
+// Drifting orbs background
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _OrbsLayer extends StatelessWidget {
+  const _OrbsLayer({required this.t});
+
+  final double t; // 0..1 repeating
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final circleSize = size.width * 1.5;
+    final angle = t * 2 * math.pi;
 
-    return Center(
+    return Stack(
+      children: [
+        // Large centred radial orb
+        Positioned(
+          left: size.width * 0.5 - size.width * 0.68,
+          top: size.height * 0.18,
+          child: Container(
+            width: size.width * 1.36,
+            height: size.width * 1.36,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [_Colors.orbBase, _Colors.background],
+                stops: [0.35, 1.0],
+              ),
+            ),
+          ),
+        ),
+
+        // Top-left drifting orb
+        Positioned(
+          left: size.width * (-0.12) + math.sin(angle) * size.width * 0.04,
+          top: size.height * 0.04 + math.cos(angle) * size.height * 0.03,
+          child: Container(
+            width: size.width * 0.52,
+            height: size.width * 0.52,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _Colors.gold.withValues(alpha: 0.06),
+            ),
+          ),
+        ),
+
+        // Bottom-right drifting orb
+        Positioned(
+          right:
+              size.width * (-0.10) + math.cos(angle + 1.0) * size.width * 0.04,
+          bottom:
+              size.height * 0.06 + math.sin(angle + 1.0) * size.height * 0.025,
+          child: Container(
+            width: size.width * 0.46,
+            height: size.width * 0.46,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _Colors.gold.withValues(alpha: 0.08),
+            ),
+          ),
+        ),
+
+        // Small top-right accent orb
+        Positioned(
+          right: size.width * 0.05 + math.sin(angle + 2.0) * size.width * 0.03,
+          top: size.height * 0.10,
+          child: Container(
+            width: size.width * 0.22,
+            height: size.width * 0.22,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _Colors.gold.withValues(alpha: 0.05),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Ambient glow halo
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _GlowHalo extends StatelessWidget {
+  const _GlowHalo({required this.opacity});
+
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: opacity,
       child: Container(
-        width: circleSize,
-        height: circleSize,
-        decoration: const BoxDecoration(
-          color: SplashScreen.haloColor,
+        width: 240,
+        height: 240,
+        decoration: BoxDecoration(
           shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: _Colors.gold.withValues(alpha: 0.42),
+              blurRadius: 90,
+              spreadRadius: 24,
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _LogoGlyph extends StatefulWidget {
-  const _LogoGlyph();
+// ─────────────────────────────────────────────────────────────────────────────
+// Decorative sweep-gradient arc ring
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ArcRing extends StatelessWidget {
+  const _ArcRing();
 
   @override
-  State<_LogoGlyph> createState() => _LogoGlyphState();
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 220,
+      height: 220,
+      child: CustomPaint(painter: _ArcPainter()),
+    );
+  }
 }
 
-class _LogoGlyphState extends State<_LogoGlyph>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _pulseController;
-  late Animation<double> _pulse;
-
+class _ArcPainter extends CustomPainter {
   @override
-  void initState() {
-    super.initState();
+  void paint(Canvas canvas, Size size) {
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round
+      ..shader = const SweepGradient(
+        colors: [
+          Colors.transparent,
+          _Colors.gold,
+          _Colors.goldLight,
+          _Colors.gold,
+          Colors.transparent,
+        ],
+        stops: [0.0, 0.15, 0.5, 0.85, 1.0],
+      ).createShader(rect);
 
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1400),
-    )..repeat(reverse: true);
-
-    _pulse = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    canvas.drawArc(
+      Rect.fromCircle(
+        center: Offset(size.width / 2, size.height / 2),
+        radius: size.width / 2 - 2,
+      ),
+      -math.pi / 2,
+      math.pi * 1.75,
+      false,
+      paint,
     );
   }
 
   @override
+  bool shouldRepaint(covariant CustomPainter _) => false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Logo card (white circle, gold shadow, subtle pulse)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _LogoCard extends StatefulWidget {
+  const _LogoCard();
+
+  @override
+  State<_LogoCard> createState() => _LogoCardState();
+}
+
+class _LogoCardState extends State<_LogoCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1800),
+  )..repeat(reverse: true);
+
+  late final Animation<double> _scale = Tween<double>(
+    begin: 1.0,
+    end: 1.035,
+  ).animate(CurvedAnimation(parent: _pulse, curve: Curves.easeInOut));
+
+  @override
   void dispose() {
-    _pulseController.dispose();
+    _pulse.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return ScaleTransition(
-      scale: _pulse,
-      child: DecoratedBox(
+      scale: _scale,
+      child: Container(
+        width: 148,
+        height: 148,
+        padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: SplashScreen.brandGold.withValues(alpha: 0.25),
-              blurRadius: 30,
-              spreadRadius: 2,
-              offset: const Offset(0, 12),
+              color: _Colors.gold.withValues(alpha: 0.28),
+              blurRadius: 50,
+              spreadRadius: 6,
+              offset: const Offset(0, 14),
+            ),
+            BoxShadow(
+              color: Colors.white.withValues(alpha: 0.95),
+              blurRadius: 20,
+              spreadRadius: 4,
             ),
           ],
         ),
-        child: SizedBox(
-          height: 200,
-          width: 200,
-          child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
-        ),
+        child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Brand text with gold gradient + decorative divider
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _BrandText extends StatelessWidget {
+  const _BrandText();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [_Colors.goldDark, _Colors.goldLight, _Colors.goldDark],
+            stops: [0.0, 0.5, 1.0],
+          ).createShader(bounds),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _thinLine(reverse: true),
+            const SizedBox(width: 10),
+            Container(
+              width: 5,
+              height: 5,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: _Colors.gold,
+              ),
+            ),
+            const SizedBox(width: 10),
+            _thinLine(reverse: false),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'YOUR TRUSTED SERVICE PARTNER',
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 3.0,
+            color: _Colors.goldDark.withValues(alpha: 0.60),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _thinLine({required bool reverse}) => Container(
+    width: 40,
+    height: 1,
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: reverse
+            ? [_Colors.gold.withValues(alpha: 0.55), Colors.transparent]
+            : [Colors.transparent, _Colors.gold.withValues(alpha: 0.55)],
+      ),
+    ),
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Animated loading dots
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _LoadingDots extends StatelessWidget {
+  const _LoadingDots({required this.controller});
+
+  final AnimationController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (_, __) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (i) {
+            final start = i * 0.22;
+            final end = (start + 0.50).clamp(0.0, 1.0);
+            final anim = Tween<double>(begin: 0.2, end: 1.0).animate(
+              CurvedAnimation(
+                parent: controller,
+                curve: Interval(start, end, curve: Curves.easeInOut),
+              ),
+            );
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Opacity(
+                opacity: anim.value,
+                child: Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _Colors.gold.withValues(alpha: anim.value),
+                  ),
+                ),
+              ),
+            );
+          }),
+        );
+      },
     );
   }
 }

@@ -82,6 +82,12 @@ class BookingService {
         success: false,
         message: e.message ?? 'Failed to create booking',
       );
+    } catch (e) {
+      debugPrint("CREATE BOOKING UNEXPECTED ERROR: $e");
+      return BookingCreateResponse(
+        success: false,
+        message: 'An unexpected error occurred. Please try again.',
+      );
     }
   }
 
@@ -113,7 +119,7 @@ class BookingService {
         queryParameters: {
           "page": page,
           "limit": limit,
-          "status": ?status,
+          if (status != null) "status": status,
         },
       );
 

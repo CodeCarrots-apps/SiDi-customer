@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/models/stylist.dart';
 import 'package:sidi/presentation/detailedartistscreen.dart';
+import 'package:sidi/presentation/widgets/premium_route.dart';
 // If you want to use Beautician model, import it as well:
 // import 'package:sidi/models/beautician_model.dart';
 
@@ -17,7 +18,7 @@ class StylistsCard extends StatelessWidget {
     HapticFeedback.lightImpact();
     Navigator.push(
       context,
-      MaterialPageRoute(
+      PremiumPageRoute(
         builder: (_) => DetailedArtistScreen(
           artistId: stylist.id,
           artistName: stylist.fullName,

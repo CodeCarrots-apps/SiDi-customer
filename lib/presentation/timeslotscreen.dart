@@ -1,14 +1,9 @@
-// ignore_for_file: unused_local_variable
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
+import 'package:sidi/models/service_cart_item.dart';
 import 'package:sidi/presentation/selectaddress.dart';
-
-import '../models/booking.dart';
-import '../models/booking_models.dart';
-import '../services/local_storage_service.dart';
-// import 'appointmentbooking.dart';
 
 import '../models/stylist.dart';
 
@@ -22,6 +17,8 @@ class SelectTimeSlotScreen extends StatefulWidget {
     required this.imageUrl,
     this.description = '',
     this.stylist,
+    this.beauticianId,
+    this.services = const [],
   });
 
   final String serviceId;
@@ -31,6 +28,8 @@ class SelectTimeSlotScreen extends StatefulWidget {
   final String imageUrl;
   final String description;
   final Stylist? stylist;
+  final String? beauticianId;
+  final List<ServiceCartItem> services;
 
   @override
   State<SelectTimeSlotScreen> createState() => _SelectTimeSlotScreenState();
@@ -57,7 +56,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
     'December',
   ];
 
-  DateTime initialDate = DateTime.now();
+  DateTime initialDate = DateTime.now().add(const Duration(days: 1));
   late DateTime selectedDate = initialDate;
   String selectedTime = "10:30 AM";
   int bottomIndex = 1;
@@ -85,8 +84,10 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
     });
   }
 
-  DateTime get _today =>
-      DateTime(initialDate.year, initialDate.month, initialDate.day);
+  DateTime get _today {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
 
   @override
   void initState() {
@@ -97,37 +98,11 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
     );
   }
 
-  DateTime _slotDateTime(DateTime date, String time) {
-    final match = RegExp(
-      r'^(\d{1,2}):(\d{2})\s*([APMapm]{2})$',
-    ).firstMatch(time);
-    if (match == null) {
-      return DateTime(date.year, date.month, date.day);
-    }
-
-    var hour = int.parse(match.group(1)!);
-    final minute = int.parse(match.group(2)!);
-    final period = match.group(3)!.toUpperCase();
-
-    if (period == 'PM' && hour < 12) {
-      hour += 12;
-    }
-    if (period == 'AM' && hour == 12) {
-      hour = 0;
-    }
-
-    return DateTime(date.year, date.month, date.day, hour, minute);
-  }
-
   bool _isSlotAvailable(DateTime date, String time) {
-    final slotDateTime = _slotDateTime(date, time);
-    final now = DateTime.now();
     final selectedDay = DateTime(date.year, date.month, date.day);
-    if (selectedDay.isBefore(_today)) {
+    // API rule: same-day bookings are not allowed — must be tomorrow or later
+    if (!selectedDay.isAfter(_today)) {
       return false;
-    }
-    if (selectedDay.isAtSameMomentAs(_today)) {
-      return slotDateTime.isAtSameMomentAs(now) || slotDateTime.isAfter(now);
     }
     return true;
   }
@@ -191,7 +166,10 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildServicePreview(),
-                _buildEnhanceButton(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(32, 28, 32, 0),
+                  child: const _BookingStepBar(currentStep: 2),
+                ),
                 _buildCalendar(),
                 _buildTimeSlots(),
                 const SizedBox(height: 200),
@@ -214,7 +192,20 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
             borderRadius: BorderRadius.circular(20),
             child: AspectRatio(
               aspectRatio: 4 / 3,
-              child: Image.network(widget.imageUrl, fit: BoxFit.cover),
+              child: Image.network(
+                widget.imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => Container(
+                  color: const Color(0xFFF0EBE3),
+                  child: const Center(
+                    child: Icon(
+                      Icons.image_not_supported_outlined,
+                      size: 40,
+                      color: Color(0xFFB0A090),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -255,42 +246,11 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
     );
   }
 
-  Widget _buildEnhanceButton() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 30),
-      child: OutlinedButton.icon(
-        onPressed: () {
-          _logAction('Enhance button pressed');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Enhancement options will be available soon.',
-                style: GoogleFonts.inter(),
-              ),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        },
-        icon: const Icon(Icons.auto_awesome, size: 18),
-        label: Text(
-          "Enhance your session",
-          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
-        ),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: espresso,
-          side: BorderSide(color: opacity(espresso, 0.1)),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(50),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-        ),
-      ),
-    );
-  }
-
   Widget _buildCalendar() {
     final headerMonth = monthNames[days.first.month - 1].toUpperCase();
     final headerYear = days.first.year;
+    // Offset so day 1 falls on the correct weekday column (Mon=0 … Sun=6)
+    final firstWeekdayOffset = days.first.weekday - 1;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -320,24 +280,40 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
+          // Weekday header row
+          Row(
+            children: ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+                .map(
+                  (d) => Expanded(
+                    child: Center(
+                      child: Text(
+                        d,
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+          const SizedBox(height: 8),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: days.length,
+            itemCount: days.length + firstWeekdayOffset,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
             ),
             itemBuilder: (context, index) {
-              final day = days[index];
-              final today = DateTime(
-                DateTime.now().year,
-                DateTime.now().month,
-                DateTime.now().day,
-              );
-              final isPast = day.isBefore(today);
+              if (index < firstWeekdayOffset) return const SizedBox();
+              final day = days[index - firstWeekdayOffset];
+              final isPast = !day.isAfter(_today); // blocks today AND past days
               final isSelected =
                   !isPast &&
                   selectedDate.day == day.day &&
@@ -348,7 +324,8 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                 onTap: isPast
                     ? null
                     : () {
-                        _logAction('Date selected: \\${day.toIso8601String()}');
+                        HapticFeedback.selectionClick();
+                        _logAction('Date selected: ${day.toIso8601String()}');
                         setState(() {
                           selectedDate = day;
                           selectedTime = _firstAvailableTimeForDate(day) ?? '';
@@ -379,13 +356,16 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
   }
 
   Widget _buildTimeSlots() {
+    final hasAvailableSlots = timeSlots.any(
+      (t) => _isSlotAvailable(selectedDate, t),
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "AVAILABLE AFTERNOON SLOTS",
+            "AVAILABLE TIME SLOTS",
             style: GoogleFonts.inter(
               fontSize: 11,
               letterSpacing: 2,
@@ -393,62 +373,79 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: timeSlots.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 3,
-            ),
-            itemBuilder: (context, index) {
-              final time = timeSlots[index];
-              final isAvailable = _isSlotAvailable(selectedDate, time);
-              final isSelected = selectedTime == time && isAvailable;
-
-              return GestureDetector(
-                onTap: isAvailable
-                    ? () {
-                        _logAction('Time slot selected: $time');
-                        setState(() => selectedTime = time);
-                      }
-                    : null,
-                child: Container(
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: isSelected ? champagne : Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isSelected
-                          ? mutedGold
-                          : isAvailable
-                          ? Colors.grey.shade200
-                          : Colors.grey.shade300,
-                    ),
-                    boxShadow: [
-                      if (!isSelected)
-                        BoxShadow(
-                          color: opacity(Colors.black, 0.02),
-                          blurRadius: 12,
-                        ),
-                    ],
-                  ),
-                  child: Text(
-                    time,
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w500,
-                      color: isAvailable ? espresso : Colors.grey.shade400,
-                    ),
+          if (!hasAvailableSlots)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: Text(
+                  'No available slots for this day.\nPlease select another date.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: Colors.grey.shade500,
+                    height: 1.65,
                   ),
                 ),
-              );
-            },
-          ),
+              ),
+            )
+          else
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: timeSlots.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 3,
+              ),
+              itemBuilder: (context, index) {
+                final time = timeSlots[index];
+                final isAvailable = _isSlotAvailable(selectedDate, time);
+                final isSelected = selectedTime == time && isAvailable;
+
+                return GestureDetector(
+                  onTap: isAvailable
+                      ? () {
+                          HapticFeedback.selectionClick();
+                          _logAction('Time slot selected: $time');
+                          setState(() => selectedTime = time);
+                        }
+                      : null,
+                  child: Container(
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isSelected ? champagne : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected
+                            ? mutedGold
+                            : isAvailable
+                            ? Colors.grey.shade200
+                            : Colors.grey.shade300,
+                      ),
+                      boxShadow: [
+                        if (!isSelected)
+                          BoxShadow(
+                            color: opacity(Colors.black, 0.02),
+                            blurRadius: 12,
+                          ),
+                      ],
+                    ),
+                    child: Text(
+                      time,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w500,
+                        color: isAvailable ? espresso : Colors.grey.shade400,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
         ],
       ),
     );
@@ -481,27 +478,8 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                       'Continue pressed with selectedDate=$selectedDateIso selectedTime=$selectedTime',
                     );
 
-                    final booking = Booking(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      title: widget.title,
-                      time: selectedTime,
-                      stylist: 'Assigned stylist',
-                      image: widget.imageUrl,
-                      status: 'Confirmed',
-                      jobId: DateTime.now().millisecondsSinceEpoch.toString(),
-                    );
-
-                    await LocalStorageService.addCachedBooking(booking);
-
-                    final response = BookingCreateResponse(
-                      success: true,
-                      message: 'Your appointment is confirmed.',
-                      booking: booking,
-                      estimatedPrice: 0,
-                      addonsAmount: 0,
-                      travelFee: 0,
-                      broadcastedCount: 0,
-                    );
+                    final selectedDateDisplay =
+                        '${monthNames[selectedDate.month - 1]} ${selectedDate.day}, ${selectedDate.year}';
 
                     if (!mounted) return;
                     Navigator.push(
@@ -510,17 +488,22 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                         builder: (_) => SelectAddressScreen(
                           serviceImage: widget.imageUrl,
                           serviceTitle: widget.title,
-                          selectedDateDisplay: selectedTime,
+                          servicePrice: widget.price,
+                          selectedDateDisplay: selectedDateDisplay,
                           selectedDateIso: selectedDateIso,
                           selectedTime: selectedTime,
                           serviceId: widget.serviceId,
                           stylist: widget.stylist,
+                          beauticianId: widget.beauticianId,
+                          services: widget.services,
                         ),
                       ),
                     );
                   },
             child: Text(
-              "CONFIRM APPOINTMENT",
+              widget.services.isNotEmpty
+                  ? 'CONTINUE WITH ${widget.services.length} SERVICES'
+                  : "CONTINUE TO ADDRESS",
               style: GoogleFonts.inter(
                 fontSize: 12,
                 letterSpacing: 2,
@@ -532,6 +515,80 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
           const SizedBox(height: 30),
         ],
       ),
+    );
+  }
+}
+
+class _BookingStepBar extends StatelessWidget {
+  const _BookingStepBar({required this.currentStep});
+  final int currentStep;
+
+  @override
+  Widget build(BuildContext context) {
+    const labels = ['Service', 'Schedule', 'Confirm'];
+    return Row(
+      children: List.generate(labels.length * 2 - 1, (i) {
+        if (i.isOdd) {
+          return Expanded(
+            child: Container(
+              height: 1.5,
+              color: i ~/ 2 < currentStep - 1
+                  ? const Color(0xFFC5B38A)
+                  : const Color(0xFFE8E5DF),
+            ),
+          );
+        }
+        final idx = i ~/ 2;
+        final done = idx < currentStep - 1;
+        final active = idx == currentStep - 1;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: done
+                    ? const Color(0xFFC5B38A)
+                    : active
+                    ? const Color(0xFF2C1A0E)
+                    : const Color(0xFFF3F2F0),
+              ),
+              child: Center(
+                child: done
+                    ? const Icon(
+                        Icons.check_rounded,
+                        size: 15,
+                        color: Colors.white,
+                      )
+                    : Text(
+                        '${idx + 1}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: active
+                              ? Colors.white
+                              : const Color(0xFF78716C),
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              labels[idx],
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: active ? FontWeight.w700 : FontWeight.w400,
+                color: active
+                    ? const Color(0xFF2C1A0E)
+                    : const Color(0xFF78716C),
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        );
+      }),
     );
   }
 }

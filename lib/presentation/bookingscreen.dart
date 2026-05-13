@@ -12,6 +12,7 @@ import 'dart:async';
 
 import 'detailedartistscreen.dart';
 import 'servicedetailscreen.dart';
+import 'widgets/premium_route.dart';
 
 class BookingScreen extends StatefulWidget {
   const BookingScreen({super.key});
@@ -393,7 +394,7 @@ class _BookingScreenState extends State<BookingScreen> {
             if (type == 'service') {
               Navigator.push(
                 context,
-                MaterialPageRoute(
+                PremiumPageRoute(
                   builder: (_) => ServiceDetailScreen(
                     serviceId: item['_id'] ?? '',
                     title: name,
@@ -407,7 +408,7 @@ class _BookingScreenState extends State<BookingScreen> {
             } else if (type == 'stylist') {
               Navigator.push(
                 context,
-                MaterialPageRoute(
+                PremiumPageRoute(
                   builder: (_) => DetailedArtistScreen(
                     artistId: item['_id'] ?? '',
                     artistName: name,
@@ -470,7 +471,7 @@ class _BookingScreenState extends State<BookingScreen> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
+                        PremiumPageRoute(
                           builder: (_) => ServiceDetailScreen(
                             description: showCurated[0]['description'] ?? '',
                             serviceId: showCurated[0]['_id']?.toString() ?? '',
@@ -517,7 +518,7 @@ class _BookingScreenState extends State<BookingScreen> {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              PremiumPageRoute(
                                 builder: (_) => ServiceDetailScreen(
                                   serviceId:
                                       showCurated[1]['_id']?.toString() ?? '',
@@ -566,7 +567,7 @@ class _BookingScreenState extends State<BookingScreen> {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              PremiumPageRoute(
                                 builder: (_) => ServiceDetailScreen(
                                   serviceId:
                                       showCurated[2]['_id']?.toString() ?? '',
@@ -725,7 +726,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    PremiumPageRoute(
                       builder: (_) => DetailedArtistScreen(
                         artistId: stylist.id,
                         artistName: stylist.fullName,

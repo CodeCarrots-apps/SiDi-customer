@@ -9,6 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
 import 'detailedservicescreen.dart';
 import 'servicedetailscreen.dart';
+import 'widgets/premium_route.dart';
 import 'locationsearchscreen.dart';
 import 'notificationsscreen.dart';
 
@@ -107,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _openDetailedServices({String? query, String? category}) async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
+      PremiumPageRoute(
         builder: (_) => DetailedServiceScreen(
           initialSearchQuery: query,
           initialCategory: category,
@@ -325,7 +326,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              PremiumPageRoute(
                                 builder: (_) => ServiceDetailScreen(
                                   description: banner['description'] ?? '',
                                   serviceId:
@@ -418,7 +419,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               onPressed: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(
+                                  PremiumPageRoute(
                                     builder: (_) => ServiceDetailScreen(
                                       description: banner['description'] ?? '',
                                       serviceId:
@@ -636,7 +637,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
+                            PremiumPageRoute(
                               builder: (_) => ServiceDetailScreen(
                                 description: item['description'] ?? '',
                                 serviceId: item['_id']?.toString() ?? '',

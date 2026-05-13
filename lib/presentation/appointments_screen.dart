@@ -3,8 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import '../models/booking.dart';
-import '../services/booking_service.dart';
-// import '../services/local_storage_service.dart';
+import '../services/local_storage_service.dart';
 
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
@@ -14,37 +13,49 @@ class AppointmentsScreen extends StatefulWidget {
 }
 
 class _AppointmentsScreenState extends State<AppointmentsScreen> {
-  // late Future<List<Booking>> _futureBookings;
-
-  late Future<List<Booking>> _futureBookings;
+  List<Booking> _bookings = [];
+  bool _isLoading = true;
+  String? _errorMessage;
   DateTime? _lastUpdatedAt;
 
   @override
   void initState() {
     super.initState();
-    _futureBookings = _loadBookings();
+    _loadBookings();
   }
 
-  Future<List<Booking>> _loadBookings() async {
-    final response = await BookingService.getMyBookings();
-    return response.bookings;
+  Future<void> _loadBookings() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final bookings = await LocalStorageService.loadCachedBookings();
+      if (!mounted) return;
+      setState(() {
+        _bookings = bookings;
+        _isLoading = false;
+        _lastUpdatedAt = DateTime.now();
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Failed to load bookings. Please try again.';
+      });
+    }
   }
 
   Future<void> _refreshBookings() async {
     await HapticFeedback.mediumImpact();
-    setState(() {
-      _futureBookings = _loadBookings();
-    });
-    try {
-      await _futureBookings;
-      if (!mounted) return;
-      setState(() {
-        _lastUpdatedAt = DateTime.now();
-      });
-      await HapticFeedback.selectionClick();
-    } catch (_) {
-      await HapticFeedback.vibrate();
-    }
+    await _loadBookings();
+    if (mounted) await HapticFeedback.selectionClick();
+  }
+
+  Future<void> _deleteBooking(String id) async {
+    final updated = _bookings.where((b) => b.id != id).toList();
+    setState(() => _bookings = updated);
+    await LocalStorageService.saveCachedBookings(updated);
   }
 
   @override
@@ -67,6 +78,14 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               backgroundColor: kBackgroundLight,
               surfaceTintColor: kBackgroundLight,
               centerTitle: true,
+              title: Text(
+                'My Appointments',
+                style: GoogleFonts.cormorantGaramond(
+                  fontSize: 22,
+                  fontStyle: FontStyle.italic,
+                  color: kCharcoalColor,
+                ),
+              ),
             ),
             SliverPadding(
               padding: EdgeInsets.fromLTRB(
@@ -76,23 +95,43 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                 24 * scale,
               ),
               sliver: SliverToBoxAdapter(
-                child: FutureBuilder<List<Booking>>(
-                  future: _futureBookings,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
+                child: Builder(
+                  builder: (context) {
+                    if (_isLoading) {
                       return const _AppointmentsLoadingState();
-                    } else if (snapshot.hasError) {
+                    }
+                    if (_errorMessage != null) {
                       return _AppointmentsErrorState(
-                        message: 'Failed to load bookings. Please try again.',
+                        message: _errorMessage!,
                         onRetry: _refreshBookings,
                       );
                     }
-                    final bookings = snapshot.data ?? [];
+                    final bookings = _bookings;
                     if (bookings.isEmpty) {
                       return _AppointmentsEmptyState(
                         onRefresh: _refreshBookings,
                       );
                     }
+
+                    // Split by date: recent = last 14 days or future, earlier = older
+                    final recentCutoff = DateTime.now().subtract(
+                      const Duration(days: 14),
+                    );
+                    final hasDateInfo = bookings.any(
+                      (b) => b.bookingDate.isNotEmpty,
+                    );
+                    final recentBookings = hasDateInfo
+                        ? bookings.where((b) {
+                            final d = DateTime.tryParse(b.bookingDate);
+                            return d == null || !d.isBefore(recentCutoff);
+                          }).toList()
+                        : bookings.take(2).toList();
+                    final earlierBookings = hasDateInfo
+                        ? bookings.where((b) {
+                            final d = DateTime.tryParse(b.bookingDate);
+                            return d != null && d.isBefore(recentCutoff);
+                          }).toList()
+                        : bookings.skip(2).toList();
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,48 +161,60 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                         SizedBox(height: 6 * scale),
                         Divider(color: kWarmGrey200, height: 1),
                         SizedBox(height: 12 * scale),
-                        ...bookings
-                            .take(2)
-                            .map(
-                              (b) => Padding(
-                                padding: EdgeInsets.only(bottom: 12 * scale),
-                                child: _AppearIn(
-                                  delayMs: 50,
-                                  child: _buildRecentAppointment(
-                                    image: b.image.isNotEmpty
-                                        ? b.image
-                                        : 'https://i.pinimg.com/1200x/8b/9a/ec/8b9aeceef93905e3b619889c2b0b7111.jpg',
-                                    title: b.title,
-                                    time: b.time,
-                                    stylist: b.stylist,
-                                    scale: scale,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        SizedBox(height: 18 * scale),
-                        _buildSectionLabel('EARLIER', scale),
-                        SizedBox(height: 6 * scale),
-                        Divider(color: kWarmGrey200, height: 1),
-                        SizedBox(height: 10 * scale),
-                        ...bookings
-                            .skip(2)
-                            .toList()
-                            .asMap()
-                            .entries
-                            .map(
-                              (entry) => _AppearIn(
-                                delayMs: 90 + (entry.key * 40),
-                                child: _buildEarlierAppointment(
-                                  image: entry.value.image.isNotEmpty
-                                      ? entry.value.image
-                                      : 'https://sidi.mobilegear.co.in${entry.value.image}',
-                                  title: entry.value.title,
-                                  subtitle: entry.value.stylist,
+                        ...recentBookings.map(
+                          (b) => Dismissible(
+                            key: ValueKey(b.id),
+                            direction: DismissDirection.endToStart,
+                            background: _buildDeleteBackground(scale),
+                            onDismissed: (_) => _deleteBooking(b.id),
+                            child: Padding(
+                              padding: EdgeInsets.only(bottom: 12 * scale),
+                              child: _AppearIn(
+                                delayMs: 50,
+                                child: _buildRecentAppointment(
+                                  image: b.image.isNotEmpty
+                                      ? b.image
+                                      : 'https://i.pinimg.com/1200x/8b/9a/ec/8b9aeceef93905e3b619889c2b0b7111.jpg',
+                                  title: b.title,
+                                  time: b.time,
+                                  stylist: b.stylist,
+                                  status: b.status,
                                   scale: scale,
                                 ),
                               ),
                             ),
+                          ),
+                        ),
+                        SizedBox(height: 18 * scale),
+                        if (earlierBookings.isNotEmpty) ...[
+                          _buildSectionLabel('EARLIER', scale),
+                          SizedBox(height: 6 * scale),
+                          Divider(color: kWarmGrey200, height: 1),
+                          SizedBox(height: 10 * scale),
+                          ...earlierBookings.toList().asMap().entries.map(
+                            (entry) => Dismissible(
+                              key: ValueKey(entry.value.id),
+                              direction: DismissDirection.endToStart,
+                              background: _buildDeleteBackground(scale),
+                              onDismissed: (_) =>
+                                  _deleteBooking(entry.value.id),
+                              child: _AppearIn(
+                                delayMs: 90 + (entry.key * 40),
+                                child: _buildEarlierAppointment(
+                                  image: entry.value.image.isNotEmpty
+                                      ? (entry.value.image.startsWith('http')
+                                            ? entry.value.image
+                                            : 'https://sidi.mobilegear.co.in${entry.value.image}')
+                                      : 'https://i.pinimg.com/1200x/8b/9a/ec/8b9aeceef93905e3b619889c2b0b7111.jpg',
+                                  title: entry.value.title,
+                                  subtitle: entry.value.stylist,
+                                  status: entry.value.status,
+                                  scale: scale,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     );
                   },
@@ -174,6 +225,53 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildDeleteBackground(double scale) {
+    return Container(
+      alignment: Alignment.centerRight,
+      padding: EdgeInsets.only(right: 20 * scale),
+      margin: EdgeInsets.only(bottom: 12 * scale),
+      decoration: BoxDecoration(
+        color: const Color(0xFFB03A2E),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.delete_outline_rounded,
+            color: Colors.white,
+            size: 22 * scale,
+          ),
+          SizedBox(height: 4 * scale),
+          Text(
+            'DELETE',
+            style: GoogleFonts.inter(
+              fontSize: 9 * scale,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _statusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'confirmed':
+        return const Color(0xFF2D7A4F);
+      case 'pending':
+        return const Color(0xFFB8860B);
+      case 'cancelled':
+        return const Color(0xFFB03A2E);
+      case 'completed':
+        return const Color(0xFF1A5276);
+      default:
+        return kWarmGrey600;
+    }
   }
 
   Widget _buildSectionLabel(String text, double scale) {
@@ -193,6 +291,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     required String title,
     required String time,
     required String stylist,
+    required String status,
     required double scale,
   }) {
     return Row(
@@ -236,6 +335,28 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                   color: kWarmGrey600,
                 ),
               ),
+              if (status.isNotEmpty) ...[
+                SizedBox(height: 5 * scale),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 8 * scale,
+                    vertical: 3 * scale,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _statusColor(status).withAlpha(28),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    status.toUpperCase(),
+                    style: GoogleFonts.inter(
+                      fontSize: 9 * scale,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                      color: _statusColor(status),
+                    ),
+                  ),
+                ),
+              ],
               SizedBox(height: 8 * scale),
               Text(
                 stylist.isNotEmpty ? stylist : 'No Stylist',
@@ -256,6 +377,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     required String image,
     required String title,
     required String subtitle,
+    required String status,
     required double scale,
   }) {
     return Padding(
@@ -299,12 +421,43 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                     color: kWarmGrey600,
                   ),
                 ),
+                if (status.isNotEmpty)
+                  Padding(
+                    padding: EdgeInsets.only(top: 3 * scale),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 6 * scale,
+                        vertical: 2 * scale,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _statusColor(status).withAlpha(28),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        status.toUpperCase(),
+                        style: GoogleFonts.inter(
+                          fontSize: 8 * scale,
+                          fontWeight: FontWeight.w700,
+                          color: _statusColor(status),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
           SizedBox(width: 8 * scale),
           OutlinedButton(
-            onPressed: () {},
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Browse the Home tab to find and rebook "$title".',
+                  ),
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            },
             style: OutlinedButton.styleFrom(
               foregroundColor: kCharcoalColor,
               side: BorderSide(color: kWarmGrey200),
@@ -338,28 +491,59 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
   }
 }
 
-class _AppearIn extends StatelessWidget {
+class _AppearIn extends StatefulWidget {
   const _AppearIn({required this.child, this.delayMs = 0});
 
   final Widget child;
   final int delayMs;
 
   @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: Duration(milliseconds: 260 + delayMs),
+  State<_AppearIn> createState() => _AppearInState();
+}
+
+class _AppearInState extends State<_AppearIn>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 260),
+    );
+    _animation = CurvedAnimation(
+      parent: _controller,
       curve: Curves.easeOutCubic,
-      builder: (context, value, builtChild) {
-        return Opacity(
-          opacity: value,
-          child: Transform.translate(
-            offset: Offset(0, (1 - value) * 10),
-            child: builtChild,
-          ),
-        );
-      },
-      child: child,
+    );
+    if (widget.delayMs > 0) {
+      Future.delayed(Duration(milliseconds: widget.delayMs), () {
+        if (mounted) _controller.forward();
+      });
+    } else {
+      _controller.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) => Opacity(
+        opacity: _animation.value,
+        child: Transform.translate(
+          offset: Offset(0, (1 - _animation.value) * 10),
+          child: child,
+        ),
+      ),
+      child: widget.child,
     );
   }
 }

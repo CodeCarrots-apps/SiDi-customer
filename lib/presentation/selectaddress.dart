@@ -1,17 +1,22 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:location/location.dart';
 import 'package:sidi/constant/constants.dart';
+import 'package:sidi/models/service_cart_item.dart';
 import 'package:sidi/models/stylist.dart';
 
 import 'confirmationscreen.dart';
+import 'waitinglistscreen.dart';
 
 import '../models/address_model.dart';
 import '../models/booking_models.dart';
 import '../models/edit_result.dart';
 import '../models/payment_method_model.dart';
-import '../services/booking_service.dart';
+import '../models/booking.dart';
 import '../services/local_storage_service.dart';
+import '../services/service_cart_service.dart';
 import 'edit_address_screen.dart';
 import 'edit_payment_method_screen.dart';
 
@@ -24,7 +29,10 @@ class SelectAddressScreen extends StatefulWidget {
     required this.serviceId,
     required this.serviceTitle,
     required this.serviceImage,
+    this.servicePrice = '',
     this.stylist,
+    this.beauticianId,
+    this.services = const [],
   });
 
   final String selectedDateDisplay;
@@ -33,7 +41,10 @@ class SelectAddressScreen extends StatefulWidget {
   final String serviceId;
   final String serviceTitle;
   final String serviceImage;
+  final String servicePrice;
   final Stylist? stylist;
+  final String? beauticianId;
+  final List<ServiceCartItem> services;
 
   @override
   State<SelectAddressScreen> createState() => _SelectAddressScreenState();
@@ -47,6 +58,64 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
 
   List<AddressModel> _addresses = [];
   List<PaymentMethodModel> _paymentMethods = [];
+
+  List<ServiceCartItem> get _selectedServices {
+    if (widget.services.isNotEmpty) {
+      return widget.services;
+    }
+
+    return [
+      ServiceCartItem(
+        serviceId: widget.serviceId,
+        title: widget.serviceTitle,
+        price: widget.servicePrice,
+        duration: '',
+        imageUrl: widget.serviceImage,
+        beauticianId: widget.beauticianId,
+      ),
+    ];
+  }
+
+  String get _serviceSummaryTitle {
+    final items = _selectedServices;
+    if (items.isEmpty) {
+      return widget.serviceTitle;
+    }
+    if (items.length == 1) {
+      return items.first.title;
+    }
+    return '${items.first.title} + ${items.length - 1} more';
+  }
+
+  String get _serviceCountLabel {
+    final count = _selectedServices.length;
+    return count == 1 ? '1 service' : '$count services';
+  }
+
+  String get _servicePriceLabel {
+    final items = _selectedServices;
+    if (items.length == 1 && items.first.price.isNotEmpty) {
+      return items.first.price;
+    }
+
+    var total = 0.0;
+    var parsedCount = 0;
+    for (final item in items) {
+      final numeric = double.tryParse(
+        item.price.replaceAll(RegExp(r'[^0-9.]'), ''),
+      );
+      if (numeric != null) {
+        total += numeric;
+        parsedCount++;
+      }
+    }
+
+    if (parsedCount == items.length && parsedCount > 0) {
+      return 'AED ${total.toStringAsFixed(total.truncateToDouble() == total ? 0 : 2)}';
+    }
+
+    return widget.servicePrice;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -131,33 +200,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
             ),
           ),
         ),
-        if (_isBooking)
-          Positioned.fill(
-            child: Container(
-              color: Colors.black.withOpacity(0.35),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                    const SizedBox(height: 28),
-                    Text(
-                      'Booking your appointment...\nPlease wait',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+        if (_isBooking) const _BookingProgressOverlay(),
       ],
     );
   }
@@ -215,21 +258,15 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
           throw Exception('Location permission denied');
         }
 
-        final currentLocation = await location.getLocation();
+        final currentLocation = await location.getLocation().timeout(
+          const Duration(seconds: 12),
+          onTimeout: () => throw Exception('Location request timed out'),
+        );
         latitude = currentLocation.latitude ?? 0.0;
         longitude = currentLocation.longitude ?? 0.0;
       } catch (error) {
-        debugPrint('Booking address resolution failed: $error');
-        if (!mounted) return null;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Unable to resolve address coordinates. Please enable location services or edit your address.',
-            ),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-        return null;
+        debugPrint('GPS resolution failed (proceeding without coords): $error');
+        // Don't block the booking — proceed with 0.0 coords
       }
     }
 
@@ -244,7 +281,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
 
   String _to24Hour(String time) {
     final match = RegExp(
-      r'^(\d{1,2}):(\d{2})\s*([APMapm]{2})\s* $',
+      r'^(\d{1,2}):(\d{2})\s*([APMapm]{2})\s*$',
     ).firstMatch(time);
     if (match == null) return time;
 
@@ -265,66 +302,213 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
   Future<void> _confirmAppointment() async {
     if (_addresses.isEmpty) return;
 
+    final confirmed = await _showConfirmationSheet();
+    if (!confirmed) return;
+
     setState(() {
       _isBooking = true;
     });
 
+    try {
+      await _runBookingFlow();
+    } catch (e) {
+      debugPrint('Unexpected booking error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Something went wrong. Please try again.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isBooking = false;
+        });
+      }
+    }
+  }
+
+  Future<bool> _showConfirmationSheet() async {
+    if (_addresses.isEmpty) return false;
+    final address = _addresses[selectedAddressIndex];
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetCtx) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Confirm Booking',
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 26,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            const SizedBox(height: 20),
+            _confirmRow(Icons.spa_outlined, 'Service', _serviceSummaryTitle),
+            if (_selectedServices.length > 1)
+              _confirmRow(
+                Icons.shopping_bag_outlined,
+                'Included',
+                _serviceCountLabel,
+              ),
+            if (_servicePriceLabel.isNotEmpty)
+              _confirmRow(Icons.payments_outlined, 'Price', _servicePriceLabel),
+            _confirmRow(
+              Icons.calendar_today_outlined,
+              'Date',
+              widget.selectedDateDisplay,
+            ),
+            _confirmRow(
+              Icons.access_time_outlined,
+              'Time',
+              widget.selectedTime,
+            ),
+            _confirmRow(Icons.location_on_outlined, 'Address', address.line1),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(sheetCtx, false),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(sheetCtx, true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kEspressoColor,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size.fromHeight(52),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                    ),
+                    child: Text(
+                      'Book Now',
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+    return result == true;
+  }
+
+  Widget _confirmRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: kWarmGrey600),
+          const SizedBox(width: 10),
+          Text(
+            '$label: ',
+            style: GoogleFonts.inter(fontSize: 13, color: kWarmGrey600),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: kEspressoColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _runBookingFlow() async {
     final bookingAddress = await _resolveBookingAddress(
       _addresses[selectedAddressIndex],
     );
-    if (bookingAddress == null) {
-      setState(() {
-        _isBooking = false;
-      });
-      return;
-    }
+    if (bookingAddress == null) return;
+    final primaryService = _selectedServices.first;
 
-    debugPrint(
-      'Booking request: serviceId=${widget.serviceId}, date=${widget.selectedDateIso}, time=${widget.selectedTime}, address=${bookingAddress.address}, lat=${bookingAddress.latitude}, lng=${bookingAddress.longitude}',
-    );
-    final response = await BookingService.createBooking(
-      serviceId: widget.serviceId,
-      beauticianId: null,
+    // Build and save a local booking immediately.
+    final localBooking = Booking(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: _serviceSummaryTitle,
+      time: _to24Hour(widget.selectedTime),
       bookingDate: widget.selectedDateIso,
-      bookingTime: _to24Hour(widget.selectedTime),
-      locationType: 'home',
-      address: bookingAddress,
-      notes: 'Please be on time',
-      preferredGender: 'Female',
+      serviceId: primaryService.serviceId,
+      stylist: widget.stylist?.fullName ?? '',
+      image: primaryService.imageUrl,
+      status: 'pending',
     );
+    await LocalStorageService.addCachedBooking(localBooking);
+    debugPrint('Booking saved locally: id=${localBooking.id}');
+
+    // Simulate processing for 15 seconds.
+    await Future.delayed(const Duration(seconds: 15));
 
     if (!mounted) return;
-    setState(() {
-      _isBooking = false;
-    });
 
-    debugPrint(
-      'Booking response: success=${response.success}, message="${response.message}", bookingId=${response.booking?.id ?? 'none'}',
+    final response = BookingCreateResponse(
+      success: true,
+      message: 'Appointment booked successfully.',
+      booking: localBooking,
     );
 
-    if (!response.success) {
-      debugPrint('Confirm appointment failed: ${response.message}');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response.message),
-          duration: const Duration(seconds: 3),
-        ),
-      );
-      return;
-    }
-
-    if (response.booking != null) {
-      await LocalStorageService.addCachedBooking(response.booking!);
-    } else {
-      debugPrint(
-        'Booking succeeded but returned appointment details are missing.',
-      );
-    }
+    final status = (response.booking?.status ?? '').toLowerCase().trim();
+    final isWaitingList = <String>{
+      'pending',
+      'waitlist',
+      'waiting',
+      'waiting_list',
+      'queued',
+      'queue',
+    }.contains(status);
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Appointment booked successfully.'),
+      SnackBar(
+        content: Text(
+          isWaitingList
+              ? 'Your booking request is on the waiting list.'
+              : 'Appointment booked successfully.',
+        ),
         duration: Duration(seconds: 2),
       ),
     );
@@ -332,23 +516,44 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ConfirmationScreen(
-          response: response,
-
-          serviceTitle: widget.serviceTitle,
-          serviceImage: widget.serviceImage,
-          selectedTime: widget.selectedTime,
-          selectedDate: widget.selectedDateDisplay,
-          stylistName: widget.stylist?.fullName,
-          stylistImage: widget.stylist?.profileImage,
-          stylistTag: widget.stylist != null
-              ? widget.stylist!.skills.isNotEmpty
-                    ? widget.stylist!.skills.join(', ')
-                    : 'Beautician'
-              : null,
-        ),
+        builder: (_) => isWaitingList
+            ? WaitingListScreen(
+                response: response,
+                serviceTitle: _serviceSummaryTitle,
+                serviceImage: primaryService.imageUrl,
+                selectedTime: widget.selectedTime,
+                selectedDate: widget.selectedDateDisplay,
+                stylistName: widget.stylist?.fullName,
+                stylistImage: widget.stylist?.profileImage,
+                services: _selectedServices,
+                stylistTag: widget.stylist != null
+                    ? widget.stylist!.skills.isNotEmpty
+                          ? widget.stylist!.skills.join(', ')
+                          : 'Beautician'
+                    : null,
+              )
+            : ConfirmationScreen(
+                response: response,
+                serviceTitle: _serviceSummaryTitle,
+                serviceImage: primaryService.imageUrl,
+                selectedTime: widget.selectedTime,
+                selectedDate: widget.selectedDateDisplay,
+                stylistName: widget.stylist?.fullName,
+                stylistImage: widget.stylist?.profileImage,
+                servicePrice: _servicePriceLabel,
+                services: _selectedServices,
+                stylistTag: widget.stylist != null
+                    ? widget.stylist!.skills.isNotEmpty
+                          ? widget.stylist!.skills.join(', ')
+                          : 'Beautician'
+                    : null,
+              ),
       ),
     );
+
+    if (widget.services.isNotEmpty) {
+      await ServiceCartService.clearCart();
+    }
   }
 
   List<AddressModel> _defaultAddresses() {
@@ -461,16 +666,32 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios_new, color: kEspressoColor),
+        Row(
+          children: [
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.arrow_back_ios_new, color: kEspressoColor),
+            ),
+            const Spacer(),
+            Text(
+              'STEP 3 OF 3',
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                letterSpacing: 2,
+                fontWeight: FontWeight.w600,
+                color: kWarmGrey600,
+              ),
+            ),
+            const SizedBox(width: 16),
+          ],
         ),
-        const Spacer(),
-
-        const Spacer(),
-        const SizedBox(width: 42),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          child: const _BookingStepBar(currentStep: 3),
+        ),
       ],
     );
   }
@@ -556,6 +777,31 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               ),
             ],
           ),
+          if (_servicePriceLabel.isNotEmpty) ...[
+            const Spacer(),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Price',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    letterSpacing: 1.5,
+                    color: kWarmGrey600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _servicePriceLabel,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: kEspressoColor,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -597,8 +843,12 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
                       color: kWarmGrey50,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
-                      Icons.home,
+                    child: Icon(
+                      address.label.toUpperCase().contains('OFFICE')
+                          ? Icons.work_outline
+                          : address.label.toUpperCase().contains('HOTEL')
+                          ? Icons.hotel_outlined
+                          : Icons.home_outlined,
                       size: 18,
                       color: kEspressoColor,
                     ),
@@ -660,13 +910,32 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               ),
               const SizedBox(height: 18),
               Container(
-                height: 118,
+                height: 80,
                 decoration: BoxDecoration(
-                  color: kWarmGrey50,
-                  borderRadius: BorderRadius.circular(24),
+                  color: const Color(0xFFF0EDE8),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Center(
-                  child: Icon(Icons.location_on, size: 32, color: kWarmGrey600),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.location_on_rounded,
+                      size: 20,
+                      color: kChampagneColor,
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        address.line2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: kWarmGrey600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -822,6 +1091,149 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
                 color: kWarmGrey600,
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BookingStepBar extends StatelessWidget {
+  const _BookingStepBar({required this.currentStep});
+  final int currentStep;
+
+  @override
+  Widget build(BuildContext context) {
+    const labels = ['Service', 'Schedule', 'Confirm'];
+    return Row(
+      children: List.generate(labels.length * 2 - 1, (i) {
+        if (i.isOdd) {
+          return Expanded(
+            child: Container(
+              height: 1.5,
+              color: i ~/ 2 < currentStep - 1
+                  ? const Color(0xFFC5B38A)
+                  : const Color(0xFFE8E5DF),
+            ),
+          );
+        }
+        final idx = i ~/ 2;
+        final done = idx < currentStep - 1;
+        final active = idx == currentStep - 1;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: done
+                    ? const Color(0xFFC5B38A)
+                    : active
+                    ? const Color(0xFF2C1A0E)
+                    : const Color(0xFFF3F2F0),
+              ),
+              child: Center(
+                child: done
+                    ? const Icon(
+                        Icons.check_rounded,
+                        size: 15,
+                        color: Colors.white,
+                      )
+                    : Text(
+                        '${idx + 1}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: active
+                              ? Colors.white
+                              : const Color(0xFF78716C),
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              labels[idx],
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: active ? FontWeight.w700 : FontWeight.w400,
+                color: active
+                    ? const Color(0xFF2C1A0E)
+                    : const Color(0xFF78716C),
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        );
+      }),
+    );
+  }
+}
+
+class _BookingProgressOverlay extends StatelessWidget {
+  const _BookingProgressOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.22),
+          child: Center(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 44),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 44),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(32),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 48,
+                    offset: const Offset(0, 24),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 52,
+                    height: 52,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(kEspressoColor),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  Text(
+                    'Booking Your Appointment',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.playfairDisplay(
+                      fontSize: 22,
+                      fontStyle: FontStyle.italic,
+                      fontWeight: FontWeight.w400,
+                      color: kEspressoColor,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Please wait while we confirm\nyour details',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: kWarmGrey600,
+                      height: 1.65,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

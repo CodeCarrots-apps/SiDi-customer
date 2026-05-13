@@ -12,7 +12,9 @@ import 'package:sidi/presentation/appointments_screen.dart';
 import 'package:sidi/presentation/changepasswordscreen.dart';
 import 'package:sidi/presentation/editprofilescreen.dart';
 import 'package:sidi/presentation/loginscreen.dart';
+import 'package:sidi/presentation/rewards_wallet_screen.dart';
 import 'package:sidi/models/user_profile.dart';
+import 'package:sidi/services/rewards_wallet_service.dart';
 import 'package:sidi/utils/app_constants.dart';
 import 'package:sidi/utils/token_storage.dart';
 
@@ -33,12 +35,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   UserProfile? _profile;
+  RewardsWalletSummary? _walletSummary;
   bool _hasLoadedOnce = false;
 
   @override
   void initState() {
     super.initState();
     _fetchUserProfile();
+    _loadRewardsSummary();
+  }
+
+  Future<void> _loadRewardsSummary() async {
+    final walletSummary = await RewardsWalletService.loadSummary();
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _walletSummary = walletSummary;
+    });
   }
 
   Future<void> _fetchUserProfile({bool forceRefresh = false}) async {
@@ -184,6 +199,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           else ...[
             SliverToBoxAdapter(child: _buildProfileHeader(scale)),
             SliverToBoxAdapter(child: _buildStatStrip(scale)),
+            SliverToBoxAdapter(child: _buildRewardsPreview(scale)),
             SliverToBoxAdapter(
               child: _buildSection(
                 title: 'MANAGEMENT',
@@ -233,6 +249,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     'Payments & Billing',
                   ),
                   _ProfileItemData(
+                    Icons.wallet_giftcard_outlined,
+                    'Rewards & Referrals',
+                    onTap: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const RewardsWalletScreen(),
+                        ),
+                      );
+                      await _loadRewardsSummary();
+                    },
+                  ),
+                  _ProfileItemData(
                     Icons.auto_awesome_outlined,
                     'Favorite Stylists',
                     onTap: () {
@@ -278,8 +306,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: OutlinedButton(
                   onPressed: () async {
                     final token = await _getToken();
+                    if (!context.mounted) {
+                      return;
+                    }
+
+                    final scaffoldMessenger = ScaffoldMessenger.of(context);
+                    final navigator = Navigator.of(context);
+
                     if (token == null || token.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      scaffoldMessenger.showSnackBar(
                         const SnackBar(content: Text('No token found.')),
                       );
                       return;
@@ -291,14 +326,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           const Center(child: CircularProgressIndicator()),
                     );
                     final success = await _logoutController.logout(token);
-                    Navigator.of(context).pop();
+                    if (!context.mounted) {
+                      return;
+                    }
+                    navigator.pop();
                     if (success) {
-                      Navigator.of(context).pushAndRemoveUntil(
+                      navigator.pushAndRemoveUntil(
                         MaterialPageRoute(builder: (_) => const LoginScreen()),
                         (route) => false,
                       );
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      scaffoldMessenger.showSnackBar(
                         SnackBar(
                           content: Text(
                             _logoutController.errorMessage ?? 'Logout failed.',
@@ -476,6 +514,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildStatStrip(double scale) {
     final bookings = _profile?.stats.totalBookings.toString() ?? '0';
     final reviews = _profile?.stats.totalReviews.toString() ?? '0';
+    final points = _walletSummary?.currentPoints.toString() ?? '0';
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -492,7 +531,111 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Expanded(child: _statCell(bookings, 'BOOKINGS', scale)),
           Expanded(child: _statCell(reviews, 'REVIEWS', scale)),
+          Expanded(child: _statCell(points, 'POINTS', scale)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildRewardsPreview(double scale) {
+    final walletSummary = _walletSummary;
+    if (walletSummary == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20 * scale, 18 * scale, 20 * scale, 0),
+      child: InkWell(
+        onTap: () async {
+          await Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const RewardsWalletScreen()),
+          );
+          await _loadRewardsSummary();
+        },
+        child: Container(
+          padding: EdgeInsets.all(18 * scale),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            gradient: const LinearGradient(
+              colors: [Color(0xFFFBF4E7), Color(0xFFF1E0BF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Rewards Wallet',
+                      style: GoogleFonts.playfairDisplay(
+                        fontSize: 24 * scale,
+                        fontStyle: FontStyle.italic,
+                        color: kEspressoColor,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: kEspressoColor,
+                    size: 22 * scale,
+                  ),
+                ],
+              ),
+              SizedBox(height: 8 * scale),
+              Text(
+                walletSummary.hasUnlockedFreeService
+                    ? 'You have ${walletSummary.freeServiceCredits} complimentary ${walletSummary.freeServiceCredits == 1 ? 'service' : 'services'} ready to use.'
+                    : '${walletSummary.pointsToNextFreeService} more points to unlock a complimentary service.',
+                style: GoogleFonts.inter(
+                  fontSize: 12 * scale,
+                  color: kCharcoalColor,
+                  height: 1.5,
+                ),
+              ),
+              SizedBox(height: 14 * scale),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  minHeight: 10 * scale,
+                  value: walletSummary.progressToNextFreeService,
+                  backgroundColor: Colors.white.withValues(alpha: 0.55),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    Color(0xFFB98A3F),
+                  ),
+                ),
+              ),
+              SizedBox(height: 14 * scale),
+              Row(
+                children: [
+                  Expanded(
+                    child: _rewardPreviewStat(
+                      '${walletSummary.currentPoints}',
+                      'Wallet Points',
+                      scale,
+                    ),
+                  ),
+                  Expanded(
+                    child: _rewardPreviewStat(
+                      '${walletSummary.freeServiceCredits}',
+                      'Free Services',
+                      scale,
+                    ),
+                  ),
+                  Expanded(
+                    child: _rewardPreviewStat(
+                      walletSummary.referralCode,
+                      'Referral Code',
+                      scale,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -572,6 +715,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
             fontSize: 9 * scale,
             letterSpacing: 3,
             color: kAccentGold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _rewardPreviewStat(String value, String label, double scale) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: GoogleFonts.playfairDisplay(
+            fontSize: label == 'Referral Code' ? 14 * scale : 24 * scale,
+            color: kEspressoColor,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        SizedBox(height: 4 * scale),
+        Text(
+          label.toUpperCase(),
+          style: GoogleFonts.inter(
+            fontSize: 8 * scale,
+            letterSpacing: 1.8,
+            color: kWarmGrey600,
           ),
         ),
       ],
