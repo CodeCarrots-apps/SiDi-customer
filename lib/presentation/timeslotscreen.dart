@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/models/service_cart_item.dart';
+import 'package:sidi/presentation/enhance_session_screen.dart';
 import 'package:sidi/presentation/selectaddress.dart';
 
 import '../models/stylist.dart';
@@ -18,7 +19,6 @@ class SelectTimeSlotScreen extends StatefulWidget {
     this.description = '',
     this.stylist,
     this.beauticianId,
-    this.services = const [],
   });
 
   final String serviceId;
@@ -29,7 +29,6 @@ class SelectTimeSlotScreen extends StatefulWidget {
   final String description;
   final Stylist? stylist;
   final String? beauticianId;
-  final List<ServiceCartItem> services;
 
   @override
   State<SelectTimeSlotScreen> createState() => _SelectTimeSlotScreenState();
@@ -37,8 +36,6 @@ class SelectTimeSlotScreen extends StatefulWidget {
 
 class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
   final Color espresso = kEspressoColor;
-  final Color champagne = kChampagneColor;
-  final Color mutedGold = kMutedGoldColor;
   final Color backgroundLight = kBackgroundLight;
 
   static const List<String> monthNames = [
@@ -59,7 +56,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
   DateTime initialDate = DateTime.now().add(const Duration(days: 1));
   late DateTime selectedDate = initialDate;
   String selectedTime = "10:30 AM";
-  int bottomIndex = 1;
+  List<ServiceCartItem> selectedAddonServices = [];
 
   late List<DateTime> days = _generateDays(initialDate.year, initialDate.month);
 
@@ -87,6 +84,12 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
   DateTime get _today {
     final now = DateTime.now();
     return DateTime(now.year, now.month, now.day);
+  }
+
+  bool get _canGoToPreviousMonth {
+    final currentMonth = DateTime(_today.year, _today.month, 1);
+    final visibleMonth = DateTime(initialDate.year, initialDate.month, 1);
+    return visibleMonth.isAfter(currentMonth);
   }
 
   @override
@@ -165,14 +168,16 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const SizedBox(height: 6),
                 _buildServicePreview(),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(32, 28, 32, 0),
+                  padding: const EdgeInsets.fromLTRB(32, 30, 32, 0),
                   child: const _BookingStepBar(currentStep: 2),
                 ),
+                _buildEnhancementPill(),
                 _buildCalendar(),
                 _buildTimeSlots(),
-                const SizedBox(height: 200),
+                const SizedBox(height: 180),
               ],
             ),
           ),
@@ -187,15 +192,15 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
         children: [
-          const SizedBox(height: 10),
+          const SizedBox(height: 20),
           ClipRRect(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(24),
             child: AspectRatio(
               aspectRatio: 4 / 3,
               child: Image.network(
                 widget.imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => Container(
+                errorBuilder: (_, __, ___) => Container(
                   color: const Color(0xFFF0EBE3),
                   child: const Center(
                     child: Icon(
@@ -208,7 +213,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 28),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -218,15 +223,20 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                   children: [
                     Text(
                       widget.title,
-                      style: GoogleFonts.playfairDisplay(fontSize: 24),
+                      style: GoogleFonts.playfairDisplay(
+                        fontSize: 24,
+                        height: 1,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 10),
                     Text(
-                      "DURATION: ${widget.duration.toUpperCase()}",
+                      'DURATION: ${widget.duration.toUpperCase()}',
                       style: GoogleFonts.inter(
                         fontSize: 11,
-                        letterSpacing: 2,
-                        color: Colors.grey,
+                        letterSpacing: 3,
+                        color: const Color(0xFFADB4C0),
+                        fontWeight: FontWeight.w300,
                       ),
                     ),
                   ],
@@ -235,8 +245,9 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
               Text(
                 widget.price,
                 style: GoogleFonts.inter(
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: FontWeight.w300,
+                  color: espresso,
                 ),
               ),
             ],
@@ -246,11 +257,164 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
     );
   }
 
+  Widget _buildEnhancementPill() {
+    final hasAddons = selectedAddonServices.isNotEmpty;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(32, 34, 32, 44),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Material(
+              color: hasAddons ? const Color(0xFFF3E7D0) : Colors.white,
+              borderRadius: BorderRadius.circular(999),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(999),
+                onTap: () async {
+                  final result = await Navigator.push<List<ServiceCartItem>>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const EnhanceSessionScreen(),
+                    ),
+                  );
+                  if (!mounted || result == null) return;
+                  setState(() {
+                    selectedAddonServices = result;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 26,
+                    vertical: 18,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: hasAddons
+                          ? const Color(0xFFCDB28A)
+                          : const Color(0xFFE5E0D8),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.auto_awesome,
+                        size: 18,
+                        color: hasAddons
+                            ? const Color(0xFFC3A76D)
+                            : const Color(0xFF17120E),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        hasAddons
+                            ? '${selectedAddonServices.length} Add-on${selectedAddonServices.length == 1 ? '' : 's'} Selected'
+                            : 'Enhance your session',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: hasAddons
+                              ? const Color(0xFFC3A76D)
+                              : const Color(0xFF17120E),
+                        ),
+                      ),
+                      if (hasAddons) ...[
+                        const SizedBox(width: 10),
+                        const Icon(
+                          Icons.edit_outlined,
+                          size: 14,
+                          color: Color(0xFFC3A76D),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (hasAddons) ...[
+            const SizedBox(height: 16),
+            ...selectedAddonServices.map(
+              (addon) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: const Color(0xFFF6EFE5),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: addon.imageUrl.isNotEmpty
+                            ? Image.network(
+                                addon.imageUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.spa_outlined,
+                                  size: 18,
+                                  color: Color(0xFFC3A76D),
+                                ),
+                              )
+                            : const Icon(
+                                Icons.spa_outlined,
+                                size: 18,
+                                color: Color(0xFFC3A76D),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        addon.title,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF17120E),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      addon.price,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFFC3A76D),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedAddonServices = selectedAddonServices
+                              .where((s) => s.serviceId != addon.serviceId)
+                              .toList();
+                        });
+                      },
+                      child: const Icon(
+                        Icons.close_rounded,
+                        size: 16,
+                        color: Color(0xFFB0A898),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildCalendar() {
     final headerMonth = monthNames[days.first.month - 1].toUpperCase();
     final headerYear = days.first.year;
-    // Offset so day 1 falls on the correct weekday column (Mon=0 … Sun=6)
-    final firstWeekdayOffset = days.first.weekday - 1;
+    final firstWeekdayOffset = days.first.weekday % 7;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -258,41 +422,46 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_left),
-                onPressed: () => _changeMonth(-1),
-                tooltip: 'Previous month',
-              ),
-              Text(
-                "$headerMonth $headerYear",
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  letterSpacing: 3,
-                  fontWeight: FontWeight.w500,
+              Expanded(
+                child: Text(
+                  '$headerMonth $headerYear',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    letterSpacing: 4,
+                    fontWeight: FontWeight.w500,
+                    color: espresso,
+                  ),
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.arrow_right),
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.chevron_left, size: 22),
+                onPressed: _canGoToPreviousMonth
+                    ? () => _changeMonth(-1)
+                    : null,
+                tooltip: 'Previous month',
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.chevron_right, size: 22),
                 onPressed: () => _changeMonth(1),
                 tooltip: 'Next month',
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          // Weekday header row
+          const SizedBox(height: 22),
           Row(
-            children: ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+            children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
                 .map(
-                  (d) => Expanded(
+                  (label) => Expanded(
                     child: Center(
                       child: Text(
-                        d,
+                        label,
                         style: GoogleFonts.inter(
                           fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade500,
+                          fontWeight: FontWeight.w400,
+                          color: const Color(0xFFB6BCC7),
                         ),
                       ),
                     ),
@@ -300,20 +469,24 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                 )
                 .toList(),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 14),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: days.length + firstWeekdayOffset,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 8,
+              mainAxisExtent: 38,
             ),
             itemBuilder: (context, index) {
-              if (index < firstWeekdayOffset) return const SizedBox();
+              if (index < firstWeekdayOffset) {
+                return const SizedBox();
+              }
+
               final day = days[index - firstWeekdayOffset];
-              final isPast = !day.isAfter(_today); // blocks today AND past days
+              final isPast = !day.isAfter(_today);
               final isSelected =
                   !isPast &&
                   selectedDate.day == day.day &&
@@ -331,19 +504,24 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                           selectedTime = _firstAvailableTimeForDate(day) ?? '';
                         });
                       },
-                child: Container(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOut,
                   alignment: Alignment.center,
-                  decoration: isSelected
-                      ? BoxDecoration(color: champagne, shape: BoxShape.circle)
-                      : null,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? const Color(0xFFF1E5D2)
+                        : Colors.transparent,
+                    shape: BoxShape.circle,
+                  ),
                   child: Text(
-                    "${day.day}",
+                    '${day.day}',
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: isSelected
                           ? FontWeight.w600
-                          : FontWeight.w300,
-                      color: isPast ? Colors.grey.shade400 : espresso,
+                          : FontWeight.w400,
+                      color: isPast ? const Color(0xFFD0D3DA) : espresso,
                     ),
                   ),
                 ),
@@ -356,107 +534,145 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
   }
 
   Widget _buildTimeSlots() {
-    final hasAvailableSlots = timeSlots.any(
-      (t) => _isSlotAvailable(selectedDate, t),
-    );
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+      padding: const EdgeInsets.fromLTRB(32, 54, 32, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "AVAILABLE TIME SLOTS",
+            'AVAILABLE AFTERNOON SLOTS',
             style: GoogleFonts.inter(
               fontSize: 11,
-              letterSpacing: 2,
+              letterSpacing: 4,
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 24),
-          if (!hasAvailableSlots)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Center(
-                child: Text(
-                  'No available slots for this day.\nPlease select another date.',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: Colors.grey.shade500,
-                    height: 1.65,
-                  ),
-                ),
-              ),
-            )
-          else
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: timeSlots.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 3,
-              ),
-              itemBuilder: (context, index) {
-                final time = timeSlots[index];
-                final isAvailable = _isSlotAvailable(selectedDate, time);
-                final isSelected = selectedTime == time && isAvailable;
-
-                return GestureDetector(
-                  onTap: isAvailable
-                      ? () {
-                          HapticFeedback.selectionClick();
-                          _logAction('Time slot selected: $time');
-                          setState(() => selectedTime = time);
-                        }
-                      : null,
-                  child: Container(
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: isSelected ? champagne : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected
-                            ? mutedGold
-                            : isAvailable
-                            ? Colors.grey.shade200
-                            : Colors.grey.shade300,
-                      ),
-                      boxShadow: [
-                        if (!isSelected)
-                          BoxShadow(
-                            color: opacity(Colors.black, 0.02),
-                            blurRadius: 12,
-                          ),
-                      ],
-                    ),
-                    child: Text(
-                      time,
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.w500,
-                        color: isAvailable ? espresso : Colors.grey.shade400,
-                      ),
-                    ),
-                  ),
-                );
-              },
+          const SizedBox(height: 28),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: timeSlots.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 22,
+              crossAxisSpacing: 20,
+              childAspectRatio: 2.15,
             ),
+            itemBuilder: (context, index) {
+              final time = timeSlots[index];
+              final isAvailable = _isSlotAvailable(selectedDate, time);
+              final isSelected = selectedTime == time && isAvailable;
+
+              return GestureDetector(
+                onTap: isAvailable
+                    ? () {
+                        HapticFeedback.selectionClick();
+                        _logAction('Time slot selected: $time');
+                        setState(() => selectedTime = time);
+                      }
+                    : null,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOut,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? const Color(0xFFF3E7D0)
+                        : isAvailable
+                        ? Colors.white
+                        : const Color(0xFFF2F0ED),
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(
+                      color: isSelected
+                          ? const Color(0xFFE6D1AA)
+                          : isAvailable
+                          ? const Color(0xFFEAE6DE)
+                          : const Color(0xFFE1DED9),
+                    ),
+                    boxShadow: isAvailable
+                        ? [
+                            BoxShadow(
+                              color: opacity(
+                                espresso,
+                                isSelected ? 0.04 : 0.03,
+                              ),
+                              blurRadius: isSelected ? 18 : 14,
+                              offset: const Offset(0, 6),
+                            ),
+                          ]
+                        : [],
+                  ),
+                  child: isAvailable
+                      ? Text(
+                          time,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w500,
+                            color: espresso,
+                          ),
+                        )
+                      : Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              time,
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.grey.shade400,
+                                decoration: TextDecoration.lineThrough,
+                                decorationColor: Colors.grey.shade400,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              'Unavailable',
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                color: Colors.grey.shade400,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
   Widget _buildBottomSection() {
+    final primaryService = ServiceCartItem(
+      serviceId: widget.serviceId,
+      title: widget.title,
+      price: widget.price,
+      duration: widget.duration,
+      imageUrl: widget.imageUrl,
+      description: widget.description,
+      beauticianId: widget.beauticianId,
+    );
+
+    final bookingServices = selectedAddonServices.isEmpty
+        ? const <ServiceCartItem>[]
+        : [primaryService, ...selectedAddonServices];
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(32, 20, 32, 30),
+      padding: const EdgeInsets.fromLTRB(32, 22, 32, 34),
       decoration: BoxDecoration(
         color: opacity(backgroundLight, 0.95),
         border: Border(top: BorderSide(color: Colors.grey.shade200)),
+        boxShadow: [
+          BoxShadow(
+            color: opacity(Colors.black, 0.04),
+            blurRadius: 24,
+            offset: const Offset(0, -6),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -464,9 +680,10 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: espresso,
-              minimumSize: const Size.fromHeight(56),
+              elevation: 0,
+              minimumSize: const Size.fromHeight(62),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(50),
+                borderRadius: BorderRadius.circular(24),
               ),
             ),
             onPressed: selectedTime.isEmpty
@@ -489,30 +706,27 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                           serviceImage: widget.imageUrl,
                           serviceTitle: widget.title,
                           servicePrice: widget.price,
+                          services: bookingServices,
                           selectedDateDisplay: selectedDateDisplay,
                           selectedDateIso: selectedDateIso,
                           selectedTime: selectedTime,
                           serviceId: widget.serviceId,
                           stylist: widget.stylist,
                           beauticianId: widget.beauticianId,
-                          services: widget.services,
                         ),
                       ),
                     );
                   },
             child: Text(
-              widget.services.isNotEmpty
-                  ? 'CONTINUE WITH ${widget.services.length} SERVICES'
-                  : "CONTINUE TO ADDRESS",
+              "CONTINUE TO ADDRESS",
               style: GoogleFonts.inter(
                 fontSize: 12,
-                letterSpacing: 2,
+                letterSpacing: 3,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
             ),
           ),
-          const SizedBox(height: 30),
         ],
       ),
     );
@@ -521,69 +735,80 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
 
 class _BookingStepBar extends StatelessWidget {
   const _BookingStepBar({required this.currentStep});
+
   final int currentStep;
 
   @override
   Widget build(BuildContext context) {
     const labels = ['Service', 'Schedule', 'Confirm'];
+
     return Row(
-      children: List.generate(labels.length * 2 - 1, (i) {
-        if (i.isOdd) {
+      children: List.generate(labels.length * 2 - 1, (index) {
+        if (index.isOdd) {
           return Expanded(
             child: Container(
-              height: 1.5,
-              color: i ~/ 2 < currentStep - 1
-                  ? const Color(0xFFC5B38A)
-                  : const Color(0xFFE8E5DF),
+              height: 1,
+              margin: const EdgeInsets.only(bottom: 18),
+              color: index ~/ 2 < currentStep - 1
+                  ? const Color(0xFFCDB28A)
+                  : const Color(0xFFE8E3DA),
             ),
           );
         }
-        final idx = i ~/ 2;
-        final done = idx < currentStep - 1;
-        final active = idx == currentStep - 1;
+
+        final stepIndex = index ~/ 2;
+        final isDone = stepIndex < currentStep - 1;
+        final isActive = stepIndex == currentStep - 1;
+
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 30,
-              height: 30,
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: done
-                    ? const Color(0xFFC5B38A)
-                    : active
-                    ? const Color(0xFF2C1A0E)
-                    : const Color(0xFFF3F2F0),
+                color: isDone
+                    ? const Color(0xFFCDB28A)
+                    : isActive
+                    ? const Color(0xFF1B180D)
+                    : const Color(0xFFF5F1EA),
+                border: Border.all(
+                  color: isActive
+                      ? const Color(0xFF1B180D)
+                      : const Color(0xFFE6DED2),
+                ),
               ),
               child: Center(
-                child: done
+                child: isDone
                     ? const Icon(
                         Icons.check_rounded,
-                        size: 15,
+                        size: 16,
                         color: Colors.white,
                       )
                     : Text(
-                        '${idx + 1}',
-                        style: TextStyle(
+                        '${stepIndex + 1}',
+                        style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: active
+                          color: isActive
                               ? Colors.white
-                              : const Color(0xFF78716C),
+                              : const Color(0xFF8F877D),
                         ),
                       ),
               ),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 8),
             Text(
-              labels[idx],
-              style: TextStyle(
+              labels[stepIndex],
+              style: GoogleFonts.inter(
                 fontSize: 10,
-                fontWeight: active ? FontWeight.w700 : FontWeight.w400,
-                color: active
-                    ? const Color(0xFF2C1A0E)
-                    : const Color(0xFF78716C),
-                letterSpacing: 0.3,
+                letterSpacing: 0.4,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                color: isActive
+                    ? const Color(0xFF1B180D)
+                    : const Color(0xFF8F877D),
               ),
             ),
           ],

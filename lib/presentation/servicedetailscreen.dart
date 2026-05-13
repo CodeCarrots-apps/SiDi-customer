@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
-import 'package:sidi/models/service_cart_item.dart';
-import 'package:sidi/presentation/service_cart_screen.dart';
 import 'package:sidi/presentation/widgets/stylistcard.dart';
 
 import 'package:sidi/services/favorite_service_api.dart';
@@ -13,7 +11,6 @@ import 'package:sidi/controller/ratingcontroller.dart';
 import 'timeslotscreen.dart';
 
 import 'package:sidi/models/stylist.dart';
-import 'package:sidi/services/service_cart_service.dart';
 
 class ServiceDetailScreen extends StatefulWidget {
   const ServiceDetailScreen({
@@ -62,8 +59,6 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
   // Colors are provided by lib/constant/constants.dart
   late bool isFavorite = false;
   late bool isLoadingFavorite = false;
-  int _cartCount = 0;
-  bool _isCurrentServiceInCart = false;
 
   int? selectedStylistIndex;
   int selectedRating = 0;
@@ -76,7 +71,6 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       selectedStylistIndex = 0;
     }
     _loadFavoriteStatus();
-    _loadCartState();
     _entranceCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
@@ -103,57 +97,6 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
     _stylistsFade = fade(0.5, 0.9);
     _slideStylists = slide(0.5, 0.9);
     _entranceCtrl.forward();
-  }
-
-  ServiceCartItem get _currentCartItem => ServiceCartItem(
-    serviceId: widget.serviceId,
-    title: widget.title,
-    price: widget.price,
-    duration: widget.duration,
-    imageUrl: widget.imageUrl,
-    description: widget.description,
-    curatedServiceId: widget.curatedServiceId,
-    beauticianId: widget.beauticianId,
-  );
-
-  Future<void> _loadCartState() async {
-    final items = await ServiceCartService.loadCart();
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _cartCount = items.length;
-      _isCurrentServiceInCart = items.any(
-        (item) => item.uniqueKey == _currentCartItem.uniqueKey,
-      );
-    });
-  }
-
-  Future<void> _addCurrentServiceToCart() async {
-    final alreadyInCart = _isCurrentServiceInCart;
-    await ServiceCartService.addItem(_currentCartItem);
-    await _loadCartState();
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          alreadyInCart
-              ? '${widget.title} is already in your cart.'
-              : '${widget.title} added to your cart.',
-        ),
-      ),
-    );
-  }
-
-  Future<void> _openCart() async {
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const ServiceCartScreen()));
-    await _loadCartState();
   }
 
   @override
@@ -369,7 +312,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                                             ? [
                                                 BoxShadow(
                                                   color: kChampagneColor
-                                                      .withValues(alpha: 0.28),
+                                                      .withOpacity(0.28),
                                                   blurRadius: 14,
                                                   offset: const Offset(0, 4),
                                                 ),
@@ -443,38 +386,6 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
         ),
       ),
       actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 10),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              _circleButton(Icons.shopping_bag_outlined, onTap: _openCart),
-              if (_cartCount > 0)
-                Positioned(
-                  right: 0,
-                  top: -2,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: const BoxDecoration(
-                      color: kChampagneColor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      '$_cartCount',
-                      style: GoogleFonts.inter(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
         if (widget.showFavButton)
           Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -523,11 +434,11 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
         width: 38,
         height: 38,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.88),
+          color: Colors.white.withOpacity(0.88),
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.10),
+              color: Colors.black.withOpacity(0.10),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -803,7 +714,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
         child: Container(
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.72),
+            color: Colors.white.withOpacity(0.72),
             border: Border(
               top: BorderSide(color: opacity(kEspressoColor, 0.08)),
             ),
@@ -811,99 +722,68 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    flex: 4,
-                    child: OutlinedButton(
-                      onPressed: _addCurrentServiceToCart,
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(60),
-                        side: BorderSide(color: opacity(kEspressoColor, 0.18)),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(50),
-                        ),
-                      ),
-                      child: Text(
-                        _isCurrentServiceInCart ? 'IN CART' : 'ADD TO CART',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          letterSpacing: 1.8,
-                          fontWeight: FontWeight.w700,
-                          color: kEspressoColor,
-                        ),
-                      ),
-                    ),
+              Container(
+                height: 60,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [kEspressoColor, Color(0xFF5C3D2E)],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 6,
-                    child: Container(
-                      height: 60,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [kEspressoColor, Color(0xFF5C3D2E)],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ),
-                        borderRadius: BorderRadius.circular(50),
-                        boxShadow: [
-                          BoxShadow(
-                            color: kEspressoColor.withValues(alpha: 0.32),
-                            blurRadius: 18,
-                            offset: const Offset(0, 7),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(50),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(50),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => SelectTimeSlotScreen(
-                                  serviceId: widget.serviceId,
-                                  title: widget.title,
-                                  price: widget.price,
-                                  duration: widget.duration,
-                                  imageUrl: widget.imageUrl,
-                                  stylist: widget.stylists.isNotEmpty
-                                      ? widget.stylists[selectedStylistIndex ??
-                                            0]
-                                      : null,
-                                  beauticianId: widget.beauticianId,
-                                ),
-                              ),
-                            );
-                          },
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.calendar_month,
-                                size: 20,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 10),
-                              Text(
-                                'BOOK NOW',
-                                style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  letterSpacing: 2,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
+                  borderRadius: BorderRadius.circular(50),
+                  boxShadow: [
+                    BoxShadow(
+                      color: kEspressoColor.withOpacity(0.32),
+                      blurRadius: 18,
+                      offset: const Offset(0, 7),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(50),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(50),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SelectTimeSlotScreen(
+                            serviceId: widget.serviceId,
+                            title: widget.title,
+                            price: widget.price,
+                            duration: widget.duration,
+                            imageUrl: widget.imageUrl,
+                            stylist: widget.stylists.isNotEmpty
+                                ? widget.stylists[selectedStylistIndex ?? 0]
+                                : null,
+                            beauticianId: widget.beauticianId,
                           ),
                         ),
-                      ),
+                      );
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.calendar_month,
+                          size: 20,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'BOOK NOW',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            letterSpacing: 2,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
               const SizedBox(height: 20),
             ],

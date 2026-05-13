@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:location/location.dart';
@@ -13,10 +11,9 @@ import 'waitinglistscreen.dart';
 import '../models/address_model.dart';
 import '../models/booking_models.dart';
 import '../models/edit_result.dart';
+import '../services/booking_service.dart';
 import '../models/payment_method_model.dart';
-import '../models/booking.dart';
 import '../services/local_storage_service.dart';
-import '../services/service_cart_service.dart';
 import 'edit_address_screen.dart';
 import 'edit_payment_method_screen.dart';
 
@@ -59,64 +56,6 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
   List<AddressModel> _addresses = [];
   List<PaymentMethodModel> _paymentMethods = [];
 
-  List<ServiceCartItem> get _selectedServices {
-    if (widget.services.isNotEmpty) {
-      return widget.services;
-    }
-
-    return [
-      ServiceCartItem(
-        serviceId: widget.serviceId,
-        title: widget.serviceTitle,
-        price: widget.servicePrice,
-        duration: '',
-        imageUrl: widget.serviceImage,
-        beauticianId: widget.beauticianId,
-      ),
-    ];
-  }
-
-  String get _serviceSummaryTitle {
-    final items = _selectedServices;
-    if (items.isEmpty) {
-      return widget.serviceTitle;
-    }
-    if (items.length == 1) {
-      return items.first.title;
-    }
-    return '${items.first.title} + ${items.length - 1} more';
-  }
-
-  String get _serviceCountLabel {
-    final count = _selectedServices.length;
-    return count == 1 ? '1 service' : '$count services';
-  }
-
-  String get _servicePriceLabel {
-    final items = _selectedServices;
-    if (items.length == 1 && items.first.price.isNotEmpty) {
-      return items.first.price;
-    }
-
-    var total = 0.0;
-    var parsedCount = 0;
-    for (final item in items) {
-      final numeric = double.tryParse(
-        item.price.replaceAll(RegExp(r'[^0-9.]'), ''),
-      );
-      if (numeric != null) {
-        total += numeric;
-        parsedCount++;
-      }
-    }
-
-    if (parsedCount == items.length && parsedCount > 0) {
-      return 'AED ${total.toStringAsFixed(total.truncateToDouble() == total ? 0 : 2)}';
-    }
-
-    return widget.servicePrice;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -141,6 +80,10 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
                               _buildSectionTitle(),
                               const SizedBox(height: 18),
                               _buildAppointmentSummary(),
+                              if (_addonServices.isNotEmpty) ...[
+                                const SizedBox(height: 16),
+                                _buildAddonsSection(),
+                              ],
                               const SizedBox(height: 26),
                               ...List.generate(
                                 _addresses.length,
@@ -216,10 +159,8 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
     final payments = await LocalStorageService.loadPaymentMethods();
 
     setState(() {
-      _addresses = addresses.isNotEmpty ? addresses : _defaultAddresses();
-      _paymentMethods = payments.isNotEmpty
-          ? payments
-          : _defaultPaymentMethods();
+      _addresses = addresses;
+      _paymentMethods = payments;
       _isLoading = false;
     });
   }
@@ -231,6 +172,43 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
   Future<void> _savePaymentMethods() async {
     await LocalStorageService.savePaymentMethods(_paymentMethods);
   }
+
+  // ── Add-on helpers ──────────────────────────────────────────────────────────
+
+  List<ServiceCartItem> get _addonServices =>
+      widget.services.where((s) => s.serviceId != widget.serviceId).toList();
+
+  double _parsePrice(String price) {
+    final cleaned = price.replaceAll(RegExp(r'[^0-9.]'), '');
+    return double.tryParse(cleaned) ?? 0;
+  }
+
+  String get _displayTotalPrice {
+    if (widget.servicePrice.isEmpty) return '';
+    final addons = _addonServices;
+    if (addons.isEmpty) return widget.servicePrice;
+    final base = _parsePrice(widget.servicePrice);
+    final addonTotal = addons.fold<double>(
+      0,
+      (sum, a) => sum + _parsePrice(a.price),
+    );
+    final total = base + addonTotal;
+    final symbol = widget.servicePrice.replaceAll(RegExp(r'[\d.,\s]'), '');
+    final formatted = total.truncateToDouble() == total
+        ? total.toInt().toString()
+        : total.toStringAsFixed(2);
+    return '$symbol$formatted';
+  }
+
+  List<String> get _selectedServiceNames {
+    final names = <String>[
+      widget.serviceTitle,
+      ..._addonServices.map((s) => s.title),
+    ];
+    return names.toSet().toList();
+  }
+
+  // ────────────────────────────────────────────────────────────────────────────
 
   Future<BookingAddress?> _resolveBookingAddress(
     AddressModel addressModel,
@@ -266,7 +244,6 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
         longitude = currentLocation.longitude ?? 0.0;
       } catch (error) {
         debugPrint('GPS resolution failed (proceeding without coords): $error');
-        // Don't block the booking — proceed with 0.0 coords
       }
     }
 
@@ -289,12 +266,8 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
     final minute = match.group(2)!;
     final period = match.group(3)!.toUpperCase();
 
-    if (period == 'PM' && hour < 12) {
-      hour += 12;
-    }
-    if (period == 'AM' && hour == 12) {
-      hour = 0;
-    }
+    if (period == 'PM' && hour < 12) hour += 12;
+    if (period == 'AM' && hour == 12) hour = 0;
 
     return '${hour.toString().padLeft(2, '0')}:$minute';
   }
@@ -305,9 +278,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
     final confirmed = await _showConfirmationSheet();
     if (!confirmed) return;
 
-    setState(() {
-      _isBooking = true;
-    });
+    setState(() => _isBooking = true);
 
     try {
       await _runBookingFlow();
@@ -322,11 +293,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _isBooking = false;
-        });
-      }
+      if (mounted) setState(() => _isBooking = false);
     }
   }
 
@@ -364,15 +331,17 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            _confirmRow(Icons.spa_outlined, 'Service', _serviceSummaryTitle),
-            if (_selectedServices.length > 1)
+            _confirmWrapRow(
+              Icons.spa_outlined,
+              _selectedServiceNames.length > 1 ? 'Services' : 'Service',
+              _selectedServiceNames.join(', '),
+            ),
+            if (widget.servicePrice.isNotEmpty)
               _confirmRow(
-                Icons.shopping_bag_outlined,
-                'Included',
-                _serviceCountLabel,
+                Icons.payments_outlined,
+                _addonServices.isEmpty ? 'Price' : 'Total Price',
+                _displayTotalPrice,
               ),
-            if (_servicePriceLabel.isNotEmpty)
-              _confirmRow(Icons.payments_outlined, 'Price', _servicePriceLabel),
             _confirmRow(
               Icons.calendar_today_outlined,
               'Date',
@@ -459,37 +428,86 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
     );
   }
 
+  Widget _confirmWrapRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: kWarmGrey600),
+          const SizedBox(width: 10),
+          Text(
+            '$label: ',
+            style: GoogleFonts.inter(fontSize: 13, color: kWarmGrey600),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: kEspressoColor,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _runBookingFlow() async {
     final bookingAddress = await _resolveBookingAddress(
       _addresses[selectedAddressIndex],
     );
     if (bookingAddress == null) return;
-    final primaryService = _selectedServices.first;
 
-    // Build and save a local booking immediately.
-    final localBooking = Booking(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      title: _serviceSummaryTitle,
-      time: _to24Hour(widget.selectedTime),
+    final addonIds = _addonServices.map((s) => s.serviceId).toList();
+
+    final requestPayload = {
+      'serviceId': widget.serviceId,
+      'beauticianId': widget.beauticianId,
+      'bookingDate': widget.selectedDateIso,
+      'bookingTime': _to24Hour(widget.selectedTime),
+      'locationType': 'home',
+      'address': bookingAddress.toJson(),
+      'addonIds': addonIds.isEmpty ? null : addonIds,
+    }..removeWhere((key, value) => value == null);
+
+    debugPrint('BOOKING_REQUEST -> $requestPayload');
+
+    final response = await BookingService.createBooking(
+      serviceId: widget.serviceId,
+      beauticianId: widget.beauticianId,
       bookingDate: widget.selectedDateIso,
-      serviceId: primaryService.serviceId,
-      stylist: widget.stylist?.fullName ?? '',
-      image: primaryService.imageUrl,
-      status: 'pending',
+      bookingTime: _to24Hour(widget.selectedTime),
+      locationType: 'home',
+      address: bookingAddress,
+      addonIds: addonIds.isEmpty ? null : addonIds,
     );
-    await LocalStorageService.addCachedBooking(localBooking);
-    debugPrint('Booking saved locally: id=${localBooking.id}');
 
-    // Simulate processing for 15 seconds.
-    await Future.delayed(const Duration(seconds: 15));
+    debugPrint(
+      'BOOKING_RESPONSE -> success=${response.success}, '
+      'message=${response.message}, '
+      'status=${response.booking?.status}, '
+      'bookingId=${response.booking?.id}, '
+      'estimatedPrice=${response.estimatedPrice}, '
+      'addonsAmount=${response.addonsAmount}, '
+      'travelFee=${response.travelFee}, '
+      'broadcastedCount=${response.broadcastedCount}',
+    );
 
     if (!mounted) return;
 
-    final response = BookingCreateResponse(
-      success: true,
-      message: 'Appointment booked successfully.',
-      booking: localBooking,
-    );
+    if (!response.success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response.message),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+      return;
+    }
 
     final status = (response.booking?.status ?? '').toLowerCase().trim();
     final isWaitingList = <String>{
@@ -509,7 +527,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               ? 'Your booking request is on the waiting list.'
               : 'Appointment booked successfully.',
         ),
-        duration: Duration(seconds: 2),
+        duration: const Duration(seconds: 2),
       ),
     );
 
@@ -519,13 +537,12 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
         builder: (_) => isWaitingList
             ? WaitingListScreen(
                 response: response,
-                serviceTitle: _serviceSummaryTitle,
-                serviceImage: primaryService.imageUrl,
+                serviceTitle: widget.serviceTitle,
+                serviceImage: widget.serviceImage,
                 selectedTime: widget.selectedTime,
                 selectedDate: widget.selectedDateDisplay,
                 stylistName: widget.stylist?.fullName,
                 stylistImage: widget.stylist?.profileImage,
-                services: _selectedServices,
                 stylistTag: widget.stylist != null
                     ? widget.stylist!.skills.isNotEmpty
                           ? widget.stylist!.skills.join(', ')
@@ -534,14 +551,13 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               )
             : ConfirmationScreen(
                 response: response,
-                serviceTitle: _serviceSummaryTitle,
-                serviceImage: primaryService.imageUrl,
+                serviceTitle: widget.serviceTitle,
+                serviceImage: widget.serviceImage,
                 selectedTime: widget.selectedTime,
                 selectedDate: widget.selectedDateDisplay,
                 stylistName: widget.stylist?.fullName,
                 stylistImage: widget.stylist?.profileImage,
-                servicePrice: _servicePriceLabel,
-                services: _selectedServices,
+                servicePrice: widget.servicePrice,
                 stylistTag: widget.stylist != null
                     ? widget.stylist!.skills.isNotEmpty
                           ? widget.stylist!.skills.join(', ')
@@ -550,50 +566,6 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               ),
       ),
     );
-
-    if (widget.services.isNotEmpty) {
-      await ServiceCartService.clearCart();
-    }
-  }
-
-  List<AddressModel> _defaultAddresses() {
-    return [
-      AddressModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        label: 'HOME',
-        line1: '123 Elegant Ave, Penthouse 4B',
-        line2: 'New York, NY 10012',
-      ),
-      AddressModel(
-        id: (DateTime.now().millisecondsSinceEpoch + 1).toString(),
-        label: 'OFFICE',
-        line1: '456 Corporate Plaza, Suite 200',
-        line2: 'Manhattan, NY 10001',
-      ),
-    ];
-  }
-
-  List<PaymentMethodModel> _defaultPaymentMethods() {
-    return [
-      PaymentMethodModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        label: 'Apple Pay',
-        details: '',
-        brand: 'apple',
-      ),
-      PaymentMethodModel(
-        id: (DateTime.now().millisecondsSinceEpoch + 1).toString(),
-        label: 'Visa ending in 4242',
-        details: '',
-        brand: 'visa',
-      ),
-      PaymentMethodModel(
-        id: (DateTime.now().millisecondsSinceEpoch + 2).toString(),
-        label: 'Cash Onsite',
-        details: 'Pay cash at appointment',
-        brand: 'cash',
-      ),
-    ];
   }
 
   Future<void> _openAddressEditor({AddressModel? address, int? index}) async {
@@ -777,13 +749,13 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               ),
             ],
           ),
-          if (_servicePriceLabel.isNotEmpty) ...[
+          if (widget.servicePrice.isNotEmpty) ...[
             const Spacer(),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Price',
+                  _addonServices.isEmpty ? 'Price' : 'Total Price',
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     letterSpacing: 1.5,
@@ -792,7 +764,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _servicePriceLabel,
+                  _displayTotalPrice,
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -802,6 +774,103 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               ],
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddonsSection() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAF7F2),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE8DFD0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.auto_awesome,
+                size: 14,
+                color: Color(0xFFC3A76D),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'ADD-ONS',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  letterSpacing: 2,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFFC3A76D),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${_addonServices.length} selected',
+                style: GoogleFonts.inter(fontSize: 11, color: kWarmGrey600),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ..._addonServices.map(
+            (addon) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0EBE3),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: addon.imageUrl.isNotEmpty
+                          ? Image.network(
+                              addon.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.spa_outlined,
+                                size: 16,
+                                color: Color(0xFFC3A76D),
+                              ),
+                            )
+                          : const Icon(
+                              Icons.spa_outlined,
+                              size: 16,
+                              color: Color(0xFFC3A76D),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      addon.title,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: kEspressoColor,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    addon.price,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFFC3A76D),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -821,8 +890,8 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
             color: selected ? kEspressoColor : opacity(kEspressoColor, 0.08),
             width: selected ? 1.8 : 1,
           ),
-          boxShadow: [
-            const BoxShadow(
+          boxShadow: const [
+            BoxShadow(
               color: Color(0x0A000000),
               blurRadius: 20,
               offset: Offset(0, 10),
@@ -984,11 +1053,11 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
             color: selected ? kEspressoColor : opacity(kEspressoColor, 0.1),
             width: selected ? 1.8 : 1,
           ),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
-              color: const Color(0x08000000),
+              color: Color(0x08000000),
               blurRadius: 12,
-              offset: const Offset(0, 8),
+              offset: Offset(0, 8),
             ),
           ],
         ),
@@ -1178,61 +1247,58 @@ class _BookingProgressOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned.fill(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          color: Colors.black.withValues(alpha: 0.22),
-          child: Center(
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 44),
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 44),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(32),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.12),
-                    blurRadius: 48,
-                    offset: const Offset(0, 24),
+      child: ColoredBox(
+        color: const Color(0x38000000),
+        child: Center(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 44),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 44),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x1F000000),
+                  blurRadius: 48,
+                  offset: Offset(0, 24),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 52,
+                  height: 52,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    valueColor: AlwaysStoppedAnimation<Color>(kEspressoColor),
                   ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(
-                    width: 52,
-                    height: 52,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation<Color>(kEspressoColor),
-                    ),
+                ),
+                const SizedBox(height: 32),
+                Text(
+                  'Booking Your Appointment',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: 22,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w400,
+                    color: kEspressoColor,
+                    decoration: TextDecoration.none,
                   ),
-                  const SizedBox(height: 32),
-                  Text(
-                    'Booking Your Appointment',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.playfairDisplay(
-                      fontSize: 22,
-                      fontStyle: FontStyle.italic,
-                      fontWeight: FontWeight.w400,
-                      color: kEspressoColor,
-                      decoration: TextDecoration.none,
-                    ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Please wait while we confirm\nyour details',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: kWarmGrey600,
+                    height: 1.65,
+                    decoration: TextDecoration.none,
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Please wait while we confirm\nyour details',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      color: kWarmGrey600,
-                      height: 1.65,
-                      decoration: TextDecoration.none,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
