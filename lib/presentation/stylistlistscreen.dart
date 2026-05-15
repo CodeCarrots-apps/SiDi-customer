@@ -118,9 +118,9 @@ class StylistListScreen extends StatelessWidget {
                                 duration: const Duration(milliseconds: 250),
                                 transitionBuilder: (child, animation) =>
                                     FadeTransition(
-                                  opacity: animation,
-                                  child: child,
-                                ),
+                                      opacity: animation,
+                                      child: child,
+                                    ),
                                 child: Text(
                                   controller.selectedLocation.value,
                                   key: ValueKey(
@@ -178,7 +178,8 @@ class StylistListScreen extends StatelessWidget {
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.only(top: 4, bottom: 18),
                           itemCount: controller.stylists.length,
-                          separatorBuilder: (_, _) => const SizedBox(height: 14),
+                          separatorBuilder: (_, _) =>
+                              const SizedBox(height: 14),
                           itemBuilder: (context, index) {
                             return StylistsCard(
                               stylist: controller.stylists[index],

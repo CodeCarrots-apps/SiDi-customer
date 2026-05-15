@@ -1,6 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
+
+import '../models/app_notification.dart';
+import '../services/appointments_sync_service.dart';
+import '../services/local_storage_service.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -11,45 +17,50 @@ class NotificationsScreen extends StatefulWidget {
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
   int _selectedFilterIndex = 0;
+  bool _isLoading = true;
+  StreamSubscription<List<AppNotification>>? _notificationsSubscription;
 
-  final List<String> _filters = ['ALL', 'APPOINTMENTS', 'OFFERS'];
-  final List<_NotificationEntry> _notifications = [
-    _NotificationEntry(
-      createdAt: DateTime.now().subtract(const Duration(minutes: 2)),
-      message: 'Your session with Elena is confirmed for tomorrow at 2 PM.',
-      icon: Icons.calendar_today_outlined,
-      category: _NotificationCategory.appointments,
-    ),
-    _NotificationEntry(
-      createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-      message:
-          'As a valued guest, enjoy 20% off your next \'Morning Glow\' facial.',
-      icon: Icons.auto_awesome_outlined,
-      category: _NotificationCategory.offers,
-      actionLabel: 'CLAIM OFFER',
-    ),
-    _NotificationEntry(
-      createdAt: DateTime.now().subtract(const Duration(hours: 3)),
-      message: 'Face ID verification is now active for your account.',
-      icon: Icons.fingerprint,
-      category: _NotificationCategory.other,
-    ),
-    _NotificationEntry(
-      createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
-      message: 'Your monthly editorial journal is now available.',
-      subtitle: 'Issue No. 14: The Winter Serenity Guide',
-      imageUrl:
-          'https://images.unsplash.com/photo-1516979187457-637abb4f9353?auto=format&fit=crop&w=300&q=80',
-      icon: Icons.menu_book_outlined,
-      category: _NotificationCategory.other,
-      isEditorial: true,
-    ),
-  ];
+  final List<String> _filters = ['ALL', 'APPOINTMENTS', 'UPDATES'];
+  List<AppNotification> _notifications = const [];
 
-  void _clearNotifications() {
+  @override
+  void initState() {
+    super.initState();
+    _notificationsSubscription = AppointmentsSyncService.notificationsStream
+        .listen(_applyNotifications);
+    _loadNotifications();
+  }
+
+  @override
+  void dispose() {
+    _notificationsSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadNotifications() async {
+    final storedNotifications =
+        await LocalStorageService.loadAppNotifications();
+    if (!mounted) return;
+
     setState(() {
-      _notifications.clear();
+      _notifications = storedNotifications;
+      _isLoading = false;
     });
+
+    await AppointmentsSyncService.publishNotifications();
+  }
+
+  void _applyNotifications(List<AppNotification> notifications) {
+    if (!mounted) return;
+
+    setState(() {
+      _notifications = notifications;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _clearNotifications() async {
+    await AppointmentsSyncService.clearNotifications();
   }
 
   bool _isSameDay(DateTime a, DateTime b) {
@@ -86,10 +97,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return '${date.day}/${date.month}/${date.year}';
   }
 
-  List<_NotificationEntry> _sortedVisibleNotifications() {
+  List<AppNotification> _sortedVisibleNotifications() {
     final selectedCategory = switch (_selectedFilterIndex) {
-      1 => _NotificationCategory.appointments,
-      2 => _NotificationCategory.offers,
+      1 => AppNotificationCategory.appointments,
+      2 => AppNotificationCategory.updates,
       _ => null,
     };
 
@@ -158,6 +169,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget _buildNotificationFeed() {
     final items = _sortedVisibleNotifications();
 
+    if (_isLoading) {
+      return const Padding(
+        padding: EdgeInsets.fromLTRB(24, 40, 24, 140),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     if (items.isEmpty) {
       return Padding(
         padding: const EdgeInsets.fromLTRB(24, 40, 24, 140),
@@ -202,18 +220,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         children.add(const SizedBox(height: 22));
       }
 
-      if (item.isEditorial) {
-        children.add(_buildEditorialCard(item));
-      } else {
-        children.add(
-          _buildNotificationCard(
-            time: _relativeTime(item.createdAt),
-            message: item.message,
-            trailing: Icon(item.icon, size: 14, color: kWarmGrey200),
-            actionLabel: item.actionLabel,
+      children.add(
+        _buildNotificationCard(
+          time: _relativeTime(item.createdAt),
+          title: item.title,
+          message: item.message,
+          trailing: Icon(
+            _notificationIcon(item.category),
+            size: 16,
+            color: kWarmGrey200,
           ),
-        );
-      }
+        ),
+      );
 
       previousDay = currentDay;
     }
@@ -278,9 +296,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildNotificationCard({
     required String time,
+    required String title,
     required String message,
     required Widget trailing,
-    String? actionLabel,
   }) {
     return Container(
       width: double.infinity,
@@ -308,6 +326,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ],
           ),
           const SizedBox(height: 12),
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.1,
+              color: kWarmGrey600,
+            ),
+          ),
+          const SizedBox(height: 8),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 290),
             child: Text(
@@ -319,125 +347,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
             ),
           ),
-          if (actionLabel != null) ...[
-            const SizedBox(height: 18),
-            FilledButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('$actionLabel claimed successfully!'),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              },
-              style: FilledButton.styleFrom(
-                backgroundColor: kEspressoColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 11,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-              child: Text(
-                actionLabel,
-                style: GoogleFonts.inter(
-                  fontSize: 10,
-                  letterSpacing: 2.2,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
 
-  Widget _buildEditorialCard(_NotificationEntry item) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.only(bottom: 22),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: kWarmGrey200)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'YESTERDAY',
-                  style: GoogleFonts.inter(
-                    fontSize: 9,
-                    letterSpacing: 2.8,
-                    color: kWarmGrey600,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  item.message,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    height: 1.45,
-                    color: kCharcoalColor,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  item.subtitle ?? '',
-                  style: GoogleFonts.cormorantGaramond(
-                    fontSize: 16,
-                    fontStyle: FontStyle.italic,
-                    color: kWarmGrey600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 18),
-          Container(
-            width: 62,
-            height: 82,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(2),
-              color: const Color(0xFF2B2B2B),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(2),
-              child: Image.network(item.imageUrl ?? '', fit: BoxFit.cover),
-            ),
-          ),
-        ],
-      ),
-    );
+  IconData _notificationIcon(AppNotificationCategory category) {
+    switch (category) {
+      case AppNotificationCategory.appointments:
+        return Icons.calendar_today_outlined;
+      case AppNotificationCategory.updates:
+        return Icons.notifications_active_outlined;
+    }
   }
-}
-
-enum _NotificationCategory { appointments, offers, other }
-
-class _NotificationEntry {
-  const _NotificationEntry({
-    required this.createdAt,
-    required this.message,
-    required this.icon,
-    required this.category,
-    this.actionLabel,
-    this.subtitle,
-    this.imageUrl,
-    this.isEditorial = false,
-  });
-
-  final DateTime createdAt;
-  final String message;
-  final String? subtitle;
-  final String? imageUrl;
-  final String? actionLabel;
-  final IconData icon;
-  final _NotificationCategory category;
-  final bool isEditorial;
 }

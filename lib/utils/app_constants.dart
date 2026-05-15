@@ -19,4 +19,10 @@ class AppConstants {
   static const String appointments = '${baseUrl}customer/appointments';
   static const String appointmentDetails =
       '${baseUrl}customer/appointment-details';
+
+  // Referral & Wallet
+  static const String referralWallet =
+      '${baseUrl}api/mobileapp/user/referral/wallet';
+  static const String referralRedeem =
+      '${baseUrl}api/mobileapp/user/referral/redeem';
 }

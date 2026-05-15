@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sidi/presentation/splashscreen.dart';
+import 'package:background_fetch/background_fetch.dart';
+import 'package:sidi/services/appointments_sync_service.dart';
 // import 'package:sidi/presentation/mainscreen.dart';
 // import 'package:sidi/view/splashscreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
+  await AppointmentsSyncService.initialize();
   runApp(const MainApp());
 }
 

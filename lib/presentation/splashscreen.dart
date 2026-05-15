@@ -234,13 +234,6 @@ class _SplashScreenState extends State<SplashScreen>
     begin: 0.60,
     end: 1.0,
   ).animate(CurvedAnimation(parent: _logoCtrl, curve: Curves.easeOutBack));
-  late final Animation<double> _logoOpacity =
-      Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(
-          parent: _logoCtrl,
-          curve: const Interval(0.0, 0.65, curve: Curves.easeIn),
-        ),
-      );
   late final Animation<Offset> _logoSlide = Tween<Offset>(
     begin: const Offset(0, 0.14),
     end: Offset.zero,
@@ -251,10 +244,6 @@ class _SplashScreenState extends State<SplashScreen>
     vsync: this,
     duration: const Duration(milliseconds: 700),
   );
-  late final Animation<double> _textOpacity = Tween<double>(
-    begin: 0.0,
-    end: 1.0,
-  ).animate(CurvedAnimation(parent: _textCtrl, curve: Curves.easeIn));
   late final Animation<Offset> _textSlide = Tween<Offset>(
     begin: const Offset(0, 0.5),
     end: Offset.zero,
@@ -333,10 +322,24 @@ class _SplashScreenState extends State<SplashScreen>
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 700),
         pageBuilder: (_, __, ___) => destination,
-        transitionsBuilder: (_, animation, __, child) => FadeTransition(
-          opacity: CurvedAnimation(parent: animation, curve: Curves.easeInOut),
-          child: child,
-        ),
+        transitionsBuilder: (_, animation, __, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          );
+
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.0, 0.02),
+              end: Offset.zero,
+            ).animate(curved),
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.995, end: 1.0).animate(curved),
+              child: child,
+            ),
+          );
+        },
       ),
     );
   }
@@ -370,38 +373,32 @@ class _SplashScreenState extends State<SplashScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Glow halo, arc ring, and logo card share the same centre
-                FadeTransition(
-                  opacity: _logoOpacity,
-                  child: SlideTransition(
-                    position: _logoSlide,
-                    child: ScaleTransition(
-                      scale: _logoScale,
-                      child: SizedBox(
-                        width: 220,
-                        height: 220,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            AnimatedBuilder(
-                              animation: _glowOpacity,
-                              builder: (_, __) =>
-                                  _GlowHalo(opacity: _glowOpacity.value),
-                            ),
-                            const _ArcRing(),
-                            const _LogoCard(),
-                          ],
-                        ),
+                SlideTransition(
+                  position: _logoSlide,
+                  child: ScaleTransition(
+                    scale: _logoScale,
+                    child: SizedBox(
+                      width: 220,
+                      height: 220,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          AnimatedBuilder(
+                            animation: _glowOpacity,
+                            builder: (_, __) =>
+                                _GlowHalo(opacity: _glowOpacity.value),
+                          ),
+                          const _ArcRing(),
+                          const _LogoCard(),
+                        ],
                       ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 32),
-                FadeTransition(
-                  opacity: _textOpacity,
-                  child: SlideTransition(
-                    position: _textSlide,
-                    child: const _BrandText(),
-                  ),
+                SlideTransition(
+                  position: _textSlide,
+                  child: const _BrandText(),
                 ),
               ],
             ),
@@ -416,17 +413,14 @@ class _SplashScreenState extends State<SplashScreen>
               children: [
                 _LoadingDots(controller: _dotsCtrl),
                 const SizedBox(height: 10),
-                FadeTransition(
-                  opacity: _textOpacity,
-                  child: Text(
-                    'LOADING',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 10,
-                      letterSpacing: 3.5,
-                      fontWeight: FontWeight.w500,
-                      color: _Colors.goldDark.withValues(alpha: 0.50),
-                    ),
+                Text(
+                  'LOADING',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 10,
+                    letterSpacing: 3.5,
+                    fontWeight: FontWeight.w500,
+                    color: _Colors.goldDark.withValues(alpha: 0.50),
                   ),
                 ),
               ],
@@ -530,21 +524,18 @@ class _GlowHalo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: opacity,
-      child: Container(
-        width: 240,
-        height: 240,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: _Colors.gold.withValues(alpha: 0.42),
-              blurRadius: 90,
-              spreadRadius: 24,
-            ),
-          ],
-        ),
+    return Container(
+      width: 240,
+      height: 240,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: _Colors.gold.withValues(alpha: 0.42 * opacity),
+            blurRadius: 90,
+            spreadRadius: 24,
+          ),
+        ],
       ),
     );
   }
@@ -751,15 +742,12 @@ class _LoadingDots extends StatelessWidget {
             );
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Opacity(
-                opacity: anim.value,
-                child: Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _Colors.gold.withValues(alpha: anim.value),
-                  ),
+              child: Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _Colors.gold.withValues(alpha: anim.value),
                 ),
               ),
             );

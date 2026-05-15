@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import '../models/booking.dart';
+import '../services/appointments_sync_service.dart';
 import '../services/local_storage_service.dart';
 
 class AppointmentsScreen extends StatefulWidget {
@@ -12,38 +15,84 @@ class AppointmentsScreen extends StatefulWidget {
   State<AppointmentsScreen> createState() => _AppointmentsScreenState();
 }
 
-class _AppointmentsScreenState extends State<AppointmentsScreen> {
+class _AppointmentsScreenState extends State<AppointmentsScreen>
+    with WidgetsBindingObserver {
+  static const String _fallbackImageUrl =
+      'https://i.pinimg.com/1200x/8b/9a/ec/8b9aeceef93905e3b619889c2b0b7111.jpg';
+
   List<Booking> _bookings = [];
   bool _isLoading = true;
   String? _errorMessage;
   DateTime? _lastUpdatedAt;
+  StreamSubscription<List<Booking>>? _bookingsSubscription;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _bookingsSubscription = AppointmentsSyncService.bookingsStream.listen(
+      _applyIncomingBookings,
+    );
     _loadBookings();
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _bookingsSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_loadBookings());
+    }
+  }
+
   Future<void> _loadBookings() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-    try {
-      final bookings = await LocalStorageService.loadCachedBookings();
-      if (!mounted) return;
+    final cachedBookings = await LocalStorageService.loadCachedBookings();
+    if (mounted && _bookings.isEmpty && cachedBookings.isNotEmpty) {
       setState(() {
-        _bookings = bookings;
+        _bookings = cachedBookings;
         _isLoading = false;
         _lastUpdatedAt = DateTime.now();
       });
-    } catch (e) {
-      if (!mounted) return;
+    } else if (mounted && _bookings.isEmpty) {
       setState(() {
-        _isLoading = false;
-        _errorMessage = 'Failed to load bookings. Please try again.';
+        _isLoading = true;
+        _errorMessage = null;
       });
     }
+
+    final result = await AppointmentsSyncService.syncBookings();
+    if (!mounted) return;
+
+    setState(() {
+      _bookings = result.bookings;
+      _isLoading = false;
+      _errorMessage = result.success || result.bookings.isNotEmpty
+          ? null
+          : ((result.errorMessage?.isNotEmpty ?? false)
+                ? result.errorMessage
+                : 'Failed to load bookings. Please try again.');
+      if (result.bookings.isNotEmpty) {
+        _lastUpdatedAt = DateTime.now();
+      }
+    });
+  }
+
+  void _applyIncomingBookings(List<Booking> bookings) {
+    if (!mounted) return;
+
+    setState(() {
+      _bookings = bookings;
+      _isLoading = false;
+      if (bookings.isNotEmpty) {
+        _errorMessage = null;
+        _lastUpdatedAt = DateTime.now();
+      }
+    });
   }
 
   Future<void> _refreshBookings() async {
@@ -56,6 +105,59 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     final updated = _bookings.where((b) => b.id != id).toList();
     setState(() => _bookings = updated);
     await LocalStorageService.saveCachedBookings(updated);
+  }
+
+  Future<bool> _cancelBooking(String id) async {
+    final index = _bookings.indexWhere((b) => b.id == id);
+    if (index < 0) return false;
+
+    final booking = _bookings[index];
+    final normalizedStatus = booking.status.trim().toLowerCase();
+    if (normalizedStatus == 'cancelled' || normalizedStatus == 'completed') {
+      return false;
+    }
+
+    final updatedBooking = Booking(
+      id: booking.id,
+      title: booking.title,
+      time: booking.time,
+      bookingDate: booking.bookingDate,
+      serviceId: booking.serviceId,
+      stylist: booking.stylist,
+      image: booking.image,
+      status: 'cancelled',
+      jobId: booking.jobId,
+    );
+
+    final updatedBookings = [..._bookings];
+    updatedBookings[index] = updatedBooking;
+
+    setState(() {
+      _bookings = updatedBookings;
+      _lastUpdatedAt = DateTime.now();
+    });
+
+    await LocalStorageService.saveCachedBookings(updatedBookings);
+    return true;
+  }
+
+  String _resolveImageUrl(String image) {
+    if (image.isEmpty) return _fallbackImageUrl;
+    if (image.startsWith('http')) return image;
+    return 'https://sidi.mobilegear.co.in$image';
+  }
+
+  Future<void> _openAppointmentDetails(Booking booking) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _AppointmentDetailPage(
+          booking: booking,
+          imageUrl: _resolveImageUrl(booking.image),
+          statusColor: _statusColor(booking.status),
+          onCancel: () => _cancelBooking(booking.id),
+        ),
+      ),
+    );
   }
 
   @override
@@ -172,14 +274,13 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                               child: _AppearIn(
                                 delayMs: 50,
                                 child: _buildRecentAppointment(
-                                  image: b.image.isNotEmpty
-                                      ? b.image
-                                      : 'https://i.pinimg.com/1200x/8b/9a/ec/8b9aeceef93905e3b619889c2b0b7111.jpg',
+                                  image: _resolveImageUrl(b.image),
                                   title: b.title,
                                   time: b.time,
                                   stylist: b.stylist,
                                   status: b.status,
                                   scale: scale,
+                                  onTap: () => _openAppointmentDetails(b),
                                 ),
                               ),
                             ),
@@ -201,15 +302,13 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                               child: _AppearIn(
                                 delayMs: 90 + (entry.key * 40),
                                 child: _buildEarlierAppointment(
-                                  image: entry.value.image.isNotEmpty
-                                      ? (entry.value.image.startsWith('http')
-                                            ? entry.value.image
-                                            : 'https://sidi.mobilegear.co.in${entry.value.image}')
-                                      : 'https://i.pinimg.com/1200x/8b/9a/ec/8b9aeceef93905e3b619889c2b0b7111.jpg',
+                                  image: _resolveImageUrl(entry.value.image),
                                   title: entry.value.title,
                                   subtitle: entry.value.stylist,
                                   status: entry.value.status,
                                   scale: scale,
+                                  onTap: () =>
+                                      _openAppointmentDetails(entry.value),
                                 ),
                               ),
                             ),
@@ -293,83 +392,88 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     required String stylist,
     required String status,
     required double scale,
+    required VoidCallback onTap,
   }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(2),
-          child: Image.network(
-            image,
-            width: 66 * scale,
-            height: 78 * scale,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => Container(
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: Image.network(
+              image,
               width: 66 * scale,
               height: 78 * scale,
-              color: Colors.grey[300],
-              child: Icon(Icons.image_not_supported, color: Colors.grey[600]),
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                width: 66 * scale,
+                height: 78 * scale,
+                color: Colors.grey[300],
+                child: Icon(Icons.image_not_supported, color: Colors.grey[600]),
+              ),
             ),
           ),
-        ),
-        SizedBox(width: 12 * scale),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title.isNotEmpty ? title : 'No Title',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.cormorantGaramond(
-                  fontSize: 24 * scale,
-                  fontStyle: FontStyle.italic,
-                  color: kCharcoalColor,
-                ),
-              ),
-              SizedBox(height: 2 * scale),
-              Text(
-                time.isNotEmpty ? time : 'No Time',
-                style: GoogleFonts.inter(
-                  fontSize: 11 * scale,
-                  color: kWarmGrey600,
-                ),
-              ),
-              if (status.isNotEmpty) ...[
-                SizedBox(height: 5 * scale),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 8 * scale,
-                    vertical: 3 * scale,
+          SizedBox(width: 12 * scale),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title.isNotEmpty ? title : 'No Title',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.cormorantGaramond(
+                    fontSize: 24 * scale,
+                    fontStyle: FontStyle.italic,
+                    color: kCharcoalColor,
                   ),
-                  decoration: BoxDecoration(
-                    color: _statusColor(status).withAlpha(28),
-                    borderRadius: BorderRadius.circular(20),
+                ),
+                SizedBox(height: 2 * scale),
+                Text(
+                  time.isNotEmpty ? time : 'No Time',
+                  style: GoogleFonts.inter(
+                    fontSize: 11 * scale,
+                    color: kWarmGrey600,
                   ),
-                  child: Text(
-                    status.toUpperCase(),
-                    style: GoogleFonts.inter(
-                      fontSize: 9 * scale,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.8,
-                      color: _statusColor(status),
+                ),
+                if (status.isNotEmpty) ...[
+                  SizedBox(height: 5 * scale),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 8 * scale,
+                      vertical: 3 * scale,
                     ),
+                    decoration: BoxDecoration(
+                      color: _statusColor(status).withAlpha(28),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      status.toUpperCase(),
+                      style: GoogleFonts.inter(
+                        fontSize: 9 * scale,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        color: _statusColor(status),
+                      ),
+                    ),
+                  ),
+                ],
+                SizedBox(height: 8 * scale),
+                Text(
+                  stylist.isNotEmpty ? stylist : 'No Stylist',
+                  style: GoogleFonts.inter(
+                    fontSize: 9 * scale,
+                    letterSpacing: 1.6,
+                    color: kWarmGrey600,
                   ),
                 ),
               ],
-              SizedBox(height: 8 * scale),
-              Text(
-                stylist.isNotEmpty ? stylist : 'No Stylist',
-                style: GoogleFonts.inter(
-                  fontSize: 9 * scale,
-                  letterSpacing: 1.6,
-                  color: kWarmGrey600,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -379,106 +483,114 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     required String subtitle,
     required String status,
     required double scale,
+    required VoidCallback onTap,
   }) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 12 * scale),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.network(
-              image,
-              width: 38 * scale,
-              height: 38 * scale,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: 12 * scale),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(
+                image,
                 width: 38 * scale,
                 height: 38 * scale,
-                color: Colors.grey[300],
-                child: Icon(Icons.image_not_supported, color: Colors.grey[600]),
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  width: 38 * scale,
+                  height: 38 * scale,
+                  color: Colors.grey[300],
+                  child: Icon(
+                    Icons.image_not_supported,
+                    color: Colors.grey[600],
+                  ),
+                ),
               ),
             ),
-          ),
-          SizedBox(width: 10 * scale),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title.isNotEmpty ? title : 'No Title',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.cormorantGaramond(
-                    fontSize: 24 * scale,
-                    fontStyle: FontStyle.italic,
-                    color: kCharcoalColor,
+            SizedBox(width: 10 * scale),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title.isNotEmpty ? title : 'No Title',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.cormorantGaramond(
+                      fontSize: 24 * scale,
+                      fontStyle: FontStyle.italic,
+                      color: kCharcoalColor,
+                    ),
                   ),
-                ),
-                Text(
-                  subtitle.isNotEmpty ? subtitle : 'No Stylist',
-                  style: GoogleFonts.inter(
-                    fontSize: 10 * scale,
-                    color: kWarmGrey600,
+                  Text(
+                    subtitle.isNotEmpty ? subtitle : 'No Stylist',
+                    style: GoogleFonts.inter(
+                      fontSize: 10 * scale,
+                      color: kWarmGrey600,
+                    ),
                   ),
-                ),
-                if (status.isNotEmpty)
-                  Padding(
-                    padding: EdgeInsets.only(top: 3 * scale),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 6 * scale,
-                        vertical: 2 * scale,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _statusColor(status).withAlpha(28),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        status.toUpperCase(),
-                        style: GoogleFonts.inter(
-                          fontSize: 8 * scale,
-                          fontWeight: FontWeight.w700,
-                          color: _statusColor(status),
+                  if (status.isNotEmpty)
+                    Padding(
+                      padding: EdgeInsets.only(top: 3 * scale),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6 * scale,
+                          vertical: 2 * scale,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _statusColor(status).withAlpha(28),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          status.toUpperCase(),
+                          style: GoogleFonts.inter(
+                            fontSize: 8 * scale,
+                            fontWeight: FontWeight.w700,
+                            color: _statusColor(status),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
-          SizedBox(width: 8 * scale),
-          OutlinedButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Browse the Home tab to find and rebook "$title".',
+            SizedBox(width: 8 * scale),
+            OutlinedButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Browse the Home tab to find and rebook "$title".',
+                    ),
+                    duration: const Duration(seconds: 3),
                   ),
-                  duration: const Duration(seconds: 3),
+                );
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: kCharcoalColor,
+                side: BorderSide(color: kWarmGrey200),
+                padding: EdgeInsets.symmetric(
+                  horizontal: 12 * scale,
+                  vertical: 7 * scale,
                 ),
-              );
-            },
-            style: OutlinedButton.styleFrom(
-              foregroundColor: kCharcoalColor,
-              side: BorderSide(color: kWarmGrey200),
-              padding: EdgeInsets.symmetric(
-                horizontal: 12 * scale,
-                vertical: 7 * scale,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(
-              'REBOOK',
-              style: GoogleFonts.inter(
-                fontSize: 9 * scale,
-                letterSpacing: 1.2,
-                fontWeight: FontWeight.w500,
+              child: Text(
+                'REBOOK',
+                style: GoogleFonts.inter(
+                  fontSize: 9 * scale,
+                  letterSpacing: 1.2,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -488,6 +600,540 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     final minute = value.minute.toString().padLeft(2, '0');
     final period = value.hour >= 12 ? 'PM' : 'AM';
     return 'at $hour:$minute $period';
+  }
+}
+
+class _AppointmentDetailPage extends StatefulWidget {
+  const _AppointmentDetailPage({
+    required this.booking,
+    required this.imageUrl,
+    required this.statusColor,
+    required this.onCancel,
+  });
+
+  final Booking booking;
+  final String imageUrl;
+  final Color statusColor;
+  final Future<bool> Function() onCancel;
+
+  @override
+  State<_AppointmentDetailPage> createState() => _AppointmentDetailPageState();
+}
+
+class _AppointmentDetailPageState extends State<_AppointmentDetailPage> {
+  late String _status;
+  bool _isCancelling = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _status = widget.booking.status;
+  }
+
+  String _readableStatus(String raw) {
+    if (raw.trim().isEmpty) return 'Unknown';
+    final lower = raw.toLowerCase();
+    return lower[0].toUpperCase() + lower.substring(1);
+  }
+
+  String _formatDate(String rawDate) {
+    if (rawDate.trim().isEmpty) return 'Not specified';
+    final parsed = DateTime.tryParse(rawDate);
+    if (parsed == null) return rawDate;
+
+    const months = <String>[
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final weekday = <String>['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return '${weekday[parsed.weekday - 1]}, ${parsed.day} ${months[parsed.month - 1]} ${parsed.year}';
+  }
+
+  String _formatTime(String rawTime) {
+    return rawTime.trim().isEmpty ? 'Not specified' : rawTime;
+  }
+
+  Future<void> _confirmAndCancel() async {
+    final canCancel =
+        !(_status.trim().toLowerCase() == 'cancelled' ||
+            _status.trim().toLowerCase() == 'completed');
+    if (!canCancel || _isCancelling) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierColor: Colors.black.withAlpha(125),
+      builder: (context) {
+        final title = widget.booking.title.isEmpty
+            ? 'Appointment'
+            : widget.booking.title;
+
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 22),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFFFFBF5), Color(0xFFF6EFE4)],
+              ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x26000000),
+                  blurRadius: 34,
+                  offset: Offset(0, 20),
+                ),
+              ],
+              border: Border.all(color: const Color(0xFFE9DDC8)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFB03A2E).withAlpha(25),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(
+                      Icons.event_busy_rounded,
+                      color: Color(0xFFB03A2E),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Cancel Appointment?',
+                    style: GoogleFonts.cormorantGaramond(
+                      fontSize: 33,
+                      fontStyle: FontStyle.italic,
+                      height: 0.95,
+                      color: kCharcoalColor,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'You are about to cancel "$title". This action cannot be undone from this screen.',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      height: 1.35,
+                      color: kWarmGrey600,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 9,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlpha(180),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE8DECF)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.info_outline_rounded,
+                          size: 15,
+                          color: Color(0xFF8A6F4D),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Status will be changed to CANCELLED.',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                              color: const Color(0xFF8A6F4D),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: kCharcoalColor,
+                            side: BorderSide(color: kWarmGrey200),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(13),
+                            ),
+                          ),
+                          child: Text(
+                            'KEEP',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.1,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFFB03A2E),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(13),
+                            ),
+                          ),
+                          child: Text(
+                            'CONFIRM',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.1,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isCancelling = true);
+    final success = await widget.onCancel();
+    if (!mounted) return;
+
+    setState(() {
+      _isCancelling = false;
+      if (success) _status = 'cancelled';
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? 'Appointment cancelled successfully.'
+              : 'Unable to cancel this appointment.',
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Widget _metaTile({
+    required String label,
+    required String value,
+    IconData? icon,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: kWarmGrey200),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (icon != null) ...[
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F5F0),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, size: 16, color: kCharcoalColor),
+            ),
+            const SizedBox(width: 10),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.1,
+                    color: kWarmGrey600,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  value.trim().isEmpty ? 'Not available' : value,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: kCharcoalColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final statusText = _readableStatus(_status);
+    final statusColor = _status.trim().toLowerCase() == 'cancelled'
+        ? const Color(0xFFB03A2E)
+        : _status.trim().toLowerCase() == 'completed'
+        ? const Color(0xFF1A5276)
+        : widget.statusColor;
+    final canCancel =
+        !(_status.trim().toLowerCase() == 'cancelled' ||
+            _status.trim().toLowerCase() == 'completed');
+
+    return Scaffold(
+      backgroundColor: kBackgroundLight,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            pinned: true,
+            stretch: true,
+            expandedHeight: 280,
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.network(
+                    widget.imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: const Color(0xFFE6E3DE),
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.image_not_supported_rounded,
+                        color: Color(0xFF8C857E),
+                        size: 44,
+                      ),
+                    ),
+                  ),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withAlpha(30),
+                          Colors.black.withAlpha(150),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 20,
+                    child: Text(
+                      widget.booking.title.isEmpty
+                          ? 'Appointment'
+                          : widget.booking.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.cormorantGaramond(
+                        fontSize: 36,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.white,
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 26),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withAlpha(28),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          statusText.toUpperCase(),
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: statusColor,
+                            letterSpacing: 0.9,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        'Booking ID: ${widget.booking.id.isEmpty ? 'N/A' : widget.booking.id}',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: kWarmGrey600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _metaTile(
+                    label: 'DATE',
+                    value: _formatDate(widget.booking.bookingDate),
+                    icon: Icons.calendar_month_rounded,
+                  ),
+                  const SizedBox(height: 10),
+                  _metaTile(
+                    label: 'TIME',
+                    value: _formatTime(widget.booking.time),
+                    icon: Icons.schedule_rounded,
+                  ),
+                  const SizedBox(height: 10),
+                  _metaTile(
+                    label: 'STYLIST',
+                    value: widget.booking.stylist.isEmpty
+                        ? 'Not assigned'
+                        : widget.booking.stylist,
+                    icon: Icons.person_rounded,
+                  ),
+                  if (widget.booking.serviceId.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    _metaTile(
+                      label: 'SERVICE ID',
+                      value: widget.booking.serviceId,
+                      icon: Icons.content_cut_rounded,
+                    ),
+                  ],
+                  if (widget.booking.jobId.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    _metaTile(
+                      label: 'JOB ID',
+                      value: widget.booking.jobId,
+                      icon: Icons.badge_rounded,
+                    ),
+                  ],
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: canCancel ? _confirmAndCancel : null,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFFB03A2E),
+                        disabledBackgroundColor: kWarmGrey200,
+                        foregroundColor: Colors.white,
+                        disabledForegroundColor: kWarmGrey600,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      icon: _isCancelling
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.cancel_outlined, size: 16),
+                      label: Text(
+                        _isCancelling
+                            ? 'CANCELLING...'
+                            : (canCancel
+                                  ? 'CANCEL APPOINTMENT'
+                                  : 'CANNOT CANCEL'),
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          letterSpacing: 1.1,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Browse Home to rebook this service.',
+                            ),
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: kCharcoalColor,
+                        side: BorderSide(color: kWarmGrey200),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      icon: const Icon(Icons.refresh_rounded, size: 16),
+                      label: Text(
+                        'REBOOK THIS SERVICE',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          letterSpacing: 1.1,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -536,10 +1182,10 @@ class _AppearInState extends State<_AppearIn>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _animation,
-      builder: (context, child) => Opacity(
-        opacity: _animation.value,
-        child: Transform.translate(
-          offset: Offset(0, (1 - _animation.value) * 10),
+      builder: (context, child) => Transform.translate(
+        offset: Offset(0, (1 - _animation.value) * 10),
+        child: Transform.scale(
+          scale: 0.97 + (_animation.value * 0.03),
           child: child,
         ),
       ),

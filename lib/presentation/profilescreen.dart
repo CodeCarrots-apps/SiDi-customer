@@ -17,6 +17,7 @@ import 'package:sidi/utils/app_constants.dart';
 import 'package:sidi/utils/token_storage.dart';
 
 import 'favoritestylistscreen.dart';
+import 'referral_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -239,6 +240,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) => FavoriteStylistScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _ProfileItemData(
+                    Icons.card_giftcard_outlined,
+                    'Refer & Earn',
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ReferralScreen(),
                         ),
                       );
                     },

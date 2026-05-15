@@ -9,9 +9,11 @@ import 'confirmationscreen.dart';
 import 'waitinglistscreen.dart';
 
 import '../models/address_model.dart';
+import '../models/booking.dart';
 import '../models/booking_models.dart';
 import '../models/edit_result.dart';
 import '../services/booking_service.dart';
+import '../services/appointments_sync_service.dart';
 import '../models/payment_method_model.dart';
 import '../services/local_storage_service.dart';
 import 'edit_address_screen.dart';
@@ -159,8 +161,10 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
     final payments = await LocalStorageService.loadPaymentMethods();
 
     setState(() {
-      _addresses = addresses;
-      _paymentMethods = payments;
+      _addresses = addresses.isNotEmpty ? addresses : _defaultAddresses();
+      _paymentMethods = payments.isNotEmpty
+          ? payments
+          : _defaultPaymentMethods();
       _isLoading = false;
     });
   }
@@ -198,14 +202,6 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
         ? total.toInt().toString()
         : total.toStringAsFixed(2);
     return '$symbol$formatted';
-  }
-
-  List<String> get _selectedServiceNames {
-    final names = <String>[
-      widget.serviceTitle,
-      ..._addonServices.map((s) => s.title),
-    ];
-    return names.toSet().toList();
   }
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -331,11 +327,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            _confirmWrapRow(
-              Icons.spa_outlined,
-              _selectedServiceNames.length > 1 ? 'Services' : 'Service',
-              _selectedServiceNames.join(', '),
-            ),
+            _confirmRow(Icons.spa_outlined, 'Service', widget.serviceTitle),
             if (widget.servicePrice.isNotEmpty)
               _confirmRow(
                 Icons.payments_outlined,
@@ -428,34 +420,6 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
     );
   }
 
-  Widget _confirmWrapRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 16, color: kWarmGrey600),
-          const SizedBox(width: 10),
-          Text(
-            '$label: ',
-            style: GoogleFonts.inter(fontSize: 13, color: kWarmGrey600),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: kEspressoColor,
-                height: 1.4,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _runBookingFlow() async {
     final bookingAddress = await _resolveBookingAddress(
       _addresses[selectedAddressIndex],
@@ -463,38 +427,16 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
     if (bookingAddress == null) return;
 
     final addonIds = _addonServices.map((s) => s.serviceId).toList();
-
-    final requestPayload = {
-      'serviceId': widget.serviceId,
-      'beauticianId': widget.beauticianId,
-      'bookingDate': widget.selectedDateIso,
-      'bookingTime': _to24Hour(widget.selectedTime),
-      'locationType': 'home',
-      'address': bookingAddress.toJson(),
-      'addonIds': addonIds.isEmpty ? null : addonIds,
-    }..removeWhere((key, value) => value == null);
-
-    debugPrint('BOOKING_REQUEST -> $requestPayload');
+    final serviceIds = [widget.serviceId, ...addonIds];
 
     final response = await BookingService.createBooking(
-      serviceId: widget.serviceId,
+      serviceIds: serviceIds,
       beauticianId: widget.beauticianId,
       bookingDate: widget.selectedDateIso,
       bookingTime: _to24Hour(widget.selectedTime),
       locationType: 'home',
       address: bookingAddress,
       addonIds: addonIds.isEmpty ? null : addonIds,
-    );
-
-    debugPrint(
-      'BOOKING_RESPONSE -> success=${response.success}, '
-      'message=${response.message}, '
-      'status=${response.booking?.status}, '
-      'bookingId=${response.booking?.id}, '
-      'estimatedPrice=${response.estimatedPrice}, '
-      'addonsAmount=${response.addonsAmount}, '
-      'travelFee=${response.travelFee}, '
-      'broadcastedCount=${response.broadcastedCount}',
     );
 
     if (!mounted) return;
@@ -519,6 +461,39 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
       'queue',
     }.contains(status);
 
+    final confirmedBooking = Booking(
+      id: response.booking?.id.isNotEmpty == true
+          ? response.booking!.id
+          : 'local-${DateTime.now().millisecondsSinceEpoch}',
+      title: response.booking?.title.isNotEmpty == true
+          ? response.booking!.title
+          : widget.serviceTitle,
+      time: response.booking?.time.isNotEmpty == true
+          ? response.booking!.time
+          : widget.selectedTime,
+      bookingDate: response.booking?.bookingDate.isNotEmpty == true
+          ? response.booking!.bookingDate
+          : widget.selectedDateIso,
+      serviceId: response.booking?.serviceId.isNotEmpty == true
+          ? response.booking!.serviceId
+          : widget.serviceId,
+      stylist: response.booking?.stylist.isNotEmpty == true
+          ? response.booking!.stylist
+          : (widget.stylist?.fullName ?? ''),
+      image: response.booking?.image.isNotEmpty == true
+          ? response.booking!.image
+          : widget.serviceImage,
+      status: response.booking?.status.isNotEmpty == true
+          ? response.booking!.status
+          : (isWaitingList ? 'pending' : 'confirmed'),
+      jobId: response.booking?.jobId ?? '',
+    );
+
+    await AppointmentsSyncService.notifyBookingEvent(
+      booking: confirmedBooking,
+      isWaitingList: isWaitingList,
+    );
+
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -531,8 +506,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
       ),
     );
 
-    Navigator.push(
-      context,
+    Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (_) => isWaitingList
             ? WaitingListScreen(
@@ -565,7 +539,48 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
                     : null,
               ),
       ),
+      (route) => false,
     );
+  }
+
+  List<AddressModel> _defaultAddresses() {
+    return [
+      AddressModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        label: 'HOME',
+        line1: '123 Elegant Ave, Penthouse 4B',
+        line2: 'New York, NY 10012',
+      ),
+      AddressModel(
+        id: (DateTime.now().millisecondsSinceEpoch + 1).toString(),
+        label: 'OFFICE',
+        line1: '456 Corporate Plaza, Suite 200',
+        line2: 'Manhattan, NY 10001',
+      ),
+    ];
+  }
+
+  List<PaymentMethodModel> _defaultPaymentMethods() {
+    return [
+      PaymentMethodModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        label: 'Apple Pay',
+        details: '',
+        brand: 'apple',
+      ),
+      PaymentMethodModel(
+        id: (DateTime.now().millisecondsSinceEpoch + 1).toString(),
+        label: 'Visa ending in 4242',
+        details: '',
+        brand: 'visa',
+      ),
+      PaymentMethodModel(
+        id: (DateTime.now().millisecondsSinceEpoch + 2).toString(),
+        label: 'Cash Onsite',
+        details: 'Pay cash at appointment',
+        brand: 'cash',
+      ),
+    ];
   }
 
   Future<void> _openAddressEditor({AddressModel? address, int? index}) async {

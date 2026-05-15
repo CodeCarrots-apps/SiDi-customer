@@ -12,9 +12,21 @@ class PremiumPageRoute<T> extends PageRouteBuilder<T> {
         pageBuilder: (context, animation, secondaryAnimation) =>
             _PremiumShell(destinationBuilder: builder),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-            child: child,
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          );
+
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.0, 0.02),
+              end: Offset.zero,
+            ).animate(curved),
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.995, end: 1.0).animate(curved),
+              child: child,
+            ),
           );
         },
       );
@@ -45,10 +57,6 @@ class _PremiumShellState extends State<_PremiumShell>
     begin: 0.72,
     end: 1.0,
   ).animate(CurvedAnimation(parent: _logoCtrl, curve: Curves.easeOutBack));
-  late final Animation<double> _logoOpacity = Tween<double>(
-    begin: 0.0,
-    end: 1.0,
-  ).animate(CurvedAnimation(parent: _logoCtrl, curve: Curves.easeIn));
   late final Animation<Offset> _logoSlide = Tween<Offset>(
     begin: const Offset(0, 0.12),
     end: Offset.zero,
@@ -111,60 +119,61 @@ class _PremiumShellState extends State<_PremiumShell>
       children: [
         widget.destinationBuilder(context),
         if (_overlayVisible)
-          FadeTransition(
-            opacity: Tween<double>(begin: 1.0, end: 0.0).animate(
-              CurvedAnimation(parent: _exitCtrl, curve: Curves.easeInCubic),
-            ),
-            child: Container(
-              color: _Colors.background,
-              child: Stack(
-                children: [
-                  AnimatedBuilder(
-                    animation: _orbCtrl,
-                    builder: (_, __) => _OrbsLayer(t: _orbCtrl.value),
-                  ),
-                  Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        FadeTransition(
-                          opacity: _logoOpacity,
-                          child: SlideTransition(
-                            position: _logoSlide,
-                            child: ScaleTransition(
-                              scale: _logoScale,
-                              child: SizedBox(
-                                width: 220,
-                                height: 220,
-                                child: Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    AnimatedBuilder(
-                                      animation: _glowOpacity,
-                                      builder: (_, __) => _GlowHalo(
-                                        opacity: _glowOpacity.value,
+          AnimatedBuilder(
+            animation: _exitCtrl,
+            builder: (_, __) {
+              final exitT = Curves.easeInCubic.transform(_exitCtrl.value);
+              return Container(
+                color: _Colors.background.withValues(alpha: 1.0 - exitT),
+                child: Transform.translate(
+                  offset: Offset(0, -6 * exitT),
+                  child: Stack(
+                    children: [
+                      AnimatedBuilder(
+                        animation: _orbCtrl,
+                        builder: (_, __) => _OrbsLayer(t: _orbCtrl.value),
+                      ),
+                      Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SlideTransition(
+                              position: _logoSlide,
+                              child: ScaleTransition(
+                                scale: _logoScale,
+                                child: SizedBox(
+                                  width: 220,
+                                  height: 220,
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      AnimatedBuilder(
+                                        animation: _glowOpacity,
+                                        builder: (_, __) => _GlowHalo(
+                                          opacity: _glowOpacity.value,
+                                        ),
                                       ),
-                                    ),
-                                    const _ArcRing(),
-                                    AnimatedBuilder(
-                                      animation: _ringCtrl,
-                                      builder: (_, __) => _LoadingOrbitRing(
-                                        progress: _ringCtrl.value,
+                                      const _ArcRing(),
+                                      AnimatedBuilder(
+                                        animation: _ringCtrl,
+                                        builder: (_, __) => _LoadingOrbitRing(
+                                          progress: _ringCtrl.value,
+                                        ),
                                       ),
-                                    ),
-                                    const _LogoCard(),
-                                  ],
+                                      const _LogoCard(),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
       ],
     );
@@ -248,21 +257,18 @@ class _GlowHalo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: opacity,
-      child: Container(
-        width: 240,
-        height: 240,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: _Colors.gold.withValues(alpha: 0.42),
-              blurRadius: 90,
-              spreadRadius: 24,
-            ),
-          ],
-        ),
+    return Container(
+      width: 240,
+      height: 240,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: _Colors.gold.withValues(alpha: 0.42 * opacity),
+            blurRadius: 90,
+            spreadRadius: 24,
+          ),
+        ],
       ),
     );
   }

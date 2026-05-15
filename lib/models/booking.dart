@@ -27,44 +27,61 @@ class Booking {
     final service = json['service'] is Map<String, dynamic>
         ? json['service'] as Map<String, dynamic>
         : null;
+    final services = json['services'] is List
+        ? (json['services'] as List).whereType<Map<String, dynamic>>().toList()
+        : const <Map<String, dynamic>>[];
+    final primaryService =
+        service ?? (services.isNotEmpty ? services.first : null);
+
     final beautician = json['beautician'] is Map<String, dynamic>
         ? json['beautician'] as Map<String, dynamic>
         : null;
+
+    final dynamic rawServiceId =
+        json['serviceId'] ??
+        json['service_id'] ??
+        primaryService?['_id'] ??
+        primaryService?['id'] ??
+        (json['serviceIds'] is List && (json['serviceIds'] as List).isNotEmpty
+            ? (json['serviceIds'] as List).first
+            : null);
+
+    final resolvedServiceId = rawServiceId is Map<String, dynamic>
+        ? (rawServiceId['_id'] ?? rawServiceId['id'] ?? '').toString()
+        : (rawServiceId ?? '').toString();
 
     return Booking(
       id: (json['_id'] ?? json['id'] ?? '').toString(),
       title:
           json['title'] ??
           json['serviceName'] ??
-          service?['name'] ??
-          service?['title'] ??
+          primaryService?['name'] ??
+          primaryService?['title'] ??
           '',
       time:
           json['time'] ??
           json['bookingTime'] ??
           json['scheduledTime'] ??
+          json['startTime'] ??
+          json['selectedTime'] ??
           json['slot'] ??
           '',
       bookingDate:
           json['bookingDate'] ?? json['date'] ?? json['scheduledDate'] ?? '',
-      serviceId:
-          (json['serviceId'] ??
-                  json['service_id'] ??
-                  service?['_id'] ??
-                  service?['id'] ??
-                  '')
-              .toString(),
+      serviceId: resolvedServiceId,
       stylist:
           json['stylist'] ??
           json['beauticianName'] ??
+          beautician?['fullName'] ??
           beautician?['name'] ??
           beautician?['username'] ??
           '',
       image:
           json['image'] ??
           json['photoUrl'] ??
-          service?['image'] ??
-          service?['photoUrl'] ??
+          primaryService?['image'] ??
+          primaryService?['photoUrl'] ??
+          primaryService?['image2'] ??
           '',
       status: json['status'] ?? '',
       jobId: json['jobId'] ?? json['job_id'] ?? '',

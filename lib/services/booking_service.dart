@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 // import 'package:sidi/models/booking.dart';
@@ -23,11 +25,26 @@ class BookingService {
     );
   }
 
+  static void _logCreateBookingResponseModel(BookingCreateResponse result) {
+    final payload = {
+      'success': result.success,
+      'message': result.message,
+      'booking': result.booking?.toJson(),
+      'estimatedPrice': result.estimatedPrice,
+      'addonsAmount': result.addonsAmount,
+      'travelFee': result.travelFee,
+      'assignedBeautician': result.assignedBeautician,
+      'broadcastedCount': result.broadcastedCount,
+    };
+
+    debugPrint('CREATE BOOKING RESPONSE MODEL: ${jsonEncode(payload)}');
+  }
+
   /// ---------------------------
   /// CREATE BOOKING
   /// ---------------------------
   static Future<BookingCreateResponse> createBooking({
-    required String serviceId,
+    required List<String> serviceIds,
     String? beauticianId,
     required String bookingDate,
     required String bookingTime,
@@ -37,6 +54,19 @@ class BookingService {
     String? preferredGender,
     List<String>? addonIds,
   }) async {
+    final sanitizedServiceIds = serviceIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toList();
+
+    if (sanitizedServiceIds.isEmpty) {
+      return BookingCreateResponse(
+        success: false,
+        message: 'Please select a service before booking.',
+      );
+    }
+
+    final primaryServiceId = sanitizedServiceIds.first;
     final token = await TokenStorage.getToken();
 
     if (token == null || token.isEmpty) {
@@ -49,7 +79,8 @@ class BookingService {
     final dio = _dio(token);
 
     final payload = {
-      "serviceId": serviceId,
+      "serviceId": primaryServiceId,
+      "serviceIds": sanitizedServiceIds,
       "beauticianId": beauticianId,
       "bookingDate": bookingDate,
       "bookingTime": bookingTime,
@@ -64,7 +95,9 @@ class BookingService {
       final response = await dio.post('/create', data: payload);
 
       if (response.data is Map<String, dynamic>) {
-        return BookingCreateResponse.fromJson(response.data);
+        final result = BookingCreateResponse.fromJson(response.data);
+        _logCreateBookingResponseModel(result);
+        return result;
       }
 
       return BookingCreateResponse(
@@ -75,7 +108,9 @@ class BookingService {
       debugPrint("CREATE BOOKING ERROR: ${e.response?.data}");
 
       if (e.response?.data is Map<String, dynamic>) {
-        return BookingCreateResponse.fromJson(e.response!.data);
+        final result = BookingCreateResponse.fromJson(e.response!.data);
+        _logCreateBookingResponseModel(result);
+        return result;
       }
 
       return BookingCreateResponse(
