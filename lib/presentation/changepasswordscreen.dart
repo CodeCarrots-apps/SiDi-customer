@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sidi/constant/app_fonts.dart';
 // import 'package:sidi/utils/app_constants.dart';
 import 'package:sidi/utils/token_storage.dart';
 import 'package:sidi/constant/constants.dart';
@@ -126,7 +126,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         centerTitle: true,
         title: Text(
           'Change Password',
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 14 * scale,
             letterSpacing: 3,
             fontWeight: FontWeight.w500,
@@ -192,7 +192,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       )
                     : Text(
                         'CHANGE PASSWORD',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 13 * scale,
                           letterSpacing: 3,
                           fontWeight: FontWeight.w500,

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'package:sidi/constant/constants.dart';
+import 'package:sidi/constant/app_fonts.dart';
 import 'package:sidi/models/booking_models.dart';
-import 'package:sidi/presentation/mainscreen.dart';
+import 'package:sidi/presentation/appointments_screen.dart';
 
 class ConfirmationScreen extends StatefulWidget {
   const ConfirmationScreen({
@@ -35,17 +35,14 @@ class ConfirmationScreen extends StatefulWidget {
 
 class _ConfirmationScreenState extends State<ConfirmationScreen> {
   void _goHome() {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const MainScreen()),
-      (route) => false,
-    );
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   void _goToAppointments() {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const MainScreen(initialTab: 1)),
-      (route) => false,
-    );
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const AppointmentsScreen()));
   }
 
   void _retry() {
@@ -97,7 +94,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                     const Spacer(),
                     Text(
                       'BOOKING STATUS',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 2,
@@ -174,7 +171,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                       const SizedBox(width: 6),
                                       Text(
                                         statusChipLabel,
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.inter(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w700,
                                           letterSpacing: 1.4,
@@ -197,7 +194,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                       textAlign: TextAlign.center,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.playfairDisplay(
+                                      style: AppFonts.playfairDisplay(
                                         fontSize: 28,
                                         fontStyle: FontStyle.italic,
                                         fontWeight: FontWeight.w400,
@@ -217,7 +214,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                         const SizedBox(width: 5),
                                         Text(
                                           statusDateText,
-                                          style: GoogleFonts.inter(
+                                          style: AppFonts.inter(
                                             fontSize: 12,
                                             color: Colors.white.withOpacity(
                                               0.88,
@@ -271,7 +268,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                   children: [
                                     Text(
                                       widget.stylistName ?? 'Your Stylist',
-                                      style: GoogleFonts.playfairDisplay(
+                                      style: AppFonts.playfairDisplay(
                                         fontSize: 18,
                                         fontStyle: FontStyle.italic,
                                         fontWeight: FontWeight.w400,
@@ -280,7 +277,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                     const SizedBox(height: 6),
                                     Text(
                                       widget.stylistTag ?? 'Beautician',
-                                      style: GoogleFonts.inter(
+                                      style: AppFonts.inter(
                                         fontSize: 12,
                                         color: const Color(0xFF8C8C8C),
                                         letterSpacing: 0.5,
@@ -364,7 +361,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                 const SizedBox(width: 10),
                                 Text(
                                   'Booking Ref:  ',
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.inter(
                                     fontSize: 12,
                                     color: kWarmGrey600,
                                   ),
@@ -373,7 +370,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                   child: Text(
                                     widget.response.booking!.id,
                                     overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
                                       color: kEspressoColor,
@@ -398,7 +395,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                           ),
                           child: Text(
                             'GO TO HOME',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 1.5,
@@ -414,7 +411,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                           onPressed: _goToAppointments,
                           child: Text(
                             'VIEW MY APPOINTMENTS',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 1.5,
@@ -460,7 +457,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                   ),
                 Text(
                   'Booking failed',
-                  style: GoogleFonts.cormorantGaramond(
+                  style: AppFonts.cormorantGaramond(
                     fontSize: 32,
                     fontStyle: FontStyle.italic,
                     color: const Color(0xFF1A1A1A),
@@ -470,7 +467,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                 Text(
                   message,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 14,
                     color: const Color(0xFF6B6B6B),
                     height: 1.5,
@@ -481,7 +478,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                   onPressed: _retry,
                   child: Text(
                     'Go Back',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                    style: AppFonts.inter(fontWeight: FontWeight.w600),
                   ),
                 ),
               ],

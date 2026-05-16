@@ -1,5 +1,5 @@
 // import 'package:flutter/material.dart';
-// import 'package:google_fonts/google_fonts.dart';
+// import 'package:sidi/constant/app_fonts.dart';
 // import 'package:sidi/constant/constants.dart';
 
 // import 'timeslotscreen.dart';
@@ -204,7 +204,7 @@
 //                 const SizedBox(height: 32),
 //                 Text(
 //                   widget.role.toUpperCase(),
-//                   style: GoogleFonts.inter(
+//                   style: AppFonts.inter(
 //                     fontSize: 10,
 //                     letterSpacing: 2,
 //                     color: kWarmGrey600,
@@ -214,7 +214,7 @@
 //                 const SizedBox(height: 8),
 //                 Text(
 //                   widget.artistName,
-//                   style: GoogleFonts.cormorantGaramond(
+//                   style: AppFonts.cormorantGaramond(
 //                     fontSize: 44,
 //                     fontStyle: FontStyle.italic,
 //                     fontWeight: FontWeight.w300,
@@ -224,7 +224,7 @@
 //                 const SizedBox(height: 20),
 //                 Text(
 //                   'With more than fifteen years of experience between Milan and London, ${widget.artistName} creates refined looks rooted in subtlety and precision. Her approach emphasizes the quiet power of detail and contemporary editorial balance.',
-//                   style: GoogleFonts.inter(
+//                   style: AppFonts.inter(
 //                     fontSize: 14,
 //                     height: 1.8,
 //                     color: opacity(kEspressoColor, 0.75),
@@ -234,7 +234,7 @@
 //                 const SizedBox(height: 20),
 //                 Text(
 //                   'Specializing in techniques that celebrate natural texture, ${widget.artistName} crafts tailored services that feel modern yet enduring, with an emphasis on effortless sophistication.',
-//                   style: GoogleFonts.inter(
+//                   style: AppFonts.inter(
 //                     fontSize: 14,
 //                     height: 1.8,
 //                     color: opacity(kEspressoColor, 0.75),
@@ -247,7 +247,7 @@
 //                   children: [
 //                     Text(
 //                       'The Services',
-//                       style: GoogleFonts.cormorantGaramond(
+//                       style: AppFonts.cormorantGaramond(
 //                         fontSize: 28,
 //                         fontStyle: FontStyle.italic,
 //                         color: kEspressoColor,
@@ -255,7 +255,7 @@
 //                     ),
 //                     Text(
 //                       'CURATED CARE',
-//                       style: GoogleFonts.inter(
+//                       style: AppFonts.inter(
 //                         fontSize: 10,
 //                         letterSpacing: 2.5,
 //                         color: kWarmGrey600,
@@ -271,7 +271,7 @@
 //                 const SizedBox(height: 24),
 //                 Text(
 //                   '“Simplicity is the ultimate sophistication.”',
-//                   style: GoogleFonts.cormorantGaramond(
+//                   style: AppFonts.cormorantGaramond(
 //                     fontSize: 16,
 //                     fontStyle: FontStyle.italic,
 //                     color: opacity(kEspressoColor, 0.6),
@@ -300,7 +300,7 @@
 //             children: [
 //               Text(
 //                 service['title'] ?? '',
-//                 style: GoogleFonts.inter(
+//                 style: AppFonts.inter(
 //                   fontSize: 16,
 //                   fontWeight: FontWeight.w600,
 //                   color: kEspressoColor,
@@ -308,7 +308,7 @@
 //               ),
 //               Text(
 //                 service['price'] ?? '',
-//                 style: GoogleFonts.inter(
+//                 style: AppFonts.inter(
 //                   fontSize: 14,
 //                   fontWeight: FontWeight.w500,
 //                   color: kEspressoColor,
@@ -319,7 +319,7 @@
 //           const SizedBox(height: 8),
 //           Text(
 //             service['description'] ?? '',
-//             style: GoogleFonts.inter(
+//             style: AppFonts.inter(
 //               fontSize: 13,
 //               height: 1.7,
 //               color: opacity(kEspressoColor, 0.7),
@@ -356,7 +356,7 @@
 //               ),
 //               child: Text(
 //                 'BOOK',
-//                 style: GoogleFonts.inter(
+//                 style: AppFonts.inter(
 //                   fontSize: 12,
 //                   letterSpacing: 1.5,
 //                   fontWeight: FontWeight.w600,

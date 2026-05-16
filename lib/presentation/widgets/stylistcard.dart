@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sidi/constant/app_fonts.dart';
 import 'package:sidi/models/stylist.dart';
 import 'package:sidi/presentation/detailedartistscreen.dart';
 import 'package:sidi/presentation/widgets/premium_route.dart';
@@ -95,7 +95,7 @@ class StylistsCard extends StatelessWidget {
                             stylist.fullName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.cormorantGaramond(
+                            style: AppFonts.cormorantGaramond(
                               fontSize: 25,
                               height: 1,
                               color: const Color(0xFF1E1B17),
@@ -109,7 +109,7 @@ class StylistsCard extends StatelessWidget {
                                 : 'Professional Beautician',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 12,
                               letterSpacing: 0.2,
                               color: const Color(0xFF6F675E),
@@ -132,7 +132,7 @@ class StylistsCard extends StatelessWidget {
                               stylist.rating >= 4.5
                                   ? 'Top rated choice'
                                   : 'Loved by customers',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: 10,
                                 color: stylist.rating >= 4.5
                                     ? const Color(0xFF1A7F37)
@@ -164,7 +164,7 @@ class StylistsCard extends StatelessWidget {
                           const SizedBox(width: 3),
                           Text(
                             stylist.rating.toStringAsFixed(1),
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 12,
                               color: const Color(0xFFA37412),
                               fontWeight: FontWeight.w700,
@@ -196,7 +196,7 @@ class StylistsCard extends StatelessWidget {
                             ),
                             child: Text(
                               skill,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: 10,
                                 color: const Color(0xFF6F675E),
                                 fontWeight: FontWeight.w600,
@@ -226,7 +226,7 @@ class StylistsCard extends StatelessWidget {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          textStyle: GoogleFonts.inter(
+                          textStyle: AppFonts.inter(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                           ),
@@ -243,7 +243,7 @@ class StylistsCard extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        textStyle: GoogleFonts.inter(
+                        textStyle: AppFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                         ),

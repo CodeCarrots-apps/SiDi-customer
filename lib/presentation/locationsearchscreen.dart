@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sidi/constant/app_fonts.dart';
 import 'package:location/location.dart';
 import 'package:sidi/constant/constants.dart';
 
@@ -191,7 +191,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
             ),
             title: Text(
               'Search Location',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
                 color: kCharcoalColor,
@@ -206,10 +206,10 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
                   TextField(
                     controller: _searchController,
                     onChanged: _onSearchChanged,
-                    style: GoogleFonts.inter(fontSize: 14),
+                    style: AppFonts.inter(fontSize: 14),
                     decoration: InputDecoration(
                       hintText: 'Search area, city, or address',
-                      hintStyle: GoogleFonts.inter(
+                      hintStyle: AppFonts.inter(
                         fontSize: 13,
                         color: kWarmGrey600,
                       ),
@@ -271,7 +271,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
                         _isFetchingCurrent
                             ? 'Fetching Current Location...'
                             : 'Use Current Location',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 13,
                           letterSpacing: 0.2,
                           fontWeight: FontWeight.w500,
@@ -293,7 +293,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
                       alignment: Alignment.centerLeft,
                       child: Text(
                         _errorText!,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 12,
                           color: Colors.red.shade700,
                         ),
@@ -310,7 +310,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
               child: Center(
                 child: Text(
                   'Search for a place to see results',
-                  style: GoogleFonts.inter(fontSize: 13, color: kWarmGrey600),
+                  style: AppFonts.inter(fontSize: 13, color: kWarmGrey600),
                 ),
               ),
             )
@@ -328,7 +328,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
                     item.displayName,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 13,
                       color: kCharcoalColor,
                     ),
@@ -336,7 +336,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
                   subtitle: Text(
                     'Lat ${item.latitude.toStringAsFixed(5)}, '
                     'Lng ${item.longitude.toStringAsFixed(5)}',
-                    style: GoogleFonts.inter(fontSize: 11, color: kWarmGrey600),
+                    style: AppFonts.inter(fontSize: 11, color: kWarmGrey600),
                   ),
                   trailing: const Icon(Icons.north_east, size: 18),
                   onTap: () {

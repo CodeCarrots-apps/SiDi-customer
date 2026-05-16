@@ -1,7 +1,7 @@
 // ignore_for_file: prefer_interpolation_to_compose_strings, unused_local_variable
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sidi/constant/app_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:dio/dio.dart';
 import 'package:shimmer/shimmer.dart';
@@ -281,14 +281,14 @@ class _BookingScreenState extends State<BookingScreen> {
                 setState(() => _searchQuery = value);
                 _debounceSearch(value);
               },
-              style: GoogleFonts.cormorantGaramond(
+              style: AppFonts.cormorantGaramond(
                 fontSize: 18 * scale,
                 fontStyle: FontStyle.italic,
                 color: kCharcoalColor,
               ),
               decoration: InputDecoration(
                 hintText: 'Search services or stylists',
-                hintStyle: GoogleFonts.cormorantGaramond(
+                hintStyle: AppFonts.cormorantGaramond(
                   fontSize: 18 * scale,
                   fontStyle: FontStyle.italic,
                   color: kWarmGrey600,
@@ -430,7 +430,7 @@ class _BookingScreenState extends State<BookingScreen> {
   Widget _buildSectionTitle(String text, double scale) {
     return Text(
       text,
-      style: GoogleFonts.cormorantGaramond(
+      style: AppFonts.cormorantGaramond(
         fontSize: 32 * scale,
         fontStyle: FontStyle.italic,
         color: kCharcoalColor,
@@ -671,7 +671,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 if (subtitle != null)
                   Text(
                     subtitle,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 8 * scale,
                       letterSpacing: 1.6,
                       color: Colors.white70,
@@ -679,7 +679,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   ),
                 Text(
                   title,
-                  style: GoogleFonts.cormorantGaramond(
+                  style: AppFonts.cormorantGaramond(
                     fontSize: 22 * scale,
                     fontStyle: FontStyle.italic,
                     color: Colors.white,
@@ -764,7 +764,7 @@ class _BookingScreenState extends State<BookingScreen> {
                       SizedBox(height: 6 * scale),
                       Text(
                         stylist.fullName,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 11 * scale,
                           color: kCharcoalColor,
                         ),
@@ -774,7 +774,7 @@ class _BookingScreenState extends State<BookingScreen> {
                       SizedBox(height: 2 * scale),
                       Text(
                         stylist.tier.isNotEmpty ? stylist.tier : 'Beautician',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 8 * scale,
                           letterSpacing: 1.3,
                           color: kWarmGrey600,
@@ -806,7 +806,7 @@ class _BookingScreenState extends State<BookingScreen> {
         children: [
           Text(
             'RECOMMENDED FOR YOU',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 8 * scale,
               letterSpacing: 1.6,
               color: kWarmGrey600,
@@ -815,7 +815,7 @@ class _BookingScreenState extends State<BookingScreen> {
           SizedBox(height: 10 * scale),
           Text(
             'Coming Soon: Personalized recommendations based on your style and past bookings.',
-            style: GoogleFonts.cormorantGaramond(
+            style: AppFonts.cormorantGaramond(
               fontSize: 30 * scale,
               fontStyle: FontStyle.italic,
               color: kCharcoalColor,

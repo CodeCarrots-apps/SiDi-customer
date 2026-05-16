@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
+import 'package:sidi/constant/app_fonts.dart';
 import 'package:sidi/presentation/widgets/appointmentcard.dart';
 
 class EliteArtistScreen extends StatelessWidget {
@@ -39,7 +39,7 @@ class EliteArtistScreen extends StatelessWidget {
                         children: [
                           Text(
                             "Senior Artist",
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 10,
                               color: kWarmGrey600,
                               fontWeight: FontWeight.w600,
@@ -48,7 +48,7 @@ class EliteArtistScreen extends StatelessWidget {
                           ),
                           Text(
                             "Elena Rossi",
-                            style: GoogleFonts.cormorantGaramond(
+                            style: AppFonts.cormorantGaramond(
                               fontSize: 16,
                               fontStyle: FontStyle.italic,
                               color: kSlate950,
@@ -125,7 +125,7 @@ class EliteArtistScreen extends StatelessWidget {
                                       children: [
                                         Text(
                                           "Daily Performance",
-                                          style: GoogleFonts.inter(
+                                          style: AppFonts.inter(
                                             fontSize: 11,
                                             color: kWarmGrey600,
                                             fontWeight: FontWeight.w500,
@@ -134,7 +134,7 @@ class EliteArtistScreen extends StatelessWidget {
                                         ),
                                         Text(
                                           "+14.2%",
-                                          style: GoogleFonts.cormorantGaramond(
+                                          style: AppFonts.cormorantGaramond(
                                             fontSize: 12,
                                             fontStyle: FontStyle.italic,
                                             color: kAccentGold,
@@ -149,7 +149,7 @@ class EliteArtistScreen extends StatelessWidget {
                                       children: [
                                         Text(
                                           "\$1,840.00",
-                                          style: GoogleFonts.cormorantGaramond(
+                                          style: AppFonts.cormorantGaramond(
                                             fontSize: 28,
                                             fontWeight: FontWeight.w500,
                                             color: kSlate950,
@@ -208,7 +208,7 @@ class EliteArtistScreen extends StatelessWidget {
                                   children: [
                                     Text(
                                       "Bookings",
-                                      style: GoogleFonts.inter(
+                                      style: AppFonts.inter(
                                         fontSize: 10,
                                         letterSpacing: 2,
                                         color: kWarmGrey600,
@@ -219,7 +219,7 @@ class EliteArtistScreen extends StatelessWidget {
                                       children: [
                                         Text(
                                           "12",
-                                          style: GoogleFonts.cormorantGaramond(
+                                          style: AppFonts.cormorantGaramond(
                                             fontSize: 24,
                                             color: kSlate950,
                                           ),
@@ -227,7 +227,7 @@ class EliteArtistScreen extends StatelessWidget {
                                         SizedBox(width: 4),
                                         Text(
                                           "/ 14 slots",
-                                          style: GoogleFonts.inter(
+                                          style: AppFonts.inter(
                                             fontSize: 10,
                                             color: kWarmGrey600,
                                           ),
@@ -260,7 +260,7 @@ class EliteArtistScreen extends StatelessWidget {
                                   children: [
                                     Text(
                                       "Waitlist",
-                                      style: GoogleFonts.inter(
+                                      style: AppFonts.inter(
                                         fontSize: 10,
                                         letterSpacing: 2,
                                         color: kWarmGrey600,
@@ -271,7 +271,7 @@ class EliteArtistScreen extends StatelessWidget {
                                       children: [
                                         Text(
                                           "4",
-                                          style: GoogleFonts.cormorantGaramond(
+                                          style: AppFonts.cormorantGaramond(
                                             fontSize: 24,
                                             color: kSlate950,
                                           ),
@@ -279,7 +279,7 @@ class EliteArtistScreen extends StatelessWidget {
                                         SizedBox(width: 4),
                                         Text(
                                           "VIP requests",
-                                          style: GoogleFonts.inter(
+                                          style: AppFonts.inter(
                                             fontSize: 10,
                                             color: kWarmGrey600,
                                           ),
@@ -305,7 +305,7 @@ class EliteArtistScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     "Today's Appointments",
-                                    style: GoogleFonts.cormorantGaramond(
+                                    style: AppFonts.cormorantGaramond(
                                       fontSize: 22,
                                       fontStyle: FontStyle.italic,
                                       color: kSlate950,
@@ -314,7 +314,7 @@ class EliteArtistScreen extends StatelessWidget {
                                   SizedBox(height: 4),
                                   Text(
                                     "Thursday, October 24",
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: 12,
                                       color: kWarmGrey600,
                                     ),
@@ -325,7 +325,7 @@ class EliteArtistScreen extends StatelessWidget {
                                 onPressed: () {},
                                 child: Text(
                                   "Edit Schedule",
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.inter(
                                     fontSize: 11,
                                     color: kAccentGold,
                                     letterSpacing: 1.2,

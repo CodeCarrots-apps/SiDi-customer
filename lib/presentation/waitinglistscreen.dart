@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sidi/constant/app_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/models/booking_models.dart';
 import 'package:sidi/models/service_cart_item.dart';
@@ -163,7 +163,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
                   const Spacer(),
                   Text(
                     _isAssigned ? 'BOOKING CONFIRMED' : 'WAITING LIST STATUS',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 1.5,
@@ -218,7 +218,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
                         ),
                         child: Text(
                           _isAssigned ? 'CONFIRM' : 'GOT IT',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 1.5,
@@ -238,7 +238,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
                         },
                         child: Text(
                           'CHECK REQUEST STATUS',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 1.3,
@@ -290,7 +290,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
               children: [
                 Text(
                   'Finding your beautician',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF1E40AF),
@@ -299,7 +299,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
                 const SizedBox(height: 2),
                 Text(
                   _statusMessage,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 11,
                     color: const Color(0xFF3B82F6),
                   ),
@@ -341,7 +341,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
                 children: [
                   Text(
                     'Beautician assigned!',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF047857),
@@ -350,7 +350,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
                   const SizedBox(height: 2),
                   Text(
                     'Your appointment has been confirmed',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 11,
                       color: const Color(0xFF34D399),
                     ),
@@ -420,7 +420,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
                   const SizedBox(width: 6),
                   Text(
                     'WAITING LIST',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1.4,
@@ -443,7 +443,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.playfairDisplay(
+                  style: AppFonts.playfairDisplay(
                     fontSize: 28,
                     fontStyle: FontStyle.italic,
                     fontWeight: FontWeight.w400,
@@ -453,7 +453,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
                 const SizedBox(height: 8),
                 Text(
                   '${widget.selectedDate}  ·  Requested ${widget.selectedTime}',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 12,
                     color: Colors.white.withAlpha(225),
                     fontWeight: FontWeight.w500,
@@ -494,7 +494,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
                 _isAssigned
                     ? 'Beautician confirmed!'
                     : 'You are on the waiting list',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF6D4A10),
@@ -507,7 +507,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
             _isAssigned
                 ? 'Your beautician has accepted your request and will arrive at the scheduled time.'
                 : 'We are finding the best available beautician for your requested time slot. You will be notified once your appointment is confirmed.',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 12,
               height: 1.5,
               color: const Color(0xFF7B5D2A),
@@ -526,7 +526,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
                   ),
                   child: Text(
                     '●',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 8,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF2563EB),
@@ -536,7 +536,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
                 const SizedBox(width: 6),
                 Text(
                   'Request sent to ${widget.response.broadcastedCount} nearby stylists',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF8A672B),
@@ -563,7 +563,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
         children: [
           Text(
             'Requested Services',
-            style: GoogleFonts.playfairDisplay(
+            style: AppFonts.playfairDisplay(
               fontSize: 24,
               fontStyle: FontStyle.italic,
               color: kEspressoColor,
@@ -587,7 +587,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
                   Expanded(
                     child: Text(
                       service.title,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: kEspressoColor,
@@ -597,7 +597,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
                   if (service.price.isNotEmpty)
                     Text(
                       service.price,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 12,
                         color: kWarmGrey600,
                       ),
@@ -645,7 +645,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
                       (_isAssigned
                           ? 'Beautician assigned'
                           : 'Assigning stylist...'),
-                  style: GoogleFonts.playfairDisplay(
+                  style: AppFonts.playfairDisplay(
                     fontSize: 18,
                     fontStyle: FontStyle.italic,
                     fontWeight: FontWeight.w400,
@@ -654,7 +654,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
                 const SizedBox(height: 6),
                 Text(
                   widget.stylistTag ?? 'Beautician',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 12,
                     color: const Color(0xFF8C8C8C),
                     letterSpacing: 0.5,
@@ -686,13 +686,13 @@ class _WaitingListScreenState extends State<WaitingListScreen>
           const SizedBox(width: 10),
           Text(
             'Booking Ref:  ',
-            style: GoogleFonts.inter(fontSize: 12, color: kWarmGrey600),
+            style: AppFonts.inter(fontSize: 12, color: kWarmGrey600),
           ),
           Expanded(
             child: Text(
               bookingId,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: kEspressoColor,

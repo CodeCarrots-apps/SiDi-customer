@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sidi/constant/app_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sidi/constant/constants.dart';
@@ -181,7 +181,7 @@ class _ReferralScreenState extends State<ReferralScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         content: Text(
           'Referral code copied!',
-          style: GoogleFonts.inter(color: Colors.white, fontSize: 13),
+          style: AppFonts.inter(color: Colors.white, fontSize: 13),
         ),
       ),
     );
@@ -236,7 +236,7 @@ class _ReferralScreenState extends State<ReferralScreen>
             ),
             content: Text(
               'Your free service has been added to your account!',
-              style: GoogleFonts.inter(color: Colors.white, fontSize: 13),
+              style: AppFonts.inter(color: Colors.white, fontSize: 13),
             ),
           ),
         );
@@ -285,7 +285,7 @@ class _ReferralScreenState extends State<ReferralScreen>
             ),
             title: Text(
               'REFER & EARN',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 11 * scale,
                 letterSpacing: 5,
                 fontWeight: FontWeight.w400,
@@ -310,8 +310,8 @@ class _ReferralScreenState extends State<ReferralScreen>
               ),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  FadeTransition(
-                    opacity: _fadeAnim,
+                  AnimatedBuilder(
+                    animation: _fadeAnim,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -323,6 +323,13 @@ class _ReferralScreenState extends State<ReferralScreen>
                         SizedBox(height: 20 * scale),
                         _buildHistory(scale),
                       ],
+                    ),
+                    builder: (context, child) => Transform.translate(
+                      offset: Offset(0, (1 - _fadeAnim.value) * 12),
+                      child: Transform.scale(
+                        scale: 0.985 + (_fadeAnim.value * 0.015),
+                        child: child,
+                      ),
                     ),
                   ),
                 ]),
@@ -350,7 +357,7 @@ class _ReferralScreenState extends State<ReferralScreen>
         children: [
           Text(
             'YOUR REFERRAL CODE',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 9 * scale,
               letterSpacing: 4,
               color: kAccentGold,
@@ -370,7 +377,7 @@ class _ReferralScreenState extends State<ReferralScreen>
               ),
               child: Text(
                 code,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 26 * scale,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 8,
@@ -432,7 +439,7 @@ class _ReferralScreenState extends State<ReferralScreen>
             SizedBox(width: 6 * scale),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 10 * scale,
                 letterSpacing: 3,
                 color: Colors.white,
@@ -468,7 +475,7 @@ class _ReferralScreenState extends State<ReferralScreen>
             children: [
               Text(
                 'REWARD WALLET',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 9 * scale,
                   letterSpacing: 4,
                   color: kAccentGold,
@@ -476,7 +483,7 @@ class _ReferralScreenState extends State<ReferralScreen>
               ),
               Text(
                 '${wallet.totalReferrals} referral${wallet.totalReferrals != 1 ? 's' : ''}',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 10 * scale,
                   color: kWarmGrey600,
                 ),
@@ -489,7 +496,7 @@ class _ReferralScreenState extends State<ReferralScreen>
             children: [
               Text(
                 '${wallet.pointsBalance}',
-                style: GoogleFonts.playfairDisplay(
+                style: AppFonts.playfairDisplay(
                   fontSize: 48 * scale,
                   color: kCharcoalColor,
                   fontWeight: FontWeight.w500,
@@ -500,7 +507,7 @@ class _ReferralScreenState extends State<ReferralScreen>
                 padding: EdgeInsets.only(bottom: 6 * scale, left: 4 * scale),
                 child: Text(
                   '/ ${wallet.pointsToRedeem} pts',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 12 * scale,
                     color: kWarmGrey600,
                   ),
@@ -529,7 +536,7 @@ class _ReferralScreenState extends State<ReferralScreen>
             canRedeem
                 ? 'You\'ve earned a free service! Redeem now.'
                 : '${wallet.pointsToRedeem - wallet.pointsBalance} pts away from a free service',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 11 * scale,
               color: canRedeem ? kAccentGold : kWarmGrey600,
             ),
@@ -551,7 +558,7 @@ class _ReferralScreenState extends State<ReferralScreen>
                 ),
                 child: Text(
                   'REDEEM FREE SERVICE',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 10 * scale,
                     letterSpacing: 3,
                     fontWeight: FontWeight.w600,
@@ -602,7 +609,7 @@ class _ReferralScreenState extends State<ReferralScreen>
           padding: EdgeInsets.only(left: 4 * scale),
           child: Text(
             'HOW IT WORKS',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 9 * scale,
               letterSpacing: 4,
               color: kAccentGold,
@@ -659,7 +666,7 @@ class _ReferralScreenState extends State<ReferralScreen>
                   SizedBox(height: 8 * scale),
                   Text(
                     step.title,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 13 * scale,
                       fontWeight: FontWeight.w500,
                       color: kCharcoalColor,
@@ -668,7 +675,7 @@ class _ReferralScreenState extends State<ReferralScreen>
                   SizedBox(height: 4 * scale),
                   Text(
                     step.description,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 12 * scale,
                       color: kWarmGrey600,
                       height: 1.4,
@@ -698,7 +705,7 @@ class _ReferralScreenState extends State<ReferralScreen>
           padding: EdgeInsets.only(left: 4 * scale),
           child: Text(
             'REFERRAL HISTORY',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 9 * scale,
               letterSpacing: 4,
               color: kAccentGold,
@@ -737,7 +744,7 @@ class _ReferralScreenState extends State<ReferralScreen>
                 entry.referredName.isNotEmpty
                     ? entry.referredName[0].toUpperCase()
                     : '?',
-                style: GoogleFonts.playfairDisplay(
+                style: AppFonts.playfairDisplay(
                   fontSize: 16 * scale,
                   color: kAccentGold,
                   fontStyle: FontStyle.italic,
@@ -752,7 +759,7 @@ class _ReferralScreenState extends State<ReferralScreen>
               children: [
                 Text(
                   entry.referredName,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 13 * scale,
                     fontWeight: FontWeight.w400,
                     color: kCharcoalColor,
@@ -761,7 +768,7 @@ class _ReferralScreenState extends State<ReferralScreen>
                 SizedBox(height: 2 * scale),
                 Text(
                   date,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 10 * scale,
                     color: kWarmGrey600,
                   ),
@@ -774,7 +781,7 @@ class _ReferralScreenState extends State<ReferralScreen>
             children: [
               Text(
                 '+${entry.pointsEarned} pts',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 13 * scale,
                   fontWeight: FontWeight.w500,
                   color: entry.isCompleted ? kAccentGold : kWarmGrey600,
@@ -794,7 +801,7 @@ class _ReferralScreenState extends State<ReferralScreen>
                 ),
                 child: Text(
                   entry.status.toUpperCase(),
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 8 * scale,
                     letterSpacing: 1.5,
                     color: entry.isCompleted ? kAccentGold : kWarmGrey600,
@@ -858,7 +865,7 @@ class _ReferralScreenState extends State<ReferralScreen>
           Text(
             _errorMessage!,
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 14 * scale,
               color: kCharcoalColor,
             ),
@@ -874,7 +881,7 @@ class _ReferralScreenState extends State<ReferralScreen>
             ),
             child: Text(
               'RETRY',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 12 * scale,
                 letterSpacing: 2,
                 color: kAccentGold,

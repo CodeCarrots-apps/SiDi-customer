@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sidi/constant/app_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/presentation/widgets/stylistcard.dart';
 
@@ -45,11 +45,6 @@ class ServiceDetailScreen extends StatefulWidget {
 class _ServiceDetailScreenState extends State<ServiceDetailScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _entranceCtrl;
-  late Animation<double> _fadeTitle,
-      _fadeMeta,
-      _fadeDesc,
-      _featuresFade,
-      _stylistsFade;
   late Animation<Offset> _slideTitle,
       _slideMeta,
       _slideDesc,
@@ -75,10 +70,6 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     );
-    Animation<double> fade(double b, double e) => CurvedAnimation(
-      parent: _entranceCtrl,
-      curve: Interval(b, e, curve: Curves.easeOut),
-    );
     Animation<Offset> slide(double b, double e) =>
         Tween<Offset>(begin: const Offset(0, 0.18), end: Offset.zero).animate(
           CurvedAnimation(
@@ -86,15 +77,10 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
             curve: Interval(b, e, curve: Curves.easeOutCubic),
           ),
         );
-    _fadeTitle = fade(0.0, 0.4);
     _slideTitle = slide(0.0, 0.4);
-    _fadeMeta = fade(0.1, 0.5);
     _slideMeta = slide(0.1, 0.5);
-    _fadeDesc = fade(0.2, 0.6);
     _slideDesc = slide(0.2, 0.6);
-    _featuresFade = fade(0.35, 0.75);
     _slideFeatures = slide(0.35, 0.75);
-    _stylistsFade = fade(0.5, 0.9);
     _slideStylists = slide(0.5, 0.9);
     _entranceCtrl.forward();
   }
@@ -233,124 +219,98 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                   const SizedBox(height: 16),
                   // const _BookingStepBar(currentStep: 1),
                   const SizedBox(height: 24),
-                  FadeTransition(
-                    opacity: _fadeTitle,
-                    child: SlideTransition(
-                      position: _slideTitle,
-                      child: _buildTitle(),
-                    ),
-                  ),
+                  SlideTransition(position: _slideTitle, child: _buildTitle()),
                   const SizedBox(height: 20),
-                  FadeTransition(
-                    opacity: _fadeMeta,
-                    child: SlideTransition(
-                      position: _slideMeta,
-                      child: _buildInfoRow(),
-                    ),
-                  ),
+                  SlideTransition(position: _slideMeta, child: _buildInfoRow()),
                   const SizedBox(height: 28),
-                  FadeTransition(
-                    opacity: _fadeDesc,
-                    child: SlideTransition(
-                      position: _slideDesc,
-                      child: _buildDescription(),
-                    ),
+                  SlideTransition(
+                    position: _slideDesc,
+                    child: _buildDescription(),
                   ),
                   const SizedBox(height: 40),
-                  FadeTransition(
-                    opacity: _featuresFade,
-                    child: SlideTransition(
-                      position: _slideFeatures,
-                      child: _buildFeatures(),
-                    ),
+                  SlideTransition(
+                    position: _slideFeatures,
+                    child: _buildFeatures(),
                   ),
                   const SizedBox(height: 40),
                   if (widget.stylists.isNotEmpty) ...[
-                    FadeTransition(
-                      opacity: _stylistsFade,
-                      child: SlideTransition(
-                        position: _slideStylists,
-                        child: _buildSection(title: "Stylists", scale: 1.4),
-                      ),
+                    SlideTransition(
+                      position: _slideStylists,
+                      child: _buildSection(title: "Stylists", scale: 1.4),
                     ),
-                    FadeTransition(
-                      opacity: _stylistsFade,
-                      child: SlideTransition(
-                        position: _slideStylists,
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: widget.stylists.length,
-                          itemBuilder: (context, index) {
-                            final stylist = widget.stylists[index];
-                            final isSelected = selectedStylistIndex == index;
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 12.0),
-                              child: GestureDetector(
-                                onTap: () {
-                                  HapticFeedback.selectionClick();
-                                  setState(() {
-                                    selectedStylistIndex = index;
-                                  });
-                                },
-                                child: Stack(
-                                  children: [
-                                    AnimatedContainer(
-                                      duration: const Duration(
-                                        milliseconds: 220,
+                    SlideTransition(
+                      position: _slideStylists,
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: widget.stylists.length,
+                        itemBuilder: (context, index) {
+                          final stylist = widget.stylists[index];
+                          final isSelected = selectedStylistIndex == index;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12.0),
+                            child: GestureDetector(
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                setState(() {
+                                  selectedStylistIndex = index;
+                                });
+                              },
+                              child: Stack(
+                                children: [
+                                  AnimatedContainer(
+                                    duration: const Duration(milliseconds: 220),
+                                    curve: Curves.easeOut,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? kChampagneColor
+                                            : Colors.transparent,
+                                        width: isSelected ? 2 : 0,
                                       ),
-                                      curve: Curves.easeOut,
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                          color: isSelected
-                                              ? kChampagneColor
-                                              : Colors.transparent,
-                                          width: isSelected ? 2 : 0,
-                                        ),
-                                        borderRadius: BorderRadius.circular(18),
-                                        boxShadow: isSelected
-                                            ? [
-                                                BoxShadow(
-                                                  color: kChampagneColor
-                                                      .withOpacity(0.28),
-                                                  blurRadius: 14,
-                                                  offset: const Offset(0, 4),
-                                                ),
-                                              ]
-                                            : null,
-                                      ),
-                                      child: StylistsCard(stylist: stylist),
+                                      borderRadius: BorderRadius.circular(18),
+                                      boxShadow: isSelected
+                                          ? [
+                                              BoxShadow(
+                                                color: kChampagneColor
+                                                    .withOpacity(0.28),
+                                                blurRadius: 14,
+                                                offset: const Offset(0, 4),
+                                              ),
+                                            ]
+                                          : null,
                                     ),
-                                    if (isSelected)
-                                      Positioned(
-                                        top: 10,
-                                        right: 14,
-                                        child: AnimatedScale(
-                                          scale: 1.0,
-                                          duration: const Duration(
-                                            milliseconds: 200,
+                                    child: StylistsCard(stylist: stylist),
+                                  ),
+                                  if (isSelected)
+                                    Positioned(
+                                      top: 10,
+                                      right: 14,
+                                      child: AnimatedScale(
+                                        scale: 1.0,
+                                        duration: const Duration(
+                                          milliseconds: 200,
+                                        ),
+                                        child: Container(
+                                          width: 22,
+                                          height: 22,
+                                          decoration: const BoxDecoration(
+                                            color: kChampagneColor,
+                                            shape: BoxShape.circle,
                                           ),
-                                          child: Container(
-                                            width: 22,
-                                            height: 22,
-                                            decoration: const BoxDecoration(
-                                              color: kChampagneColor,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: const Icon(
-                                              Icons.check,
-                                              size: 13,
-                                              color: Colors.white,
-                                            ),
+                                          child: const Icon(
+                                            Icons.check,
+                                            size: 13,
+                                            color: Colors.white,
                                           ),
                                         ),
                                       ),
-                                  ],
-                                ),
+                                    ),
+                                ],
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -430,22 +390,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
   Widget _circleButton(IconData icon, {VoidCallback? onTap}) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.88),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.10),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Icon(icon, color: Colors.black87, size: 18),
-      ),
+      child: Icon(icon, color: Colors.black87, size: 18),
     );
   }
 
@@ -455,7 +400,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       children: [
         Text(
           widget.title,
-          style: GoogleFonts.cormorantGaramond(
+          style: AppFonts.cormorantGaramond(
             fontSize: 40,
             fontStyle: FontStyle.italic,
             fontWeight: FontWeight.w300,
@@ -498,7 +443,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                 padding: const EdgeInsets.only(left: 8),
                 child: Text(
                   'Thanks for rating!',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 11,
                     color: Colors.amber[700],
                     fontWeight: FontWeight.w600,
@@ -586,7 +531,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       children: [
         Text(
           label.toUpperCase(),
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 10,
             letterSpacing: 2,
             color: opacity(kEspressoColor, 0.4),
@@ -595,7 +540,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
         const SizedBox(height: 6),
         Text(
           value,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.w300,
             color: kChampagneColor,
@@ -611,7 +556,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       // "Our signature treatment includes detailed cuticle care, a soothing hand massage "
       // "with organic botanical oils, and a flawless finish with our curated palette of premium editorial shades.",
       widget.description,
-      style: GoogleFonts.inter(
+      style: AppFonts.inter(
         fontSize: 17,
         height: 1.8,
         fontWeight: FontWeight.w300,
@@ -664,7 +609,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                   ),
@@ -672,7 +617,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 13,
                     color: opacity(kEspressoColor, 0.5),
                   ),
@@ -695,7 +640,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
       children: [
         Text(
           title,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 9 * scale,
             letterSpacing: 4,
             color: kAccentGold,
@@ -773,7 +718,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
                         const SizedBox(width: 10),
                         Text(
                           'BOOK NOW',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: 16,
                             letterSpacing: 2,
                             fontWeight: FontWeight.w500,

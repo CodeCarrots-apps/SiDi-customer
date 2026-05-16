@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sidi/constant/app_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:sidi/constant/constants.dart';
@@ -194,7 +194,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         centerTitle: true,
         title: Text(
           'Edit Profile',
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 14 * scale,
             letterSpacing: 3,
             fontWeight: FontWeight.w500,
@@ -257,7 +257,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       )
                     : Text(
                         'SAVE CHANGES',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 13 * scale,
                           letterSpacing: 3,
                           fontWeight: FontWeight.w500,
@@ -322,7 +322,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         SizedBox(height: 18 * scale),
         Text(
           'Update your details here',
-          style: GoogleFonts.inter(fontSize: 12 * scale, color: kWarmGrey600),
+          style: AppFonts.inter(fontSize: 12 * scale, color: kWarmGrey600),
         ),
       ],
     );
@@ -371,7 +371,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
           child: Text(
             value,
-            style: GoogleFonts.inter(fontSize: 14, color: kCharcoalColor),
+            style: AppFonts.inter(fontSize: 14, color: kCharcoalColor),
           ),
         ),
       ],

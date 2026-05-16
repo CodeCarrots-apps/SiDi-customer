@@ -271,14 +271,47 @@ class _SplashScreenState extends State<SplashScreen>
     duration: const Duration(milliseconds: 1400),
   )..repeat();
 
+  // Loading indicator entrance (staggered after text)
+  late final AnimationController _loadingCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 600),
+  );
+  late final Animation<Offset> _loadingSlide = Tween<Offset>(
+    begin: const Offset(0, 0.3),
+    end: Offset.zero,
+  ).animate(CurvedAnimation(parent: _loadingCtrl, curve: Curves.easeOutCubic));
+  late final Animation<double> _loadingOpacity = Tween<double>(
+    begin: 0.0,
+    end: 1.0,
+  ).animate(CurvedAnimation(parent: _loadingCtrl, curve: Curves.easeOutCubic));
+
+  // Arc ring rotation (loading indicator feel)
+  late final AnimationController _arcRotateCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 3),
+  )..repeat();
+
+  late final Animation<double> _arcRotation = Tween<double>(
+    begin: 0.0,
+    end: 2 * math.pi,
+  ).animate(_arcRotateCtrl);
+
   @override
   void initState() {
     super.initState();
-    // Stagger: logo first, then text
+    // Stagger: logo first, then text, then loading indicator
     _logoCtrl.forward().then((_) {
-      if (mounted) _textCtrl.forward();
+      if (mounted) {
+        _textCtrl.forward().then((_) {
+          if (mounted) _loadingCtrl.forward();
+        });
+      }
     });
-    _navigationTimer = Timer(const Duration(seconds: 4), _navigateFromSplash);
+    // Reduced from 4s to 2.5s for faster transition
+    _navigationTimer = Timer(
+      const Duration(milliseconds: 2500),
+      _navigateFromSplash,
+    );
   }
 
   Future<bool> _isTokenValid(String token) async {
@@ -352,6 +385,8 @@ class _SplashScreenState extends State<SplashScreen>
     _orbCtrl.dispose();
     _glowCtrl.dispose();
     _dotsCtrl.dispose();
+    _arcRotateCtrl.dispose();
+    _loadingCtrl.dispose();
     super.dispose();
   }
 
@@ -388,7 +423,7 @@ class _SplashScreenState extends State<SplashScreen>
                             builder: (_, __) =>
                                 _GlowHalo(opacity: _glowOpacity.value),
                           ),
-                          const _ArcRing(),
+                          _ArcRing(rotation: _arcRotation),
                           const _LogoCard(),
                         ],
                       ),
@@ -409,21 +444,27 @@ class _SplashScreenState extends State<SplashScreen>
             bottom: 56,
             left: 0,
             right: 0,
-            child: Column(
-              children: [
-                _LoadingDots(controller: _dotsCtrl),
-                const SizedBox(height: 10),
-                Text(
-                  'LOADING',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 10,
-                    letterSpacing: 3.5,
-                    fontWeight: FontWeight.w500,
-                    color: _Colors.goldDark.withValues(alpha: 0.50),
-                  ),
+            child: SlideTransition(
+              position: _loadingSlide,
+              child: FadeTransition(
+                opacity: _loadingOpacity,
+                child: Column(
+                  children: [
+                    _LoadingDots(controller: _dotsCtrl),
+                    const SizedBox(height: 10),
+                    Text(
+                      'LOADING',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 10,
+                        letterSpacing: 3.5,
+                        fontWeight: FontWeight.w500,
+                        color: _Colors.goldDark.withValues(alpha: 0.50),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ],
@@ -546,14 +587,22 @@ class _GlowHalo extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _ArcRing extends StatelessWidget {
-  const _ArcRing();
+  const _ArcRing({required this.rotation});
+
+  final Animation<double> rotation;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 220,
-      height: 220,
-      child: CustomPaint(painter: _ArcPainter()),
+    return AnimatedBuilder(
+      animation: rotation,
+      builder: (_, __) => Transform.rotate(
+        angle: rotation.value,
+        child: SizedBox(
+          width: 220,
+          height: 220,
+          child: CustomPaint(painter: _ArcPainter()),
+        ),
+      ),
     );
   }
 }
@@ -734,20 +783,54 @@ class _LoadingDots extends StatelessWidget {
           children: List.generate(3, (i) {
             final start = i * 0.22;
             final end = (start + 0.50).clamp(0.0, 1.0);
-            final anim = Tween<double>(begin: 0.2, end: 1.0).animate(
+
+            // Opacity animation
+            final opacityAnim = Tween<double>(begin: 0.2, end: 1.0).animate(
               CurvedAnimation(
                 parent: controller,
                 curve: Interval(start, end, curve: Curves.easeInOut),
               ),
             );
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _Colors.gold.withValues(alpha: anim.value),
+
+            // Scale animation for more liveliness
+            final scaleAnim = Tween<double>(begin: 0.6, end: 1.2).animate(
+              CurvedAnimation(
+                parent: controller,
+                curve: Interval(start, end, curve: Curves.easeInOut),
+              ),
+            );
+
+            // Vertical bounce
+            final verticalAnim = Tween<double>(begin: 0.0, end: -8.0).animate(
+              CurvedAnimation(
+                parent: controller,
+                curve: Interval(start, end, curve: Curves.easeInOut),
+              ),
+            );
+
+            return Transform.translate(
+              offset: Offset(0, verticalAnim.value),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: ScaleTransition(
+                  scale: scaleAnim,
+                  child: Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _Colors.gold.withValues(alpha: opacityAnim.value),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _Colors.gold.withValues(
+                            alpha: opacityAnim.value * 0.4,
+                          ),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             );

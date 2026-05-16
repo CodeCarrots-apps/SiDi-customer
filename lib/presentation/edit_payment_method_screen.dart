@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sidi/constant/app_fonts.dart';
 
 import '../models/edit_result.dart';
 import '../models/payment_method_model.dart';
@@ -76,7 +76,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
         ),
         title: Text(
           isEditing ? 'Edit Payment' : 'Add Payment',
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: kEspressoColor,
@@ -114,7 +114,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                         ),
                         child: Text(
                           'DELETE',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontWeight: FontWeight.w600,
                             color: kEspressoColor,
                           ),
@@ -134,7 +134,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                       ),
                       child: Text(
                         'SAVE',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
                         ),
@@ -159,7 +159,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 12,
             letterSpacing: 1.5,
             color: kWarmGrey600,

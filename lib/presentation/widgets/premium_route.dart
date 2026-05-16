@@ -8,26 +8,49 @@ class PremiumPageRoute<T> extends PageRouteBuilder<T> {
   PremiumPageRoute({required WidgetBuilder builder})
     : super(
         transitionDuration: const Duration(milliseconds: 380),
-        reverseTransitionDuration: const Duration(milliseconds: 260),
+        // Longer reverse so the eye can track the page leaving — 260ms felt
+        // like a sudden crush because the scale + slide compounded too fast.
+        reverseTransitionDuration: const Duration(milliseconds: 360),
         pageBuilder: (context, animation, secondaryAnimation) =>
             _PremiumShell(destinationBuilder: builder),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          final curved = CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-            reverseCurve: Curves.easeInCubic,
-          );
+          final isForward = animation.status != AnimationStatus.reverse;
 
-          return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0.0, 0.02),
-              end: Offset.zero,
-            ).animate(curved),
-            child: ScaleTransition(
-              scale: Tween<double>(begin: 0.995, end: 1.0).animate(curved),
-              child: child,
-            ),
-          );
+          if (isForward) {
+            // Enter: subtle upward slide + micro-scale in.
+            final curved = CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            );
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.0, 0.02),
+                end: Offset.zero,
+              ).animate(curved),
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 0.995, end: 1.0).animate(curved),
+                child: child,
+              ),
+            );
+          } else {
+            // Exit: slide down and fade out — no scale, so there is no
+            // "shrinking container" artifact. easeInOut gives the motion a
+            // natural arc so it doesn't feel abrupt or laggy.
+            final curved = CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeInOut,
+            );
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.0, 0.06),
+                end: Offset.zero,
+              ).animate(curved),
+              child: FadeTransition(
+                opacity: Tween<double>(begin: 0.0, end: 1.0).animate(curved),
+                child: child,
+              ),
+            );
+          }
         },
       );
 }
@@ -76,9 +99,10 @@ class _PremiumShellState extends State<_PremiumShell>
     end: 0.72,
   ).animate(CurvedAnimation(parent: _glowCtrl, curve: Curves.easeInOut));
 
+  // FIX: full 2-second revolution so the dot and gradient sweep stay in sync.
   late final AnimationController _ringCtrl = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1800),
+    duration: const Duration(milliseconds: 2000),
   )..repeat();
 
   late final AnimationController _exitCtrl = AnimationController(
@@ -88,7 +112,7 @@ class _PremiumShellState extends State<_PremiumShell>
 
   bool _overlayVisible = true;
 
-  static const Duration _displayDuration = Duration(seconds: 5);
+  static const Duration _displayDuration = Duration(milliseconds: 1800);
 
   @override
   void initState() {
@@ -97,6 +121,11 @@ class _PremiumShellState extends State<_PremiumShell>
 
     Future.delayed(_displayDuration, () {
       if (!mounted) return;
+      // FIX: stop looping controllers before the fade so they don't keep
+      // scheduling repaints after the overlay is gone.
+      _orbCtrl.stop();
+      _glowCtrl.stop();
+      _ringCtrl.stop();
       _exitCtrl.forward().then((_) {
         if (mounted) setState(() => _overlayVisible = false);
       });
@@ -123,53 +152,59 @@ class _PremiumShellState extends State<_PremiumShell>
             animation: _exitCtrl,
             builder: (_, __) {
               final exitT = Curves.easeInCubic.transform(_exitCtrl.value);
-              return Container(
-                color: _Colors.background.withValues(alpha: 1.0 - exitT),
+              // Fade the whole overlay as a single composited layer so the
+              // glow's circular box-shadow never renders against a transparent
+              // background (which caused the visible ring artifact on exit).
+              return Opacity(
+                opacity: (1.0 - exitT).clamp(0.0, 1.0),
                 child: Transform.translate(
                   offset: Offset(0, -6 * exitT),
-                  child: Stack(
-                    children: [
-                      AnimatedBuilder(
-                        animation: _orbCtrl,
-                        builder: (_, __) => _OrbsLayer(t: _orbCtrl.value),
-                      ),
-                      Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SlideTransition(
-                              position: _logoSlide,
-                              child: ScaleTransition(
-                                scale: _logoScale,
-                                child: SizedBox(
-                                  width: 220,
-                                  height: 220,
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      AnimatedBuilder(
-                                        animation: _glowOpacity,
-                                        builder: (_, __) => _GlowHalo(
-                                          opacity: _glowOpacity.value,
+                  child: ColoredBox(
+                    color: _Colors.background,
+                    child: Stack(
+                      children: [
+                        AnimatedBuilder(
+                          animation: _orbCtrl,
+                          builder: (_, __) => _OrbsLayer(t: _orbCtrl.value),
+                        ),
+                        Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SlideTransition(
+                                position: _logoSlide,
+                                child: ScaleTransition(
+                                  scale: _logoScale,
+                                  child: SizedBox(
+                                    width: 220,
+                                    height: 220,
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        AnimatedBuilder(
+                                          animation: _glowOpacity,
+                                          builder: (_, __) => _GlowHalo(
+                                            opacity: _glowOpacity.value,
+                                          ),
                                         ),
-                                      ),
-                                      const _ArcRing(),
-                                      AnimatedBuilder(
-                                        animation: _ringCtrl,
-                                        builder: (_, __) => _LoadingOrbitRing(
-                                          progress: _ringCtrl.value,
+                                        const _ArcRing(),
+                                        AnimatedBuilder(
+                                          animation: _ringCtrl,
+                                          builder: (_, __) => _LoadingOrbitRing(
+                                            progress: _ringCtrl.value,
+                                          ),
                                         ),
-                                      ),
-                                      const _LogoCard(),
-                                    ],
+                                        const _LogoCard(),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -290,7 +325,17 @@ class _ArcRing extends StatelessWidget {
 class _ArcPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 2;
+
+    // FIX: rotate the canvas so the SweepGradient's 0° (3 o'clock) aligns
+    // with the arc's startAngle of -π/2 (12 o'clock).
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(-math.pi / 2);
+    canvas.translate(-center.dx, -center.dy);
+
+    final rect = Rect.fromCircle(center: center, radius: radius);
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2
@@ -307,15 +352,14 @@ class _ArcPainter extends CustomPainter {
       ).createShader(rect);
 
     canvas.drawArc(
-      Rect.fromCircle(
-        center: Offset(size.width / 2, size.height / 2),
-        radius: size.width / 2 - 2,
-      ),
-      -math.pi / 2,
+      rect,
+      0, // starts at 3 o'clock in rotated space == 12 o'clock on screen
       math.pi * 1.75,
       false,
       paint,
     );
+
+    canvas.restore();
   }
 
   @override
@@ -408,6 +452,9 @@ class _LoadingOrbitPainter extends CustomPainter {
 
     canvas.drawCircle(center, radius, trackPaint);
 
+    // FIX: use a full 2π sweep so the dot (which travels the full circle)
+    // always sits at the bright leading edge of the gradient trail.
+    // The GradientRotation offsets the shader to match the dot's angle.
     final arcPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.2
@@ -420,17 +467,14 @@ class _LoadingOrbitPainter extends CustomPainter {
           _Colors.gold.withValues(alpha: 0.0),
         ],
         stops: const [0.0, 0.42, 0.72, 1.0],
-        transform: GradientRotation(progress * 2 * math.pi),
+        // Rotate the gradient so the bright tip leads the dot.
+        transform: GradientRotation(progress * 2 * math.pi - math.pi / 2),
       ).createShader(Rect.fromCircle(center: center, radius: radius));
 
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -math.pi / 2,
-      math.pi * 1.8,
-      false,
-      arcPaint,
-    );
+    // Draw the full orbit so the gradient covers the entire ring.
+    canvas.drawCircle(center, radius, arcPaint);
 
+    // Dot travels the full circle, starting at 12 o'clock (-π/2).
     final dotAngle = -math.pi / 2 + progress * 2 * math.pi;
     final dotOffset = Offset(
       center.dx + radius * math.cos(dotAngle),

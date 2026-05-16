@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sidi/constant/app_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/presentation/widgets/animationtilke.dart';
 
@@ -182,7 +182,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         const SizedBox(height: 24),
         Text(
           'Check Your Email',
-          style: GoogleFonts.playfairDisplay(
+          style: AppFonts.playfairDisplay(
             fontSize: 24,
             fontStyle: FontStyle.italic,
             color: kCharcoalColor,
@@ -192,7 +192,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         const SizedBox(height: 12),
         Text(
           'We\'ve sent a password reset link to ${_emailController.text}. Check your email and follow the link to reset your password.',
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 14,
             color: kWarmGrey600,
             height: 1.5,

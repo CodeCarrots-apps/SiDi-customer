@@ -1,7 +1,7 @@
 // AppointmentCard Widget
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
+import 'package:sidi/constant/app_fonts.dart';
 
 class AppointmentCard extends StatelessWidget {
   final String imageUrl;
@@ -75,7 +75,7 @@ class AppointmentCard extends StatelessWidget {
                           SizedBox(width: 4),
                           Text(
                             status.toUpperCase(),
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 10,
                               letterSpacing: 1.2,
                               fontWeight: FontWeight.bold,
@@ -87,7 +87,7 @@ class AppointmentCard extends StatelessWidget {
                       SizedBox(height: 4),
                       Text(
                         title,
-                        style: GoogleFonts.cormorantGaramond(
+                        style: AppFonts.cormorantGaramond(
                           fontSize: 18,
                           fontWeight: FontWeight.w500,
                           color: kSlate950,
@@ -95,7 +95,7 @@ class AppointmentCard extends StatelessWidget {
                       ),
                       Text(
                         artist,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 12,
                           fontStyle: FontStyle.italic,
                           color: kWarmGrey600,
@@ -108,7 +108,7 @@ class AppointmentCard extends StatelessWidget {
                           SizedBox(width: 4),
                           Text(
                             time,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 12,
                               color: kSlate950,
                             ),
@@ -118,7 +118,7 @@ class AppointmentCard extends StatelessWidget {
                           SizedBox(width: 4),
                           Text(
                             price,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 12,
                               color: kSlate950,
                             ),
@@ -146,7 +146,7 @@ class AppointmentCard extends StatelessWidget {
                   },
                   child: Text(
                     "Decline",
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 10,
                       letterSpacing: 1.5,
                       color: kWarmGrey600,
@@ -167,7 +167,7 @@ class AppointmentCard extends StatelessWidget {
                   },
                   child: Text(
                     "Confirm",
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 10,
                       letterSpacing: 1.5,
                       color: kSlate950,

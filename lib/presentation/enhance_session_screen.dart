@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sidi/constant/app_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/models/service_cart_item.dart';
 
@@ -45,9 +45,6 @@ class _EnhanceSessionScreenState extends State<EnhanceSessionScreen> {
         if (!mounted) return;
         setState(() {
           _services = services;
-          if (_selectedServiceIds.isEmpty && services.isNotEmpty) {
-            _selectedServiceIds.add(services.first.id);
-          }
           _isLoading = false;
         });
       } else {
@@ -99,286 +96,331 @@ class _EnhanceSessionScreenState extends State<EnhanceSessionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final isSmall = size.width < 360;
+    final isTablet = size.width >= 700;
+
+    final horizontalPadding = isTablet ? 32.0 : (isSmall ? 16.0 : 20.0);
+    final titleFontSize = isTablet ? 52.0 : (isSmall ? 34.0 : 42.0);
+    final subtitleFontSize = isSmall ? 14.0 : 16.0;
+    final imageTileSize = isTablet ? 112.0 : (isSmall ? 84.0 : 96.0);
+    final cardPadding = isSmall ? 14.0 : 16.0;
+    final buttonHeight = isSmall ? 54.0 : 60.0;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFAF7F2),
       body: SafeArea(
         child: Stack(
           children: [
-            ListView(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 220),
-              children: [
-                _buildTopBar(context),
-                const SizedBox(height: 40),
-                Text(
-                  'Elevate Your\nExperience',
-                  style: GoogleFonts.playfairDisplay(
-                    fontSize: 48,
-                    fontStyle: FontStyle.italic,
-                    height: 1.03,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF17120E),
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 820),
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    8,
+                    horizontalPadding,
+                    210,
                   ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  'Personalize your service with our curated\nselection of premium enhancements.',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    height: 1.45,
-                    color: const Color(0xFF9D9A96),
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                const SizedBox(height: 40),
-                if (_isLoading)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 120),
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          kEspressoColor,
-                        ),
+                  children: [
+                    _buildTopBar(context, isSmall: isSmall),
+                    SizedBox(height: isSmall ? 24 : 34),
+                    Text(
+                      'Elevate Your\nExperience',
+                      style: AppFonts.playfairDisplay(
+                        fontSize: titleFontSize,
+                        fontStyle: FontStyle.italic,
+                        height: 1.03,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF17120E),
                       ),
                     ),
-                  )
-                else if (_errorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 56),
-                    child: Center(
-                      child: Column(
-                        children: [
-                          Text(
-                            _errorMessage!,
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(
+                    SizedBox(height: isSmall ? 10 : 14),
+                    Text(
+                      'Personalize your service with our curated selection of premium enhancements.',
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppFonts.inter(
+                        fontSize: subtitleFontSize,
+                        height: 1.45,
+                        color: const Color(0xFF9D9A96),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    SizedBox(height: isSmall ? 24 : 32),
+                    if (_isLoading)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 120),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              kEspressoColor,
+                            ),
+                          ),
+                        ),
+                      )
+                    else if (_errorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 56),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Text(
+                                _errorMessage!,
+                                textAlign: TextAlign.center,
+                                style: AppFonts.inter(
+                                  fontSize: 14,
+                                  color: kWarmGrey600,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              OutlinedButton(
+                                onPressed: _fetchAllServices,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: kEspressoColor,
+                                  side: const BorderSide(color: kEspressoColor),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                ),
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else if (_services.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 56),
+                        child: Center(
+                          child: Text(
+                            'No services available right now.',
+                            style: AppFonts.inter(
                               fontSize: 14,
                               color: kWarmGrey600,
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          OutlinedButton(
-                            onPressed: _fetchAllServices,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: kEspressoColor,
-                              side: const BorderSide(color: kEspressoColor),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                            ),
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                else if (_services.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 56),
-                    child: Center(
-                      child: Text(
-                        'No services available right now.',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: kWarmGrey600,
                         ),
-                      ),
-                    ),
-                  )
-                else
-                  ...List.generate(_services.length, (index) {
-                    final service = _services[index];
-                    final isSelected = _selectedServiceIds.contains(service.id);
+                      )
+                    else
+                      ...List.generate(_services.length, (index) {
+                        final service = _services[index];
+                        final isSelected = _selectedServiceIds.contains(
+                          service.id,
+                        );
 
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 22),
-                      child: GestureDetector(
-                        onTap: () => _toggleSelection(service.id),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          curve: Curves.easeOut,
-                          padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: isSelected
-                                  ? const Color(0xFFCDB28A)
-                                  : const Color(0xFFF1ECE4),
-                              width: isSelected ? 1.4 : 1,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: opacity(Colors.black, 0.03),
-                                blurRadius: 20,
-                                offset: const Offset(0, 8),
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: isSmall ? 14 : 18),
+                          child: GestureDetector(
+                            onTap: () => _toggleSelection(service.id),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              curve: Curves.easeOut,
+                              padding: EdgeInsets.all(cardPadding),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? const Color(0xFFCDB28A)
+                                      : const Color(0xFFF1ECE4),
+                                  width: isSelected ? 1.4 : 1,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: opacity(Colors.black, 0.03),
+                                    blurRadius: 14,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _ServiceImageTile(service: service),
-                              const SizedBox(width: 18),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _ServiceImageTile(
+                                    service: service,
+                                    size: imageTileSize,
+                                  ),
+                                  SizedBox(width: isSmall ? 12 : 14),
+                                  Expanded(
+                                    child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Expanded(
-                                          child: Text(
-                                            service.title,
-                                            style: GoogleFonts.inter(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.w700,
-                                              color: const Color(0xFF121212),
+                                        Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                service.title,
+                                                maxLines: 3,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: AppFonts.inter(
+                                                  fontSize: isSmall ? 15 : 17,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: const Color(
+                                                    0xFF121212,
+                                                  ),
+                                                ),
+                                              ),
                                             ),
-                                          ),
+                                            const SizedBox(width: 10),
+                                            Text(
+                                              _formatMoney(service.priceValue),
+                                              style: AppFonts.inter(
+                                                fontSize: isSmall ? 16 : 18,
+                                                fontWeight: FontWeight.w600,
+                                                color: const Color(0xFFC3A76D),
+                                              ),
+                                            ),
+                                          ],
                                         ),
+                                        SizedBox(height: isSmall ? 6 : 8),
                                         Text(
-                                          _formatMoney(service.priceValue),
-                                          style: GoogleFonts.inter(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFFC3A76D),
+                                          service.description.isNotEmpty
+                                              ? service.description
+                                              : 'Premium service enhancement.',
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppFonts.inter(
+                                            fontSize: isSmall ? 13 : 14,
+                                            height: 1.5,
+                                            color: const Color(0xFF9A9895),
+                                            fontWeight: FontWeight.w400,
                                           ),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 10),
-                                    Text(
-                                      service.description.isNotEmpty
-                                          ? service.description
-                                          : 'Premium service enhancement.',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 15,
-                                        height: 1.55,
-                                        color: const Color(0xFF9A9895),
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                    ),
-                                  ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                  ],
+                ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SafeArea(
+                top: false,
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 820),
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    isSmall ? 14 : 16,
+                    horizontalPadding,
+                    isSmall ? 16 : 20,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.96),
+                    border: Border(
+                      top: BorderSide(color: Colors.black.withOpacity(0.05)),
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'TOTAL INVESTMENT',
+                                style: AppFonts.inter(
+                                  fontSize: 10,
+                                  letterSpacing: 2.3,
+                                  color: const Color(0xFFB3B0AB),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _formatMoney(_totalInvestment),
+                                style: AppFonts.playfairDisplay(
+                                  fontSize: isSmall ? 22 : 24,
+                                  fontStyle: FontStyle.italic,
+                                  color: const Color(0xFF17120E),
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ),
-                    );
-                  }),
-              ],
-            ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.96),
-                  border: Border(
-                    top: BorderSide(color: Colors.black.withOpacity(0.05)),
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'TOTAL INVESTMENT',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                letterSpacing: 3,
-                                color: const Color(0xFFB3B0AB),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                'SELECTED',
+                                style: AppFonts.inter(
+                                  fontSize: 10,
+                                  letterSpacing: 2.3,
+                                  color: const Color(0xFFB3B0AB),
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              _formatMoney(_totalInvestment),
-                              style: GoogleFonts.playfairDisplay(
-                                fontSize: 26,
-                                fontStyle: FontStyle.italic,
-                                color: const Color(0xFF17120E),
+                              const SizedBox(height: 8),
+                              Text(
+                                _selectedLabel,
+                                style: AppFonts.inter(
+                                  fontSize: isSmall ? 15 : 17,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFFC3A76D),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              'SELECTED',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                letterSpacing: 3,
-                                color: const Color(0xFFB3B0AB),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              _selectedLabel,
-                              style: GoogleFonts.inter(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFFC3A76D),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 22),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 62,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF17120E),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(999),
+                            ],
                           ),
-                        ),
-                        onPressed: _selectedServices.isEmpty
-                            ? null
-                            : () {
-                                Navigator.pop(
-                                  context,
-                                  _selectedServices
-                                      .map(
-                                        (service) => ServiceCartItem(
-                                          serviceId: service.id,
-                                          title: service.title,
-                                          price: _formatMoney(
-                                            service.priceValue,
+                        ],
+                      ),
+                      SizedBox(height: isSmall ? 14 : 18),
+                      SizedBox(
+                        width: double.infinity,
+                        height: buttonHeight,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF17120E),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          ),
+                          onPressed: _selectedServices.isEmpty
+                              ? null
+                              : () {
+                                  Navigator.pop(
+                                    context,
+                                    _selectedServices
+                                        .map(
+                                          (service) => ServiceCartItem(
+                                            serviceId: service.id,
+                                            title: service.title,
+                                            price: _formatMoney(
+                                              service.priceValue,
+                                            ),
+                                            duration: service.duration,
+                                            imageUrl: service.imageUrl,
+                                            description: service.description,
                                           ),
-                                          duration: service.duration,
-                                          imageUrl: service.imageUrl,
-                                          description: service.description,
-                                        ),
-                                      )
-                                      .toList(),
-                                );
-                              },
-                        child: Text(
-                          'CONFIRM & CONTINUE',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 2,
-                            color: Colors.white,
+                                        )
+                                        .toList(),
+                                  );
+                                },
+                          child: Text(
+                            'CONFIRM & CONTINUE',
+                            style: AppFonts.inter(
+                              fontSize: isSmall ? 12.5 : 13.5,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: isSmall ? 1.2 : 1.8,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -388,19 +430,34 @@ class _EnhanceSessionScreenState extends State<EnhanceSessionScreen> {
     );
   }
 
-  Widget _buildTopBar(BuildContext context) {
+  Widget _buildTopBar(BuildContext context, {required bool isSmall}) {
+    final iconButtonSize = isSmall ? 48.0 : 54.0;
+    final iconSize = isSmall ? 20.0 : 22.0;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         _CircleIconButton(
+          size: iconButtonSize,
+          iconSize: iconSize,
           icon: Icons.arrow_back_ios_new_rounded,
           onTap: () => Navigator.pop(context),
         ),
         Row(
           children: [
-            _CircleIconButton(icon: Icons.favorite_rounded, onTap: () {}),
-            const SizedBox(width: 14),
-            _CircleIconButton(icon: Icons.share_rounded, onTap: () {}),
+            _CircleIconButton(
+              size: iconButtonSize,
+              iconSize: iconSize,
+              icon: Icons.favorite_rounded,
+              onTap: () {},
+            ),
+            SizedBox(width: isSmall ? 10 : 12),
+            _CircleIconButton(
+              size: iconButtonSize,
+              iconSize: iconSize,
+              icon: Icons.share_rounded,
+              onTap: () {},
+            ),
           ],
         ),
       ],
@@ -457,15 +514,16 @@ class _EnhancementOption {
 }
 
 class _ServiceImageTile extends StatelessWidget {
-  const _ServiceImageTile({required this.service});
+  const _ServiceImageTile({required this.service, required this.size});
 
   final _EnhancementOption service;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 126,
-      height: 126,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         color: service.fallbackColor,
         borderRadius: BorderRadius.circular(16),
@@ -519,18 +577,25 @@ class _FallbackServiceIcon extends StatelessWidget {
 }
 
 class _CircleIconButton extends StatelessWidget {
-  const _CircleIconButton({required this.icon, required this.onTap});
+  const _CircleIconButton({
+    required this.icon,
+    required this.onTap,
+    required this.size,
+    required this.iconSize,
+  });
 
   final IconData icon;
   final VoidCallback onTap;
+  final double size;
+  final double iconSize;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 60,
-        height: 60,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: Colors.white,
@@ -543,7 +608,7 @@ class _CircleIconButton extends StatelessWidget {
             ),
           ],
         ),
-        child: Icon(icon, color: const Color(0xFF17120E), size: 24),
+        child: Icon(icon, color: const Color(0xFF17120E), size: iconSize),
       ),
     );
   }

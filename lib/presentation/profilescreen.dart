@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sidi/constant/app_fonts.dart';
 // import 'package:image_picker/image_picker.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -131,7 +131,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             centerTitle: true,
             title: Text(
               'ACCOUNT',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 11 * scale,
                 letterSpacing: 5,
                 fontWeight: FontWeight.w400,
@@ -155,7 +155,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Text(
                       _errorMessage!,
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 14 * scale,
                         color: kCharcoalColor,
                       ),
@@ -171,7 +171,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       child: Text(
                         'RETRY',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 12 * scale,
                           letterSpacing: 2,
                           color: kAccentGold,
@@ -328,7 +328,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   child: Text(
                     'SIGN OUT',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 9 * scale,
                       letterSpacing: 4,
                       fontWeight: FontWeight.w500,
@@ -436,7 +436,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             name,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.playfairDisplay(
+            style: AppFonts.playfairDisplay(
               fontSize: 34 * scale,
               fontStyle: FontStyle.italic,
               color: kCharcoalColor,
@@ -447,7 +447,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           SizedBox(height: 8 * scale),
           Text(
             tier,
-            style: GoogleFonts.playfairDisplay(
+            style: AppFonts.playfairDisplay(
               fontSize: 22 * scale,
               fontStyle: FontStyle.italic,
               color: kAccentGold,
@@ -456,7 +456,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           SizedBox(height: 12 * scale),
           Text(
             joined,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 9 * scale,
               letterSpacing: 3,
               color: kWarmGrey600,
@@ -466,7 +466,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SizedBox(height: 8 * scale),
             Text(
               _profile!.user.email,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 11 * scale,
                 color: kWarmGrey600,
               ),
@@ -474,7 +474,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SizedBox(height: 4 * scale),
             Text(
               _profile!.user.phoneNumber,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 11 * scale,
                 color: kWarmGrey600,
               ),
@@ -523,7 +523,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             padding: EdgeInsets.symmetric(horizontal: 28 * scale),
             child: Text(
               title,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 9 * scale,
                 letterSpacing: 4,
                 color: kAccentGold,
@@ -550,7 +550,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           item.label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 18 * scale,
             fontWeight: FontWeight.w300,
             color: kCharcoalColor,
@@ -571,7 +571,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         Text(
           value,
-          style: GoogleFonts.playfairDisplay(
+          style: AppFonts.playfairDisplay(
             fontSize: 26 * scale,
             color: kCharcoalColor,
             fontWeight: FontWeight.w500,
@@ -580,7 +580,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         SizedBox(height: 6 * scale),
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 9 * scale,
             letterSpacing: 3,
             color: kAccentGold,

@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 
-import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
+import 'package:sidi/constant/app_fonts.dart';
 import 'package:dio/dio.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sidi/models/stylist.dart';
@@ -301,7 +301,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
             centerTitle: true,
             title: Text(
               _screenTitle,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 1.6,
@@ -359,7 +359,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
                 ),
                 child: Text(
                   'Search results for "${_currentSearchQuery}"',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 12,
                     letterSpacing: 1.2,
                     color: kWarmGrey600,
@@ -420,7 +420,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
                     ),
                     child: Text(
                       'Error loading services.',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 14,
                         color: kWarmGrey600,
                         height: 1.5,
@@ -508,7 +508,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
                       _hasSearchQuery
                           ? 'No services match your search. Try a different keyword.'
                           : 'No services available for the selected filters.',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 14,
                         color: kWarmGrey600,
                         height: 1.5,
@@ -560,7 +560,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
               ),
               child: Text(
                 filters[index].toUpperCase(),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.8,
@@ -596,7 +596,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
               ),
               child: Text(
                 _subFilters[index].toUpperCase(),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 0.8,
@@ -650,7 +650,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
                     child: Text(
                       (service["name"] ?? service["title"] ?? 'Service')
                           as String,
-                      style: GoogleFonts.cormorantGaramond(
+                      style: AppFonts.cormorantGaramond(
                         fontSize: 24,
                         fontStyle: FontStyle.italic,
                         height: 1.1,
@@ -662,7 +662,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
                   const SizedBox(width: 12),
                   Text(
                     '₹${service["price"] ?? 0}',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
@@ -677,7 +677,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
                 children: [
                   Text(
                     '${service["duration"] ?? 'N/A'} MINS',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 1.4,
@@ -694,7 +694,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
                     ),
                     child: Text(
                       "VIEW DETAILS",
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 1.4,

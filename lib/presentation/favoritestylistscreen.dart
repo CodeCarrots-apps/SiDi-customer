@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sidi/constant/app_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/models/user_profile.dart' hide FavoriteService;
 import 'package:sidi/presentation/detailedartistscreen.dart';
@@ -91,7 +91,7 @@ class _FavoriteStylistScreenState extends State<FavoriteStylistScreen>
         ),
         title: Text(
           'FAVORITES',
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w700,
             letterSpacing: 1.8,
@@ -104,12 +104,12 @@ class _FavoriteStylistScreenState extends State<FavoriteStylistScreen>
           unselectedLabelColor: kWarmGrey600,
           indicatorColor: kAccentGold,
           indicatorWeight: 3,
-          labelStyle: GoogleFonts.inter(
+          labelStyle: AppFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,
             letterSpacing: 1.2,
           ),
-          unselectedLabelStyle: GoogleFonts.inter(
+          unselectedLabelStyle: AppFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
@@ -142,7 +142,7 @@ class _FavoriteStylistScreenState extends State<FavoriteStylistScreen>
       return Center(
         child: Text(
           'No favorite stylists yet',
-          style: GoogleFonts.inter(fontSize: 14, color: kWarmGrey600),
+          style: AppFonts.inter(fontSize: 14, color: kWarmGrey600),
         ),
       );
     }
@@ -172,7 +172,7 @@ class _FavoriteStylistScreenState extends State<FavoriteStylistScreen>
       return Center(
         child: Text(
           'No favorite services yet',
-          style: GoogleFonts.inter(fontSize: 14, color: kWarmGrey600),
+          style: AppFonts.inter(fontSize: 14, color: kWarmGrey600),
         ),
       );
     }
@@ -244,7 +244,7 @@ class _FavoriteStylistCard extends StatelessWidget {
                 children: [
                   Text(
                     stylist.fullName,
-                    style: GoogleFonts.cormorantGaramond(
+                    style: AppFonts.cormorantGaramond(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: kCharcoalColor,
@@ -253,7 +253,7 @@ class _FavoriteStylistCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     stylist.tier.toUpperCase(),
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                       letterSpacing: 1.4,
@@ -293,7 +293,7 @@ class _FavoriteStylistCard extends StatelessWidget {
       alignment: Alignment.center,
       child: Text(
         initials,
-        style: GoogleFonts.inter(
+        style: AppFonts.inter(
           fontSize: 24,
           fontWeight: FontWeight.w700,
           color: kCharcoalColor,
@@ -370,7 +370,7 @@ class _FavoriteServiceCard extends StatelessWidget {
                     children: [
                       Text(
                         service.name,
-                        style: GoogleFonts.cormorantGaramond(
+                        style: AppFonts.cormorantGaramond(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                           color: kCharcoalColor,
@@ -381,7 +381,7 @@ class _FavoriteServiceCard extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         '${service.duration} mins',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                           color: kWarmGrey600,
@@ -392,7 +392,7 @@ class _FavoriteServiceCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           'Category: ${service.category}',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: 11,
                             color: kWarmGrey600,
                             fontStyle: FontStyle.italic,
@@ -413,7 +413,7 @@ class _FavoriteServiceCard extends StatelessWidget {
               children: [
                 Text(
                   '\$${service.price.toStringAsFixed(2)}',
-                  style: GoogleFonts.cormorantGaramond(
+                  style: AppFonts.cormorantGaramond(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: kAccentGold,
@@ -436,7 +436,7 @@ class _FavoriteServiceCard extends StatelessWidget {
                   ),
                   child: Text(
                     'BOOK',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: kIvoryColor,
@@ -473,7 +473,7 @@ class _FavoriteServiceCard extends StatelessWidget {
       alignment: Alignment.center,
       child: Text(
         initial,
-        style: GoogleFonts.inter(
+        style: AppFonts.inter(
           fontSize: 24,
           fontWeight: FontWeight.w700,
           color: kCharcoalColor,

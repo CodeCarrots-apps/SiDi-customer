@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sidi/constant/app_fonts.dart';
 
 import '../models/address_model.dart';
 import '../models/edit_result.dart';
@@ -89,7 +89,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
         ),
         title: Text(
           isEditing ? 'Edit Address' : 'Add Address',
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: kEspressoColor,
@@ -101,7 +101,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
               onPressed: _delete,
               child: Text(
                 'DELETE',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   color: const Color(0xFFE23744),
                   fontWeight: FontWeight.w700,
                   fontSize: 12,
@@ -157,7 +157,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                               children: [
                                 Text(
                                   'Enter Complete Address',
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.inter(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w700,
                                     color: kEspressoColor,
@@ -166,7 +166,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                                 const SizedBox(height: 4),
                                 Text(
                                   'Your order will be delivered to this location',
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.inter(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                     color: kWarmGrey600,
@@ -181,7 +181,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                     const SizedBox(height: 20),
                     Text(
                       'SAVE ADDRESS AS',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: kWarmGrey600,
@@ -255,7 +255,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                   ),
                   child: Text(
                     isEditing ? 'SAVE CHANGES' : 'SAVE ADDRESS',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
                       color: Colors.white,
@@ -292,7 +292,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             color: selected ? const Color(0xFFFF7A00) : kWarmGrey600,
             fontWeight: FontWeight.w700,
             fontSize: 12,
@@ -313,7 +313,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 10,
             letterSpacing: 1.2,
             color: kWarmGrey600,
@@ -324,14 +324,14 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
         TextField(
           controller: controller,
           onChanged: (_) => setState(() {}),
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: kEspressoColor,
           ),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: GoogleFonts.inter(
+            hintStyle: AppFonts.inter(
               color: opacity(kWarmGrey600, 0.75),
               fontSize: 13,
               fontWeight: FontWeight.w500,

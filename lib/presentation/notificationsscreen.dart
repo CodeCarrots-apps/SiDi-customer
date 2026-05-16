@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sidi/constant/app_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 
 import '../models/app_notification.dart';
@@ -138,7 +138,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             centerTitle: true,
             title: Text(
               'NOTIFICATIONS',
-              style: GoogleFonts.cormorantGaramond(
+              style: AppFonts.cormorantGaramond(
                 fontSize: 22,
                 fontStyle: FontStyle.italic,
                 color: kCharcoalColor,
@@ -149,7 +149,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 onPressed: _notifications.isEmpty ? null : _clearNotifications,
                 child: Text(
                   'CLEAR',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 10,
                     letterSpacing: 1.6,
                     fontWeight: FontWeight.w500,
@@ -182,7 +182,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: Center(
           child: Text(
             'No notifications to show.',
-            style: GoogleFonts.inter(fontSize: 13, color: kWarmGrey600),
+            style: AppFonts.inter(fontSize: 13, color: kWarmGrey600),
           ),
         ),
       );
@@ -209,7 +209,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             alignment: Alignment.centerLeft,
             child: Text(
               _dayLabel(currentDay),
-              style: GoogleFonts.cormorantGaramond(
+              style: AppFonts.cormorantGaramond(
                 fontSize: 18,
                 fontStyle: FontStyle.italic,
                 color: kWarmGrey600,
@@ -240,7 +240,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     children.add(
       Text(
         'END OF RECENT UPDATES',
-        style: GoogleFonts.inter(
+        style: AppFonts.inter(
           fontSize: 9,
           letterSpacing: 4,
           color: kWarmGrey200,
@@ -273,7 +273,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               children: [
                 Text(
                   _filters[index],
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 12,
                     letterSpacing: 1.8,
                     fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
@@ -315,7 +315,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               Expanded(
                 child: Text(
                   time,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 9,
                     letterSpacing: 2.8,
                     color: kWarmGrey600,
@@ -328,7 +328,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           const SizedBox(height: 12),
           Text(
             title,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 11,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.1,
@@ -340,7 +340,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             constraints: const BoxConstraints(maxWidth: 290),
             child: Text(
               message,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 14,
                 height: 1.45,
                 color: kCharcoalColor,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sidi/constant/app_fonts.dart';
 import 'package:location/location.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/models/service_cart_item.dart';
@@ -136,7 +136,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               ),
               child: Text(
                 'CONFIRM APPOINTMENT',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 14,
                   letterSpacing: 2,
                   fontWeight: FontWeight.w600,
@@ -274,6 +274,30 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
     final confirmed = await _showConfirmationSheet();
     if (!confirmed) return;
 
+    // Validate that booking is not for today (API requirement)
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final selectedDateParts = widget.selectedDateIso.split('-');
+    final selectedDateOnly = DateTime(
+      int.parse(selectedDateParts[0]),
+      int.parse(selectedDateParts[1]),
+      int.parse(selectedDateParts[2]),
+    );
+
+    if (selectedDateOnly.isAtSameMomentAs(todayDate)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Bookings must be made for the next day or later. Same-day bookings are not allowed.',
+            ),
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+      return;
+    }
+
     setState(() => _isBooking = true);
 
     try {
@@ -321,7 +345,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
             const SizedBox(height: 20),
             Text(
               'Confirm Booking',
-              style: GoogleFonts.playfairDisplay(
+              style: AppFonts.playfairDisplay(
                 fontSize: 26,
                 fontStyle: FontStyle.italic,
               ),
@@ -359,7 +383,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                      style: AppFonts.inter(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -377,7 +401,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
                     ),
                     child: Text(
                       'Book Now',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontWeight: FontWeight.w600,
                         letterSpacing: 1,
                       ),
@@ -402,13 +426,13 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
           const SizedBox(width: 10),
           Text(
             '$label: ',
-            style: GoogleFonts.inter(fontSize: 13, color: kWarmGrey600),
+            style: AppFonts.inter(fontSize: 13, color: kWarmGrey600),
           ),
           Expanded(
             child: Text(
               value,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: kEspressoColor,
@@ -539,7 +563,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
                     : null,
               ),
       ),
-      (route) => false,
+      (route) => route.isFirst,
     );
   }
 
@@ -665,7 +689,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
             const Spacer(),
             Text(
               'STEP 3 OF 3',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 11,
                 letterSpacing: 2,
                 fontWeight: FontWeight.w600,
@@ -689,7 +713,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
       children: [
         Text(
           'Saved Addresses',
-          style: GoogleFonts.playfairDisplay(
+          style: AppFonts.playfairDisplay(
             fontSize: 34,
             fontStyle: FontStyle.italic,
             fontWeight: FontWeight.w400,
@@ -698,11 +722,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
         const SizedBox(height: 8),
         Text(
           'Select your location for service',
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            color: kWarmGrey600,
-            height: 1.5,
-          ),
+          style: AppFonts.inter(fontSize: 13, color: kWarmGrey600, height: 1.5),
         ),
       ],
     );
@@ -724,7 +744,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
             children: [
               Text(
                 'Selected Date',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 11,
                   letterSpacing: 1.5,
                   color: kWarmGrey600,
@@ -733,7 +753,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               const SizedBox(height: 4),
               Text(
                 widget.selectedDateDisplay,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: kEspressoColor,
@@ -747,7 +767,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
             children: [
               Text(
                 'Selected Time',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 11,
                   letterSpacing: 1.5,
                   color: kWarmGrey600,
@@ -756,7 +776,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               const SizedBox(height: 4),
               Text(
                 widget.selectedTime,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: kEspressoColor,
@@ -771,7 +791,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               children: [
                 Text(
                   _addonServices.isEmpty ? 'Price' : 'Total Price',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 11,
                     letterSpacing: 1.5,
                     color: kWarmGrey600,
@@ -780,7 +800,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
                 const SizedBox(height: 4),
                 Text(
                   _displayTotalPrice,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: kEspressoColor,
@@ -816,7 +836,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               const SizedBox(width: 8),
               Text(
                 'ADD-ONS',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 11,
                   letterSpacing: 2,
                   fontWeight: FontWeight.w600,
@@ -826,7 +846,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               const Spacer(),
               Text(
                 '${_addonServices.length} selected',
-                style: GoogleFonts.inter(fontSize: 11, color: kWarmGrey600),
+                style: AppFonts.inter(fontSize: 11, color: kWarmGrey600),
               ),
             ],
           ),
@@ -867,7 +887,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
                     child: Text(
                       addon.title,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                         color: kEspressoColor,
@@ -876,7 +896,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
                   ),
                   Text(
                     addon.price,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFFC3A76D),
@@ -940,7 +960,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
                   const SizedBox(width: 12),
                   Text(
                     address.label,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 2,
@@ -981,7 +1001,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               const SizedBox(height: 18),
               Text(
                 address.line1,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: kEspressoColor,
@@ -990,7 +1010,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               const SizedBox(height: 6),
               Text(
                 address.line2,
-                style: GoogleFonts.inter(fontSize: 13, color: kWarmGrey600),
+                style: AppFonts.inter(fontSize: 13, color: kWarmGrey600),
               ),
               const SizedBox(height: 18),
               Container(
@@ -1012,7 +1032,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
                       child: Text(
                         address.line2,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 12,
                           color: kWarmGrey600,
                           fontWeight: FontWeight.w500,
@@ -1035,7 +1055,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
       children: [
         Text(
           'Payment Method',
-          style: GoogleFonts.playfairDisplay(
+          style: AppFonts.playfairDisplay(
             fontSize: 34,
             fontStyle: FontStyle.italic,
             fontWeight: FontWeight.w400,
@@ -1044,11 +1064,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
         const SizedBox(height: 8),
         Text(
           'Choose your preferred payment',
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            color: kWarmGrey600,
-            height: 1.5,
-          ),
+          style: AppFonts.inter(fontSize: 13, color: kWarmGrey600, height: 1.5),
         ),
       ],
     );
@@ -1093,7 +1109,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               Expanded(
                 child: Text(
                   payment.label,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                     color: kEspressoColor,
@@ -1162,7 +1178,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               Expanded(
                 child: Text(
                   label,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: kEspressoColor,
@@ -1294,7 +1310,7 @@ class _BookingProgressOverlay extends StatelessWidget {
                 Text(
                   'Booking Your Appointment',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.playfairDisplay(
+                  style: AppFonts.playfairDisplay(
                     fontSize: 22,
                     fontStyle: FontStyle.italic,
                     fontWeight: FontWeight.w400,
@@ -1306,7 +1322,7 @@ class _BookingProgressOverlay extends StatelessWidget {
                 Text(
                   'Please wait while we confirm\nyour details',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 13,
                     color: kWarmGrey600,
                     height: 1.65,

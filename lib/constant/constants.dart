@@ -1,6 +1,6 @@
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sidi/constant/app_fonts.dart';
 
 // Colors
 const Color kPrimaryColor = Color(0xFFeebd2b);
@@ -38,7 +38,7 @@ final TextStyle kInputHintStyle = TextStyle(
   fontSize: 14,
 );
 
-final TextStyle kHeaderStyle = GoogleFonts.cormorantGaramond(
+final TextStyle kHeaderStyle = AppFonts.cormorantGaramond(
   fontStyle: FontStyle.italic,
   fontSize: 44,
   fontWeight: FontWeight.w500,

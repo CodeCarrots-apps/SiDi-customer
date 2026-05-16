@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sidi/constant/app_fonts.dart';
 
 import 'package:dio/dio.dart';
 import '../utils/token_storage.dart';
@@ -240,7 +240,7 @@ class _DetailedArtistScreenState extends State<DetailedArtistScreen> {
                   children: [
                     Text(
                       widget.artistName,
-                      style: GoogleFonts.cormorantGaramond(
+                      style: AppFonts.cormorantGaramond(
                         fontSize: 32,
                         fontStyle: FontStyle.italic,
                         color: kEspressoColor,
@@ -275,7 +275,7 @@ class _DetailedArtistScreenState extends State<DetailedArtistScreen> {
                 ),
                 Text(
                   widget.role.toUpperCase(),
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 10,
                     letterSpacing: 2,
                     color: kWarmGrey600,
@@ -290,7 +290,7 @@ class _DetailedArtistScreenState extends State<DetailedArtistScreen> {
                   widget.description.isNotEmpty
                       ? widget.description
                       : 'No description available.',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 14,
                     height: 1.8,
                     color: opacity(kEspressoColor, 0.75),
@@ -305,7 +305,7 @@ class _DetailedArtistScreenState extends State<DetailedArtistScreen> {
                   children: [
                     Text(
                       'Services',
-                      style: GoogleFonts.cormorantGaramond(
+                      style: AppFonts.cormorantGaramond(
                         fontSize: 28,
                         fontStyle: FontStyle.italic,
                         color: kEspressoColor,
@@ -349,7 +349,7 @@ class _DetailedArtistScreenState extends State<DetailedArtistScreen> {
             children: [
               Text(
                 service['title'] ?? '',
-                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                style: AppFonts.inter(fontWeight: FontWeight.w600),
               ),
               Text(service['price']?.toString() ?? ''),
             ],

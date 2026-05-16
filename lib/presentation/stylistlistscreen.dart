@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sidi/constant/app_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:get/get.dart';
 import 'widgets/stylistcard.dart';
@@ -58,16 +58,16 @@ class StylistListScreen extends StatelessWidget {
                   tween: Tween(begin: 0, end: 1),
                   duration: const Duration(milliseconds: 420),
                   curve: Curves.easeOut,
-                  builder: (context, value, child) => Opacity(
-                    opacity: value,
-                    child: Transform.translate(
-                      offset: Offset(0, (1 - value) * 14),
+                  builder: (context, value, child) => Transform.translate(
+                    offset: Offset(0, (1 - value) * 14),
+                    child: Transform.scale(
+                      scale: 0.985 + (value * 0.015),
                       child: child,
                     ),
                   ),
                   child: Text(
                     'Find Your Nearby Artisans',
-                    style: GoogleFonts.cormorantGaramond(
+                    style: AppFonts.cormorantGaramond(
                       fontSize: 34 * scale,
                       fontStyle: FontStyle.italic,
                       color: kCharcoalColor,
@@ -78,7 +78,7 @@ class StylistListScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   'Handpicked professionals close to you',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 13,
                     color: const Color(0xFF766C61),
                     fontWeight: FontWeight.w500,
@@ -116,17 +116,28 @@ class StylistListScreen extends StatelessWidget {
                             child: Obx(
                               () => AnimatedSwitcher(
                                 duration: const Duration(milliseconds: 250),
-                                transitionBuilder: (child, animation) =>
-                                    FadeTransition(
-                                      opacity: animation,
+                                transitionBuilder: (child, animation) {
+                                  final offsetAnimation = Tween<Offset>(
+                                    begin: const Offset(0, 0.18),
+                                    end: Offset.zero,
+                                  ).animate(animation);
+                                  return SlideTransition(
+                                    position: offsetAnimation,
+                                    child: ScaleTransition(
+                                      scale: Tween<double>(
+                                        begin: 0.98,
+                                        end: 1.0,
+                                      ).animate(animation),
                                       child: child,
                                     ),
+                                  );
+                                },
                                 child: Text(
                                   controller.selectedLocation.value,
                                   key: ValueKey(
                                     controller.selectedLocation.value,
                                   ),
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.inter(
                                     fontSize: 12,
                                     letterSpacing: 1.1,
                                     color: const Color(0xFF5A534A),
@@ -138,7 +149,7 @@ class StylistListScreen extends StatelessWidget {
                           ),
                           Text(
                             'Change',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 11,
                               color: const Color(0xFF8D7A63),
                               fontWeight: FontWeight.w600,
@@ -263,7 +274,7 @@ class _ErrorState extends StatelessWidget {
             Text(
               'We could not load nearby stylists',
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF3A332A),
@@ -273,7 +284,7 @@ class _ErrorState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 12,
                 color: const Color(0xFF857B70),
               ),
@@ -285,7 +296,7 @@ class _ErrorState extends StatelessWidget {
                 elevation: 0,
                 backgroundColor: const Color(0xFF2D2822),
                 foregroundColor: Colors.white,
-                textStyle: GoogleFonts.inter(
+                textStyle: AppFonts.inter(
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
                 ),
@@ -329,7 +340,7 @@ class _EmptyState extends StatelessWidget {
             Text(
               'No stylists nearby right now',
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 15,
                 color: const Color(0xFF3E372E),
                 fontWeight: FontWeight.w700,
@@ -339,7 +350,7 @@ class _EmptyState extends StatelessWidget {
             Text(
               'Try another location or refresh to check again.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 12,
                 color: const Color(0xFF82786D),
               ),
@@ -352,7 +363,7 @@ class _EmptyState extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF5E544A),
                 side: const BorderSide(color: Color(0xFFCFC3B3)),
-                textStyle: GoogleFonts.inter(
+                textStyle: AppFonts.inter(
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
                 ),

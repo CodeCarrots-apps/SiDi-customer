@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:sidi/constant/app_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import '../models/booking.dart';
 import '../services/appointments_sync_service.dart';
@@ -182,7 +182,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
               centerTitle: true,
               title: Text(
                 'My Appointments',
-                style: GoogleFonts.cormorantGaramond(
+                style: AppFonts.cormorantGaramond(
                   fontSize: 22,
                   fontStyle: FontStyle.italic,
                   color: kCharcoalColor,
@@ -241,7 +241,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                         SizedBox(height: 6 * scale),
                         Text(
                           'Appointments',
-                          style: GoogleFonts.cormorantGaramond(
+                          style: AppFonts.cormorantGaramond(
                             fontSize: 36 * scale,
                             fontStyle: FontStyle.italic,
                             color: kCharcoalColor,
@@ -251,7 +251,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                           SizedBox(height: 4 * scale),
                           Text(
                             'Last updated ${_formatLastUpdated(_lastUpdatedAt!)}',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 11 * scale,
                               color: kWarmGrey600,
                               fontWeight: FontWeight.w500,
@@ -346,7 +346,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
           SizedBox(height: 4 * scale),
           Text(
             'DELETE',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 9 * scale,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.2,
@@ -376,7 +376,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
   Widget _buildSectionLabel(String text, double scale) {
     return Text(
       text,
-      style: GoogleFonts.inter(
+      style: AppFonts.inter(
         fontSize: 10 * scale,
         fontWeight: FontWeight.w600,
         letterSpacing: 1.6,
@@ -424,7 +424,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                   title.isNotEmpty ? title : 'No Title',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.cormorantGaramond(
+                  style: AppFonts.cormorantGaramond(
                     fontSize: 24 * scale,
                     fontStyle: FontStyle.italic,
                     color: kCharcoalColor,
@@ -433,7 +433,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                 SizedBox(height: 2 * scale),
                 Text(
                   time.isNotEmpty ? time : 'No Time',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 11 * scale,
                     color: kWarmGrey600,
                   ),
@@ -451,7 +451,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                     ),
                     child: Text(
                       status.toUpperCase(),
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 9 * scale,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.8,
@@ -463,7 +463,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                 SizedBox(height: 8 * scale),
                 Text(
                   stylist.isNotEmpty ? stylist : 'No Stylist',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 9 * scale,
                     letterSpacing: 1.6,
                     color: kWarmGrey600,
@@ -519,7 +519,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                     title.isNotEmpty ? title : 'No Title',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.cormorantGaramond(
+                    style: AppFonts.cormorantGaramond(
                       fontSize: 24 * scale,
                       fontStyle: FontStyle.italic,
                       color: kCharcoalColor,
@@ -527,7 +527,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                   ),
                   Text(
                     subtitle.isNotEmpty ? subtitle : 'No Stylist',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 10 * scale,
                       color: kWarmGrey600,
                     ),
@@ -546,7 +546,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                         ),
                         child: Text(
                           status.toUpperCase(),
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: 8 * scale,
                             fontWeight: FontWeight.w700,
                             color: _statusColor(status),
@@ -582,7 +582,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
               ),
               child: Text(
                 'REBOOK',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 9 * scale,
                   letterSpacing: 1.2,
                   fontWeight: FontWeight.w500,
@@ -719,7 +719,7 @@ class _AppointmentDetailPageState extends State<_AppointmentDetailPage> {
                   const SizedBox(height: 14),
                   Text(
                     'Cancel Appointment?',
-                    style: GoogleFonts.cormorantGaramond(
+                    style: AppFonts.cormorantGaramond(
                       fontSize: 33,
                       fontStyle: FontStyle.italic,
                       height: 0.95,
@@ -729,7 +729,7 @@ class _AppointmentDetailPageState extends State<_AppointmentDetailPage> {
                   const SizedBox(height: 10),
                   Text(
                     'You are about to cancel "$title". This action cannot be undone from this screen.',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 13,
                       height: 1.35,
                       color: kWarmGrey600,
@@ -758,7 +758,7 @@ class _AppointmentDetailPageState extends State<_AppointmentDetailPage> {
                         Expanded(
                           child: Text(
                             'Status will be changed to CANCELLED.',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.5,
@@ -785,7 +785,7 @@ class _AppointmentDetailPageState extends State<_AppointmentDetailPage> {
                           ),
                           child: Text(
                             'KEEP',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 1.1,
@@ -807,7 +807,7 @@ class _AppointmentDetailPageState extends State<_AppointmentDetailPage> {
                           ),
                           child: Text(
                             'CONFIRM',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 1.1,
@@ -882,7 +882,7 @@ class _AppointmentDetailPageState extends State<_AppointmentDetailPage> {
               children: [
                 Text(
                   label,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 1.1,
@@ -892,7 +892,7 @@ class _AppointmentDetailPageState extends State<_AppointmentDetailPage> {
                 const SizedBox(height: 3),
                 Text(
                   value.trim().isEmpty ? 'Not available' : value,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: kCharcoalColor,
@@ -967,7 +967,7 @@ class _AppointmentDetailPageState extends State<_AppointmentDetailPage> {
                           : widget.booking.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.cormorantGaramond(
+                      style: AppFonts.cormorantGaramond(
                         fontSize: 36,
                         fontStyle: FontStyle.italic,
                         color: Colors.white,
@@ -1001,7 +1001,7 @@ class _AppointmentDetailPageState extends State<_AppointmentDetailPage> {
                         ),
                         child: Text(
                           statusText.toUpperCase(),
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
                             color: statusColor,
@@ -1011,7 +1011,7 @@ class _AppointmentDetailPageState extends State<_AppointmentDetailPage> {
                       ),
                       Text(
                         'Booking ID: ${widget.booking.id.isEmpty ? 'N/A' : widget.booking.id}',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 11,
                           color: kWarmGrey600,
                           fontWeight: FontWeight.w500,
@@ -1086,7 +1086,7 @@ class _AppointmentDetailPageState extends State<_AppointmentDetailPage> {
                             : (canCancel
                                   ? 'CANCEL APPOINTMENT'
                                   : 'CANNOT CANCEL'),
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 11,
                           letterSpacing: 1.1,
                           fontWeight: FontWeight.w700,
@@ -1119,7 +1119,7 @@ class _AppointmentDetailPageState extends State<_AppointmentDetailPage> {
                       icon: const Icon(Icons.refresh_rounded, size: 16),
                       label: Text(
                         'REBOOK THIS SERVICE',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 11,
                           letterSpacing: 1.1,
                           fontWeight: FontWeight.w700,
@@ -1250,7 +1250,7 @@ class _AppointmentsErrorState extends StatelessWidget {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(fontSize: 13, color: kWarmGrey600),
+            style: AppFonts.inter(fontSize: 13, color: kWarmGrey600),
           ),
           const SizedBox(height: 12),
           ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
@@ -1288,7 +1288,7 @@ class _AppointmentsEmptyState extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               'No appointments yet',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
                 color: kCharcoalColor,
@@ -1298,7 +1298,7 @@ class _AppointmentsEmptyState extends StatelessWidget {
             Text(
               'Book your first service and it will appear here.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(fontSize: 12, color: kWarmGrey600),
+              style: AppFonts.inter(fontSize: 12, color: kWarmGrey600),
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(

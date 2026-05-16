@@ -6,6 +6,7 @@ import 'package:sidi/models/service_cart_item.dart';
 import 'package:sidi/presentation/enhance_session_screen.dart';
 import 'package:sidi/presentation/selectaddress.dart';
 
+import '../constant/app_fonts.dart';
 import '../models/stylist.dart';
 
 class SelectTimeSlotScreen extends StatefulWidget {
@@ -157,7 +158,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
             centerTitle: true,
             title: Text(
               "Select Time Slot",
-              style: GoogleFonts.playfairDisplay(
+              style: AppFonts.playfairDisplay(
                 fontSize: 24,
                 fontStyle: FontStyle.italic,
               ),
@@ -223,7 +224,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                   children: [
                     Text(
                       widget.title,
-                      style: GoogleFonts.playfairDisplay(
+                      style: AppFonts.playfairDisplay(
                         fontSize: 24,
                         height: 1,
                         fontWeight: FontWeight.w500,
@@ -232,7 +233,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                     const SizedBox(height: 10),
                     Text(
                       'DURATION: ${widget.duration.toUpperCase()}',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 11,
                         letterSpacing: 3,
                         color: const Color(0xFFADB4C0),
@@ -244,7 +245,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
               ),
               Text(
                 widget.price,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.w300,
                   color: espresso,
@@ -311,7 +312,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                         hasAddons
                             ? '${selectedAddonServices.length} Add-on${selectedAddonServices.length == 1 ? '' : 's'} Selected'
                             : 'Enhance your session',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: hasAddons
@@ -370,7 +371,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                     Expanded(
                       child: Text(
                         addon.title,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                           color: const Color(0xFF17120E),
@@ -380,7 +381,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                     ),
                     Text(
                       addon.price,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFFC3A76D),
@@ -426,7 +427,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
               Expanded(
                 child: Text(
                   '$headerMonth $headerYear',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 11,
                     letterSpacing: 4,
                     fontWeight: FontWeight.w500,
@@ -458,7 +459,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                     child: Center(
                       child: Text(
                         label,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w400,
                           color: const Color(0xFFB6BCC7),
@@ -516,7 +517,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                   ),
                   child: Text(
                     '${day.day}',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 13,
                       fontWeight: isSelected
                           ? FontWeight.w600
@@ -541,7 +542,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
         children: [
           Text(
             'AVAILABLE AFTERNOON SLOTS',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 11,
               letterSpacing: 4,
               fontWeight: FontWeight.w500,
@@ -605,7 +606,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                   child: isAvailable
                       ? Text(
                           time,
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: 13,
                             fontWeight: isSelected
                                 ? FontWeight.w600
@@ -618,7 +619,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                           children: [
                             Text(
                               time,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w400,
                                 color: Colors.grey.shade400,
@@ -629,7 +630,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                             const SizedBox(height: 3),
                             Text(
                               'Unavailable',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: 10,
                                 color: Colors.grey.shade400,
                                 letterSpacing: 0.3,
@@ -719,7 +720,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
                   },
             child: Text(
               "CONTINUE TO ADDRESS",
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 12,
                 letterSpacing: 3,
                 fontWeight: FontWeight.w600,
@@ -789,7 +790,7 @@ class _BookingStepBar extends StatelessWidget {
                       )
                     : Text(
                         '${stepIndex + 1}',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           color: isActive
@@ -802,7 +803,7 @@ class _BookingStepBar extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               labels[stepIndex],
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 10,
                 letterSpacing: 0.4,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,

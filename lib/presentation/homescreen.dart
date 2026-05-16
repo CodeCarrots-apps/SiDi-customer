@@ -1,8 +1,8 @@
 // ignore_for_file: prefer_interpolation_to_compose_strings
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:sidi/constant/constants.dart';
+import 'package:sidi/constant/app_fonts.dart';
 import 'package:dio/dio.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -200,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     child: Text(
                       _selectedLocation,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 13,
                         letterSpacing: 2,
                         fontWeight: FontWeight.w500,
@@ -229,7 +229,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
                   child: Text(
                     'Last updated ${_formatLastUpdated(_lastUpdatedAt!)}',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 11,
                       color: kWarmGrey600,
                       fontWeight: FontWeight.w500,
@@ -270,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Text(
               title,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: kCharcoalColor,
@@ -279,7 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style: GoogleFonts.inter(fontSize: 12, color: kWarmGrey600),
+              style: AppFonts.inter(fontSize: 12, color: kWarmGrey600),
             ),
           ],
         ),
@@ -381,7 +381,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Text(
                               (banner["title"] ?? "").toUpperCase(),
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 color: Colors.white70,
                                 fontSize: 10,
                                 letterSpacing: 4,
@@ -394,7 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               banner["description"] ?? '',
                               maxLines: 3,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.cormorantGaramond(
+                              style: AppFonts.cormorantGaramond(
                                 color: Colors.white,
                                 fontSize: 32,
                                 fontStyle: FontStyle.italic,
@@ -436,7 +436,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               },
                               child: Text(
                                 "EXPLORE",
-                                style: GoogleFonts.inter(
+                                style: AppFonts.inter(
                                   fontSize: 12,
                                   letterSpacing: 2,
                                   fontWeight: FontWeight.w500,
@@ -490,7 +490,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Text(
                     "Our Services",
-                    style: GoogleFonts.cormorantGaramond(
+                    style: AppFonts.cormorantGaramond(
                       fontSize: 32,
                       fontStyle: FontStyle.italic,
                     ),
@@ -550,7 +550,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(height: 12),
                           Text(
                             service["name"] ?? '',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 11,
                               letterSpacing: 2,
                               fontWeight: FontWeight.w500,
@@ -598,7 +598,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
                 "Curated for You",
-                style: GoogleFonts.cormorantGaramond(
+                style: AppFonts.cormorantGaramond(
                   fontSize: 32,
                   fontStyle: FontStyle.italic,
                 ),
@@ -689,7 +689,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(height: 12),
                               Text(
                                 item["curatedServiceName"] ?? '',
-                                style: GoogleFonts.inter(
+                                style: AppFonts.inter(
                                   fontSize: 10,
                                   letterSpacing: 3,
                                 ),
@@ -698,7 +698,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               Text(
                                 item["curatedServiceTitle"] ?? '',
-                                style: GoogleFonts.cormorantGaramond(
+                                style: AppFonts.cormorantGaramond(
                                   fontSize: 20,
                                   fontStyle: FontStyle.italic,
                                 ),
@@ -707,7 +707,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               Text(
                                 item["description"] ?? '',
-                                style: GoogleFonts.inter(
+                                style: AppFonts.inter(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w300,
                                 ),
