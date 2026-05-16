@@ -40,6 +40,51 @@ class BookingService {
     debugPrint('CREATE BOOKING RESPONSE MODEL: ${jsonEncode(payload)}');
   }
 
+  static String _extractMessageFromData(dynamic data, String fallback) {
+    if (data is Map<String, dynamic>) {
+      final raw = data['message'];
+      if (raw is String && raw.trim().isNotEmpty) {
+        return raw;
+      }
+      return fallback;
+    }
+
+    if (data is Map) {
+      final map = Map<String, dynamic>.from(data);
+      final raw = map['message'];
+      if (raw is String && raw.trim().isNotEmpty) {
+        return raw;
+      }
+      return fallback;
+    }
+
+    if (data is String && data.trim().isNotEmpty) {
+      return data;
+    }
+
+    return fallback;
+  }
+
+  static GenericBookingActionResponse _parseGenericActionResponse(
+    dynamic data, {
+    required String fallbackMessage,
+  }) {
+    if (data is Map<String, dynamic>) {
+      return GenericBookingActionResponse.fromJson(data);
+    }
+
+    if (data is Map) {
+      return GenericBookingActionResponse.fromJson(
+        Map<String, dynamic>.from(data),
+      );
+    }
+
+    return GenericBookingActionResponse(
+      success: false,
+      message: fallbackMessage,
+    );
+  }
+
   /// ---------------------------
   /// CREATE BOOKING
   /// ---------------------------
@@ -194,14 +239,27 @@ class BookingService {
     try {
       final response = await dio.get('/$bookingId');
 
-      return BookingDetailResponse.fromJson(response.data);
+      if (response.data is Map<String, dynamic>) {
+        return BookingDetailResponse.fromJson(response.data);
+      }
+
+      if (response.data is Map) {
+        return BookingDetailResponse.fromJson(
+          Map<String, dynamic>.from(response.data),
+        );
+      }
+
+      return BookingDetailResponse(
+        success: false,
+        message: 'Invalid server response',
+      );
     } on DioException catch (e) {
       return BookingDetailResponse(
         success: false,
-        message:
-            e.response?.data?['message'] ??
-            e.message ??
-            'Failed to load booking',
+        message: _extractMessageFromData(
+          e.response?.data,
+          e.message ?? 'Failed to load booking',
+        ),
       );
     }
   }
@@ -230,11 +288,24 @@ class BookingService {
         data: {"reason": reason},
       );
 
-      return GenericBookingActionResponse.fromJson(response.data);
+      return _parseGenericActionResponse(
+        response.data,
+        fallbackMessage: 'Invalid server response',
+      );
     } on DioException catch (e) {
+      if (e.response?.data != null) {
+        return _parseGenericActionResponse(
+          e.response!.data,
+          fallbackMessage: _extractMessageFromData(
+            e.response?.data,
+            e.message ?? 'Cancel failed',
+          ),
+        );
+      }
+
       return GenericBookingActionResponse(
         success: false,
-        message: e.response?.data?['message'] ?? e.message ?? 'Cancel failed',
+        message: e.message ?? 'Cancel failed',
       );
     }
   }
@@ -264,12 +335,24 @@ class BookingService {
         data: {"newDate": newDate, "newTime": newTime},
       );
 
-      return GenericBookingActionResponse.fromJson(response.data);
+      return _parseGenericActionResponse(
+        response.data,
+        fallbackMessage: 'Invalid server response',
+      );
     } on DioException catch (e) {
+      if (e.response?.data != null) {
+        return _parseGenericActionResponse(
+          e.response!.data,
+          fallbackMessage: _extractMessageFromData(
+            e.response?.data,
+            e.message ?? 'Reschedule failed',
+          ),
+        );
+      }
+
       return GenericBookingActionResponse(
         success: false,
-        message:
-            e.response?.data?['message'] ?? e.message ?? 'Reschedule failed',
+        message: e.message ?? 'Reschedule failed',
       );
     }
   }

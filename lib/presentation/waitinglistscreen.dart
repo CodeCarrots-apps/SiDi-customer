@@ -41,6 +41,8 @@ class _WaitingListScreenState extends State<WaitingListScreen>
   Timer? _pollingTimer;
   dynamic _assignedBeautician;
   bool _isAssigned = false;
+  bool _isNavigatingToConfirmation = false;
+  String _latestStatus = 'requested';
   String _statusMessage = 'Waiting for beautician...';
   late AnimationController _pulseController;
   late AnimationController _successController;
@@ -57,6 +59,10 @@ class _WaitingListScreenState extends State<WaitingListScreen>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
+
+    _latestStatus = widget.response.booking?.status.trim().isNotEmpty == true
+        ? widget.response.booking!.status
+        : 'requested';
 
     _startPolling();
   }
@@ -91,26 +97,34 @@ class _WaitingListScreenState extends State<WaitingListScreen>
     if (!mounted) return;
 
     if (response.success && response.booking != null) {
-      debugPrint(
-        '[WaitingListScreen] Booking status: ${response.booking!.status}',
-      );
+      final status = response.booking!.status;
+      debugPrint('[WaitingListScreen] Booking status: $status');
+
+      setState(() {
+        _latestStatus = status;
+        _statusMessage = _statusMessageFor(status);
+      });
 
       // Check if beautician is assigned
-      if (response.booking!.status.toLowerCase() == 'accepted' ||
-          response.booking!.status.toLowerCase() == 'assigned') {
-        if (_assignedBeautician == null) {
+      if (_isAssignedStatus(status)) {
+        if (!_isNavigatingToConfirmation && _assignedBeautician == null) {
           // Beautician just assigned!
-          _onBeauticianAssigned(response.booking!.status);
+          _onBeauticianAssigned(status);
         }
       }
     }
   }
 
   void _onBeauticianAssigned(String status) {
+    if (_isNavigatingToConfirmation) return;
+
+    _isNavigatingToConfirmation = true;
     _pollingTimer?.cancel();
 
     setState(() {
       _isAssigned = true;
+      _assignedBeautician = status;
+      _latestStatus = status;
       _statusMessage = 'Beautician assigned!';
     });
 
@@ -137,6 +151,45 @@ class _WaitingListScreenState extends State<WaitingListScreen>
         );
       }
     });
+  }
+
+  bool _isAssignedStatus(String status) {
+    final normalized = status.toLowerCase().trim();
+    return normalized == 'accepted' || normalized == 'assigned';
+  }
+
+  String _statusMessageFor(String status) {
+    final normalized = status.toLowerCase().trim();
+    if (_isAssignedStatus(status)) {
+      return 'Beautician accepted your request.';
+    }
+    if (normalized == 'requested' ||
+        normalized == 'pending' ||
+        normalized == 'waiting' ||
+        normalized == 'waitlist' ||
+        normalized == 'waiting_list' ||
+        normalized == 'queued' ||
+        normalized == 'queue') {
+      return 'Searching nearby beauticians in real time...';
+    }
+    if (normalized == 'cancelled' || normalized == 'rejected') {
+      _pollingTimer?.cancel();
+      return 'This request is no longer active.';
+    }
+    return 'Current status: ${_readableStatus(status)}';
+  }
+
+  String _readableStatus(String status) {
+    final cleaned = status.replaceAll('_', ' ').trim();
+    if (cleaned.isEmpty) return 'Requested';
+    return cleaned
+        .split(' ')
+        .where((part) => part.isNotEmpty)
+        .map(
+          (part) =>
+              '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}',
+        )
+        .join(' ');
   }
 
   @override
@@ -302,6 +355,15 @@ class _WaitingListScreenState extends State<WaitingListScreen>
                   style: AppFonts.inter(
                     fontSize: 11,
                     color: const Color(0xFF3B82F6),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Booking status: ${_readableStatus(_latestStatus)}',
+                  style: AppFonts.inter(
+                    fontSize: 11,
+                    color: const Color(0xFF1E40AF),
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -597,10 +659,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
                   if (service.price.isNotEmpty)
                     Text(
                       service.price,
-                      style: AppFonts.inter(
-                        fontSize: 12,
-                        color: kWarmGrey600,
-                      ),
+                      style: AppFonts.inter(fontSize: 12, color: kWarmGrey600),
                     ),
                 ],
               ),

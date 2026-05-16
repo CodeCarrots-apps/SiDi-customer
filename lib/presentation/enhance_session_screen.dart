@@ -76,7 +76,7 @@ class _EnhanceSessionScreenState extends State<EnhanceSessionScreen> {
     final normalized = value.toStringAsFixed(
       value.truncateToDouble() == value ? 0 : 2,
     );
-    return '\$$normalized';
+    return '\u20B9$normalized';
   }
 
   String get _selectedLabel {
@@ -101,7 +101,6 @@ class _EnhanceSessionScreenState extends State<EnhanceSessionScreen> {
     final isTablet = size.width >= 700;
 
     final horizontalPadding = isTablet ? 32.0 : (isSmall ? 16.0 : 20.0);
-    final titleFontSize = isTablet ? 52.0 : (isSmall ? 34.0 : 42.0);
     final subtitleFontSize = isSmall ? 14.0 : 16.0;
     final imageTileSize = isTablet ? 112.0 : (isSmall ? 84.0 : 96.0);
     final cardPadding = isSmall ? 14.0 : 16.0;
@@ -126,9 +125,9 @@ class _EnhanceSessionScreenState extends State<EnhanceSessionScreen> {
                     _buildTopBar(context, isSmall: isSmall),
                     SizedBox(height: isSmall ? 24 : 34),
                     Text(
-                      'Elevate Your\nExperience',
+                      'Elevate Your Experience',
                       style: AppFonts.playfairDisplay(
-                        fontSize: titleFontSize,
+                        fontSize: 20,
                         fontStyle: FontStyle.italic,
                         height: 1.03,
                         fontWeight: FontWeight.w500,
@@ -443,23 +442,6 @@ class _EnhanceSessionScreenState extends State<EnhanceSessionScreen> {
           icon: Icons.arrow_back_ios_new_rounded,
           onTap: () => Navigator.pop(context),
         ),
-        Row(
-          children: [
-            _CircleIconButton(
-              size: iconButtonSize,
-              iconSize: iconSize,
-              icon: Icons.favorite_rounded,
-              onTap: () {},
-            ),
-            SizedBox(width: isSmall ? 10 : 12),
-            _CircleIconButton(
-              size: iconButtonSize,
-              iconSize: iconSize,
-              icon: Icons.share_rounded,
-              onTap: () {},
-            ),
-          ],
-        ),
       ],
     );
   }
@@ -593,23 +575,7 @@ class _CircleIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white,
-          border: Border.all(color: const Color(0xFFE4DED6)),
-          boxShadow: [
-            BoxShadow(
-              color: opacity(Colors.black, 0.03),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Icon(icon, color: const Color(0xFF17120E), size: iconSize),
-      ),
+      child: Icon(icon, color: const Color(0xFF17120E), size: iconSize),
     );
   }
 }

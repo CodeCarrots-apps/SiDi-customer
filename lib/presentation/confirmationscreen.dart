@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/constant/app_fonts.dart';
 import 'package:sidi/models/booking_models.dart';
 import 'package:sidi/presentation/appointments_screen.dart';
+import 'package:sidi/services/booking_service.dart';
 
 class ConfirmationScreen extends StatefulWidget {
   const ConfirmationScreen({
@@ -34,6 +36,22 @@ class ConfirmationScreen extends StatefulWidget {
 }
 
 class _ConfirmationScreenState extends State<ConfirmationScreen> {
+  Timer? _statusPollingTimer;
+  String _liveStatus = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _liveStatus = widget.response.booking?.status ?? '';
+    _startStatusPolling();
+  }
+
+  @override
+  void dispose() {
+    _statusPollingTimer?.cancel();
+    super.dispose();
+  }
+
   void _goHome() {
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
@@ -49,6 +67,87 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
     Navigator.pop(context);
   }
 
+  void _startStatusPolling() {
+    final bookingId = widget.response.booking?.id;
+    if (bookingId == null || bookingId.isEmpty) return;
+
+    _syncBookingStatus();
+    _statusPollingTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+      _syncBookingStatus();
+    });
+  }
+
+  Future<void> _syncBookingStatus() async {
+    final bookingId = widget.response.booking?.id;
+    if (bookingId == null || bookingId.isEmpty || !mounted) return;
+
+    final response = await BookingService.getBookingDetails(bookingId);
+    if (!mounted || !response.success || response.booking == null) return;
+
+    final nextStatus = response.booking!.status;
+    if (nextStatus.trim().isEmpty || nextStatus == _liveStatus) return;
+
+    setState(() {
+      _liveStatus = nextStatus;
+    });
+  }
+
+  ({String label, Color color, IconData icon}) _statusChipFor(String status) {
+    final normalized = status.toLowerCase().trim();
+    if (normalized == 'accepted' || normalized == 'assigned') {
+      return (
+        label: 'BOOKING CONFIRMED',
+        color: const Color(0xFF2D7A4F),
+        icon: Icons.check_circle_rounded,
+      );
+    }
+    if (normalized == 'requested' ||
+        normalized == 'pending' ||
+        normalized == 'waiting' ||
+        normalized == 'waitlist' ||
+        normalized == 'waiting_list' ||
+        normalized == 'queued' ||
+        normalized == 'queue') {
+      return (
+        label: 'WAITING FOR ASSIGNMENT',
+        color: const Color(0xFFB07A1A),
+        icon: Icons.hourglass_top_rounded,
+      );
+    }
+    if (normalized == 'cancelled' || normalized == 'rejected') {
+      return (
+        label: 'BOOKING NOT ACTIVE',
+        color: const Color(0xFFC44747),
+        icon: Icons.cancel_rounded,
+      );
+    }
+    if (normalized == 'completed') {
+      return (
+        label: 'SERVICE COMPLETED',
+        color: const Color(0xFF356EAF),
+        icon: Icons.verified_rounded,
+      );
+    }
+    return (
+      label: 'BOOKING STATUS LIVE',
+      color: const Color(0xFF5B6470),
+      icon: Icons.sync_rounded,
+    );
+  }
+
+  String _readableStatus(String status) {
+    final cleaned = status.replaceAll('_', ' ').trim();
+    if (cleaned.isEmpty) return 'Requested';
+    return cleaned
+        .split(' ')
+        .where((part) => part.isNotEmpty)
+        .map(
+          (part) =>
+              '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}',
+        )
+        .join(' ');
+  }
+
   @override
   Widget build(BuildContext context) {
     final response = widget.response;
@@ -60,10 +159,14 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
       );
     }
 
-    const statusChipLabel = 'BOOKING CONFIRMED';
-    const statusChipColor = Color(0xFF2D7A4F);
-    const statusChipIcon = Icons.check_circle_rounded;
+    final liveStatus = _liveStatus.isNotEmpty
+        ? _liveStatus
+        : (response.booking?.status.isNotEmpty == true
+              ? response.booking!.status
+              : 'accepted');
+    final statusChip = _statusChipFor(liveStatus);
     final statusDateText = '${widget.selectedDate}  ·  ${widget.selectedTime}';
+    final bookingId = widget.response.booking?.id ?? '';
 
     final screenHeight = MediaQuery.of(context).size.height;
     return WillPopScope(
@@ -157,20 +260,20 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                     vertical: 10,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: statusChipColor.withOpacity(0.92),
+                                    color: statusChip.color.withOpacity(0.92),
                                     borderRadius: BorderRadius.circular(50),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(
-                                        statusChipIcon,
+                                        statusChip.icon,
                                         size: 14,
                                         color: Colors.white,
                                       ),
                                       const SizedBox(width: 6),
                                       Text(
-                                        statusChipLabel,
+                                        statusChip.label,
                                         style: AppFonts.inter(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w700,
@@ -223,6 +326,15 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                           ),
                                         ),
                                       ],
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Text(
+                                      'Live status: ${_readableStatus(liveStatus)}',
+                                      style: AppFonts.inter(
+                                        fontSize: 11,
+                                        color: Colors.white.withOpacity(0.82),
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -335,8 +447,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                       ),
                       const SizedBox(height: 32),
                       // Booking reference
-                      if (widget.response.booking?.id != null &&
-                          widget.response.booking!.id.isNotEmpty)
+                      if (bookingId.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Container(
@@ -368,7 +479,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                 ),
                                 Expanded(
                                   child: Text(
-                                    widget.response.booking!.id,
+                                    bookingId,
                                     overflow: TextOverflow.ellipsis,
                                     style: AppFonts.inter(
                                       fontSize: 12,

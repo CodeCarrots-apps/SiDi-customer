@@ -1,11 +1,14 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sidi/constant/app_fonts.dart';
 import 'package:sidi/constant/constants.dart';
 import '../models/booking.dart';
+import 'servicedetailscreen.dart';
 import '../services/appointments_sync_service.dart';
+import '../services/booking_service.dart';
 import '../services/local_storage_service.dart';
 
 class AppointmentsScreen extends StatefulWidget {
@@ -17,6 +20,9 @@ class AppointmentsScreen extends StatefulWidget {
 
 class _AppointmentsScreenState extends State<AppointmentsScreen>
     with WidgetsBindingObserver {
+  static const String _serviceByIdEndpoint =
+      'https://sidi.mobilegear.co.in/api/mobileapp/services';
+  static const Duration _serviceCacheTtl = Duration(minutes: 10);
   static const String _fallbackImageUrl =
       'https://i.pinimg.com/1200x/8b/9a/ec/8b9aeceef93905e3b619889c2b0b7111.jpg';
 
@@ -25,6 +31,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
   String? _errorMessage;
   DateTime? _lastUpdatedAt;
   StreamSubscription<List<Booking>>? _bookingsSubscription;
+  final Map<String, Map<String, dynamic>> _serviceCacheById = {};
+  final Map<String, DateTime> _serviceCacheFetchedAtById = {};
+  final Map<String, Future<Map<String, dynamic>?>> _serviceFetchInFlightById =
+      {};
 
   @override
   void initState() {
@@ -113,9 +123,13 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
 
     final booking = _bookings[index];
     final normalizedStatus = booking.status.trim().toLowerCase();
-    if (normalizedStatus == 'cancelled' || normalizedStatus == 'completed') {
+    if (normalizedStatus == 'cancelled' ||
+        normalizedStatus == 'completed' ||
+        normalizedStatus == 'rejected') {
       return false;
     }
+
+    final previousBookings = List<Booking>.from(_bookings);
 
     final updatedBooking = Booking(
       id: booking.id,
@@ -137,7 +151,22 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
       _lastUpdatedAt = DateTime.now();
     });
 
+    final response = await BookingService.cancelBooking(
+      bookingId: id,
+      reason: 'Cancelled by customer',
+    );
+
+    if (!response.success) {
+      if (!mounted) return false;
+      setState(() {
+        _bookings = previousBookings;
+      });
+      await LocalStorageService.saveCachedBookings(previousBookings);
+      return false;
+    }
+
     await LocalStorageService.saveCachedBookings(updatedBookings);
+    unawaited(AppointmentsSyncService.syncBookings(manualRefresh: true));
     return true;
   }
 
@@ -155,9 +184,174 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
           imageUrl: _resolveImageUrl(booking.image),
           statusColor: _statusColor(booking.status),
           onCancel: () => _cancelBooking(booking.id),
+          onRebook: () => _rebookBooking(booking),
         ),
       ),
     );
+  }
+
+  Future<void> _rebookBooking(Booking booking) async {
+    final serviceId = booking.serviceId.trim();
+    if (serviceId.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Service not available for rebooking.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    Map<String, dynamic>? service = await _fetchServiceById(serviceId);
+    service ??= await _fetchServiceByTitle(booking.title);
+    if (!mounted) return;
+
+    if (service == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Service details unavailable for this appointment. Pull to refresh and try again.',
+          ),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    final resolvedServiceId = _asString(service['_id']).isNotEmpty
+        ? _asString(service['_id'])
+        : serviceId;
+
+    final resolvedTitle = _asString(service['name']).isNotEmpty
+        ? _asString(service['name'])
+        : (booking.title.isNotEmpty ? booking.title : 'Service');
+    final resolvedPrice = _asString(service['price']);
+    final resolvedDuration = _asString(service['duration']);
+    final resolvedDescription = _asString(service['description']);
+    final resolvedImage = _resolveServiceImage(
+      service,
+      fallbackImage: booking.image,
+    );
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ServiceDetailScreen(
+          serviceId: resolvedServiceId,
+          title: resolvedTitle,
+          price: resolvedPrice,
+          duration: resolvedDuration,
+          imageUrl: resolvedImage,
+          description: resolvedDescription,
+        ),
+      ),
+    );
+  }
+
+  Future<Map<String, dynamic>?> _fetchServiceById(String serviceId) async {
+    if (_hasFreshServiceCache(serviceId)) {
+      return _serviceCacheById[serviceId];
+    }
+
+    final inFlight = _serviceFetchInFlightById[serviceId];
+    if (inFlight != null) {
+      return inFlight;
+    }
+
+    final request = () async {
+      try {
+        final response = await Dio().get('$_serviceByIdEndpoint/$serviceId');
+        if (response.data is! Map) {
+          return _serviceCacheById[serviceId];
+        }
+
+        final payload = Map<String, dynamic>.from(response.data as Map);
+        final success = payload['success'] == true;
+        final serviceRaw = payload['service'];
+
+        if (!success || serviceRaw is! Map) {
+          return _serviceCacheById[serviceId];
+        }
+
+        final service = Map<String, dynamic>.from(serviceRaw);
+        _serviceCacheById[serviceId] = service;
+        _serviceCacheFetchedAtById[serviceId] = DateTime.now();
+        return service;
+      } catch (_) {
+        return _serviceCacheById[serviceId];
+      } finally {
+        _serviceFetchInFlightById.remove(serviceId);
+      }
+    }();
+
+    _serviceFetchInFlightById[serviceId] = request;
+    return request;
+  }
+
+  Future<Map<String, dynamic>?> _fetchServiceByTitle(String title) async {
+    final normalizedTitle = title.trim().toLowerCase();
+    if (normalizedTitle.isEmpty) return null;
+
+    try {
+      final response = await Dio().get(
+        'https://sidi.mobilegear.co.in/api/services',
+      );
+      if (response.data is! List) return null;
+
+      final services = (response.data as List)
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
+
+      for (final service in services) {
+        final serviceName = _asString(service['name']).toLowerCase();
+        if (serviceName == normalizedTitle) {
+          final id = _asString(service['_id']);
+          if (id.isNotEmpty) {
+            _serviceCacheById[id] = service;
+            _serviceCacheFetchedAtById[id] = DateTime.now();
+          }
+          return service;
+        }
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  bool _hasFreshServiceCache(String serviceId) {
+    final cached = _serviceCacheById[serviceId];
+    final fetchedAt = _serviceCacheFetchedAtById[serviceId];
+    if (cached == null || fetchedAt == null) return false;
+    return DateTime.now().difference(fetchedAt) <= _serviceCacheTtl;
+  }
+
+  String _resolveServiceImage(
+    Map<String, dynamic> service, {
+    required String fallbackImage,
+  }) {
+    final primary = _asString(service['image']);
+    final secondary = _asString(service['image2']);
+    final tertiary = _asString(service['image1']);
+
+    final selected = primary.isNotEmpty
+        ? primary
+        : (secondary.isNotEmpty ? secondary : tertiary);
+
+    if (selected.isEmpty) {
+      return _resolveImageUrl(fallbackImage);
+    }
+    if (selected.startsWith('http')) return selected;
+    if (selected.startsWith('/')) {
+      return 'https://sidi.mobilegear.co.in$selected';
+    }
+    return 'https://sidi.mobilegear.co.in/uploads/$selected';
+  }
+
+  String _asString(dynamic value) {
+    if (value == null) return '';
+    return value.toString().trim();
   }
 
   @override
@@ -215,25 +409,19 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                       );
                     }
 
-                    // Split by date: recent = last 14 days or future, earlier = older
-                    final recentCutoff = DateTime.now().subtract(
-                      const Duration(days: 14),
-                    );
-                    final hasDateInfo = bookings.any(
-                      (b) => b.bookingDate.isNotEmpty,
-                    );
-                    final recentBookings = hasDateInfo
-                        ? bookings.where((b) {
-                            final d = DateTime.tryParse(b.bookingDate);
-                            return d == null || !d.isBefore(recentCutoff);
-                          }).toList()
-                        : bookings.take(2).toList();
-                    final earlierBookings = hasDateInfo
-                        ? bookings.where((b) {
-                            final d = DateTime.tryParse(b.bookingDate);
-                            return d != null && d.isBefore(recentCutoff);
-                          }).toList()
-                        : bookings.skip(2).toList();
+                    final sortedBookings = [...bookings]
+                      ..sort(
+                        (a, b) => _bookingSortDateTime(
+                          b,
+                        ).compareTo(_bookingSortDateTime(a)),
+                      );
+
+                    final upcomingBookings = sortedBookings
+                        .where(_isUpcomingBooking)
+                        .toList();
+                    final historyBookings = sortedBookings
+                        .where((b) => !_isUpcomingBooking(b))
+                        .toList();
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -259,40 +447,52 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                           ),
                         ],
                         SizedBox(height: 22 * scale),
-                        _buildSectionLabel('RECENT', scale),
+                        _buildSectionLabel('UPCOMING', scale),
                         SizedBox(height: 6 * scale),
                         Divider(color: kWarmGrey200, height: 1),
                         SizedBox(height: 12 * scale),
-                        ...recentBookings.map(
-                          (b) => Dismissible(
-                            key: ValueKey(b.id),
-                            direction: DismissDirection.endToStart,
-                            background: _buildDeleteBackground(scale),
-                            onDismissed: (_) => _deleteBooking(b.id),
-                            child: Padding(
-                              padding: EdgeInsets.only(bottom: 12 * scale),
-                              child: _AppearIn(
-                                delayMs: 50,
-                                child: _buildRecentAppointment(
-                                  image: _resolveImageUrl(b.image),
-                                  title: b.title,
-                                  time: b.time,
-                                  stylist: b.stylist,
-                                  status: b.status,
-                                  scale: scale,
-                                  onTap: () => _openAppointmentDetails(b),
+                        if (upcomingBookings.isNotEmpty)
+                          ...upcomingBookings.map(
+                            (b) => Dismissible(
+                              key: ValueKey(b.id),
+                              direction: DismissDirection.endToStart,
+                              background: _buildDeleteBackground(scale),
+                              onDismissed: (_) => _deleteBooking(b.id),
+                              child: Padding(
+                                padding: EdgeInsets.only(bottom: 12 * scale),
+                                child: _AppearIn(
+                                  delayMs: 50,
+                                  child: _buildRecentAppointment(
+                                    image: _resolveImageUrl(b.image),
+                                    title: b.title,
+                                    time: b.time,
+                                    stylist: b.stylist,
+                                    status: b.status,
+                                    scale: scale,
+                                    onTap: () => _openAppointmentDetails(b),
+                                  ),
                                 ),
                               ),
                             ),
+                          )
+                        else
+                          Padding(
+                            padding: EdgeInsets.only(bottom: 6 * scale),
+                            child: Text(
+                              'No upcoming appointments.',
+                              style: AppFonts.inter(
+                                fontSize: 12 * scale,
+                                color: kWarmGrey600,
+                              ),
+                            ),
                           ),
-                        ),
                         SizedBox(height: 18 * scale),
-                        if (earlierBookings.isNotEmpty) ...[
-                          _buildSectionLabel('EARLIER', scale),
+                        if (historyBookings.isNotEmpty) ...[
+                          _buildSectionLabel('HISTORY', scale),
                           SizedBox(height: 6 * scale),
                           Divider(color: kWarmGrey200, height: 1),
                           SizedBox(height: 10 * scale),
-                          ...earlierBookings.toList().asMap().entries.map(
+                          ...historyBookings.toList().asMap().entries.map(
                             (entry) => Dismissible(
                               key: ValueKey(entry.value.id),
                               direction: DismissDirection.endToStart,
@@ -309,6 +509,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                                   scale: scale,
                                   onTap: () =>
                                       _openAppointmentDetails(entry.value),
+                                  onRebook: () => _rebookBooking(entry.value),
                                 ),
                               ),
                             ),
@@ -484,6 +685,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     required String status,
     required double scale,
     required VoidCallback onTap,
+    required VoidCallback onRebook,
   }) {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
@@ -559,16 +761,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
             ),
             SizedBox(width: 8 * scale),
             OutlinedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Browse the Home tab to find and rebook "$title".',
-                    ),
-                    duration: const Duration(seconds: 3),
-                  ),
-                );
-              },
+              onPressed: onRebook,
               style: OutlinedButton.styleFrom(
                 foregroundColor: kCharcoalColor,
                 side: BorderSide(color: kWarmGrey200),
@@ -601,6 +794,61 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     final period = value.hour >= 12 ? 'PM' : 'AM';
     return 'at $hour:$minute $period';
   }
+
+  bool _isUpcomingBooking(Booking booking) {
+    final status = booking.status.trim().toLowerCase();
+    const upcomingStatuses = {
+      'assigned',
+      'accepted',
+      'confirmed',
+      'pending',
+      'requested',
+    };
+    const historyStatuses = {'cancelled', 'completed', 'rejected'};
+
+    if (upcomingStatuses.contains(status)) return true;
+    if (historyStatuses.contains(status)) return false;
+
+    final date = DateTime.tryParse(booking.bookingDate);
+    if (date == null) return true;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final bookingDay = DateTime(date.year, date.month, date.day);
+    return !bookingDay.isBefore(today);
+  }
+
+  DateTime _bookingSortDateTime(Booking booking) {
+    final parsedDate = DateTime.tryParse(booking.bookingDate);
+    if (parsedDate == null) {
+      return DateTime.fromMillisecondsSinceEpoch(0);
+    }
+
+    final parsedTime = _extractTime(booking.time);
+    return DateTime(
+      parsedDate.year,
+      parsedDate.month,
+      parsedDate.day,
+      parsedTime?.hour ?? 0,
+      parsedTime?.minute ?? 0,
+    );
+  }
+
+  TimeOfDay? _extractTime(String rawTime) {
+    final normalized = rawTime.trim();
+    if (normalized.isEmpty) return null;
+
+    final primaryPart = normalized.split('-').first.trim();
+    final match = RegExp(r'^(\d{1,2}):(\d{2})').firstMatch(primaryPart);
+    if (match == null) return null;
+
+    final hour = int.tryParse(match.group(1) ?? '');
+    final minute = int.tryParse(match.group(2) ?? '');
+    if (hour == null || minute == null) return null;
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+
+    return TimeOfDay(hour: hour, minute: minute);
+  }
 }
 
 class _AppointmentDetailPage extends StatefulWidget {
@@ -609,12 +857,14 @@ class _AppointmentDetailPage extends StatefulWidget {
     required this.imageUrl,
     required this.statusColor,
     required this.onCancel,
+    required this.onRebook,
   });
 
   final Booking booking;
   final String imageUrl;
   final Color statusColor;
   final Future<bool> Function() onCancel;
+  final Future<void> Function() onRebook;
 
   @override
   State<_AppointmentDetailPage> createState() => _AppointmentDetailPageState();
@@ -1098,15 +1348,8 @@ class _AppointmentDetailPageState extends State<_AppointmentDetailPage> {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Browse Home to rebook this service.',
-                            ),
-                            duration: Duration(seconds: 3),
-                          ),
-                        );
+                      onPressed: () async {
+                        await widget.onRebook();
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: kCharcoalColor,

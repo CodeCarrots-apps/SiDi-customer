@@ -164,7 +164,11 @@ class MyBookingsResponse {
   });
 
   factory MyBookingsResponse.fromJson(Map<String, dynamic> json) {
-    final bookingsJson = json['bookings'];
+    final Map<String, dynamic> payload = json['data'] is Map<String, dynamic>
+        ? json['data'] as Map<String, dynamic>
+        : json;
+
+    final bookingsJson = payload['bookings'];
     return MyBookingsResponse(
       success: json['success'] == true,
       message: json['message'] ?? '',
@@ -174,12 +178,12 @@ class MyBookingsResponse {
                 .map(Booking.fromJson)
                 .toList()
           : [],
-      total: json['total'] is int
-          ? json['total'] as int
-          : int.tryParse('${json['total'] ?? ''}') ?? 0,
-      currentPage: json['currentPage'] is int
-          ? json['currentPage'] as int
-          : int.tryParse('${json['currentPage'] ?? ''}') ?? 0,
+      total: payload['total'] is int
+          ? payload['total'] as int
+          : int.tryParse('${payload['total'] ?? ''}') ?? 0,
+      currentPage: payload['currentPage'] is int
+          ? payload['currentPage'] as int
+          : int.tryParse('${payload['currentPage'] ?? ''}') ?? 0,
     );
   }
 }

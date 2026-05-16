@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:location/location.dart';
 import 'package:sidi/constant/app_fonts.dart';
 
 import '../models/address_model.dart';
@@ -18,6 +20,11 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
   late final TextEditingController _labelController;
   late final TextEditingController _line1Controller;
   late final TextEditingController _line2Controller;
+  final Dio _dio = Dio();
+  final Location _location = Location();
+
+  bool _isFetchingLocation = false;
+  String? _locationErrorText;
 
   static const List<String> _addressLabels = ['HOME', 'WORK', 'HOTEL', 'OTHER'];
 
@@ -55,6 +62,104 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
 
   void _delete() {
     Navigator.pop(context, const EditResult<AddressModel>(deleted: true));
+  }
+
+  Future<void> _fetchCurrentLocation() async {
+    setState(() {
+      _isFetchingLocation = true;
+      _locationErrorText = null;
+    });
+
+    try {
+      var serviceEnabled = await _location.serviceEnabled();
+      if (!serviceEnabled) {
+        serviceEnabled = await _location.requestService();
+        if (!serviceEnabled) {
+          throw Exception('Location service is turned off on this device.');
+        }
+      }
+
+      var permissionStatus = await _location.hasPermission();
+      if (permissionStatus == PermissionStatus.denied) {
+        permissionStatus = await _location.requestPermission();
+      }
+
+      if (permissionStatus != PermissionStatus.granted &&
+          permissionStatus != PermissionStatus.grantedLimited) {
+        throw Exception(
+          permissionStatus == PermissionStatus.deniedForever
+              ? 'Location permission is permanently denied. Enable it from app settings.'
+              : 'Location permission denied. Please allow location access.',
+        );
+      }
+
+      final currentLocation = await _location.getLocation().timeout(
+        const Duration(seconds: 12),
+      );
+
+      final lat = currentLocation.latitude;
+      final lon = currentLocation.longitude;
+      if (lat == null || lon == null) {
+        throw Exception('Unable to fetch current coordinates');
+      }
+
+      var address = '';
+
+      try {
+        final response = await _dio.get(
+          'https://sidi.mobilegear.co.in/api/mobileapp/services/location',
+          queryParameters: {'lat': lat, 'lng': lon},
+        );
+
+        final data = response.data as Map<String, dynamic>;
+        if (data['success'] == true) {
+          final locationData = data['location'] as Map<String, dynamic>?;
+          address = (locationData?['address'] as String?)?.trim() ?? '';
+        }
+      } catch (_) {
+        // Fall back to reverse geocoding when the primary location API fails.
+      }
+
+      if (address.isEmpty) {
+        final reverseResponse = await _dio.get(
+          'https://nominatim.openstreetmap.org/reverse',
+          queryParameters: {'lat': lat, 'lon': lon, 'format': 'jsonv2'},
+          options: Options(
+            headers: {
+              'User-Agent': 'SiDiCustomerApp/1.0 (edit-address)',
+              'Accept-Language': 'en',
+            },
+          ),
+        );
+
+        final reverseData = reverseResponse.data as Map<String, dynamic>;
+        address = (reverseData['display_name'] as String?)?.trim() ?? '';
+      }
+
+      if (address.isEmpty) {
+        throw Exception(
+          'Could not resolve a readable address from your location.',
+        );
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isFetchingLocation = false;
+        _line2Controller.text = address;
+      });
+    } catch (error) {
+      debugPrint('Current location fetch failed: $error');
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isFetchingLocation = false;
+        _locationErrorText = error.toString().replaceFirst('Exception: ', '');
+      });
+    }
   }
 
   bool get _canSave => _line1Controller.text.trim().isNotEmpty;
@@ -122,17 +227,39 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Text(
+                      isEditing ? 'Edit Address Details' : 'Add New Address',
+                      style: AppFonts.playfairDisplay(
+                        fontSize: 30,
+                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.w400,
+                        color: kEspressoColor,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Update where your service should reach',
+                      style: AppFonts.inter(
+                        fontSize: 13,
+                        color: kWarmGrey600,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFFF8F0), Color(0xFFFFFFFF)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFFFE2BE)),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: opacity(kEspressoColor, 0.1)),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x0A000000),
+                            blurRadius: 20,
+                            offset: Offset(0, 10),
+                          ),
+                        ],
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,6 +305,52 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _isFetchingLocation
+                            ? null
+                            : _fetchCurrentLocation,
+                        icon: _isFetchingLocation
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.my_location),
+                        label: Text(
+                          _isFetchingLocation
+                              ? 'Fetching Current Location...'
+                              : 'Use Current Location',
+                          style: AppFonts.inter(
+                            fontSize: 13,
+                            letterSpacing: 0.2,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: kEspressoColor,
+                          side: BorderSide(color: opacity(kEspressoColor, 0.2)),
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (_locationErrorText != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _locationErrorText!,
+                        style: AppFonts.inter(
+                          fontSize: 12,
+                          color: Colors.red.shade700,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 20),
                     Text(
                       'SAVE ADDRESS AS',
@@ -207,10 +380,17 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                       padding: const EdgeInsets.fromLTRB(14, 16, 14, 14),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(24),
                         border: Border.all(
                           color: opacity(kEspressoColor, 0.08),
                         ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x08000000),
+                            blurRadius: 14,
+                            offset: Offset(0, 8),
+                          ),
+                        ],
                       ),
                       child: Column(
                         children: [
