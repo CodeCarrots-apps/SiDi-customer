@@ -14,7 +14,7 @@ class AppFonts {
     TextDecoration? decoration,
     Color? decorationColor,
   }) {
-    return GoogleFonts.inter(
+    return GoogleFonts.manrope(
       fontSize: fontSize,
       fontWeight: fontWeight,
       fontStyle: fontStyle,
@@ -54,7 +54,7 @@ class AppFonts {
     TextDecoration? decoration,
     Color? decorationColor,
   }) {
-    return GoogleFonts.playfairDisplay(
+    return GoogleFonts.dmSans(
       fontSize: fontSize,
       fontWeight: fontWeight,
       fontStyle: fontStyle,
