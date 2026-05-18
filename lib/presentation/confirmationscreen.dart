@@ -299,7 +299,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                       overflow: TextOverflow.ellipsis,
                                       style: AppFonts.playfairDisplay(
                                         fontSize: 28,
-                                        fontStyle: FontStyle.italic,
+                                        fontStyle: FontStyle.normal,
                                         fontWeight: FontWeight.w400,
                                         color: Colors.white,
                                       ),
@@ -382,7 +382,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                       widget.stylistName ?? 'Your Stylist',
                                       style: AppFonts.playfairDisplay(
                                         fontSize: 18,
-                                        fontStyle: FontStyle.italic,
+                                        fontStyle: FontStyle.normal,
                                         fontWeight: FontWeight.w400,
                                       ),
                                     ),
@@ -570,7 +570,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                   'Booking failed',
                   style: AppFonts.cormorantGaramond(
                     fontSize: 32,
-                    fontStyle: FontStyle.italic,
+                    fontStyle: FontStyle.normal,
                     color: const Color(0xFF1A1A1A),
                   ),
                 ),

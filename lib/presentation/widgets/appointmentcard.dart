@@ -97,7 +97,7 @@ class AppointmentCard extends StatelessWidget {
                         artist,
                         style: AppFonts.inter(
                           fontSize: 12,
-                          fontStyle: FontStyle.italic,
+                          fontStyle: FontStyle.normal,
                           color: kWarmGrey600,
                         ),
                       ),

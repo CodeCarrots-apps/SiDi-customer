@@ -436,7 +436,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             name,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: AppFonts.playfairDisplay(
+            style: AppFonts.cormorantGaramond(
               fontSize: 34 * scale,
               fontStyle: FontStyle.italic,
               color: kCharcoalColor,
@@ -447,9 +447,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           SizedBox(height: 8 * scale),
           Text(
             tier,
-            style: AppFonts.playfairDisplay(
-              fontSize: 22 * scale,
-              fontStyle: FontStyle.italic,
+            style: AppFonts.cormorantGaramond(
+              fontSize: 20 * scale,
+              fontStyle: FontStyle.normal,
               color: kAccentGold,
             ),
           ),
@@ -466,18 +466,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SizedBox(height: 8 * scale),
             Text(
               _profile!.user.email,
-              style: AppFonts.inter(
-                fontSize: 11 * scale,
-                color: kWarmGrey600,
-              ),
+              style: AppFonts.inter(fontSize: 11 * scale, color: kWarmGrey600),
             ),
             SizedBox(height: 4 * scale),
             Text(
               _profile!.user.phoneNumber,
-              style: AppFonts.inter(
-                fontSize: 11 * scale,
-                color: kWarmGrey600,
-              ),
+              style: AppFonts.inter(fontSize: 11 * scale, color: kWarmGrey600),
             ),
           ],
         ],

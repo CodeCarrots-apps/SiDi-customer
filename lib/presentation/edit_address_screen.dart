@@ -231,7 +231,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                       isEditing ? 'Edit Address Details' : 'Add New Address',
                       style: AppFonts.playfairDisplay(
                         fontSize: 30,
-                        fontStyle: FontStyle.italic,
+                        fontStyle: FontStyle.normal,
                         fontWeight: FontWeight.w400,
                         color: kEspressoColor,
                       ),

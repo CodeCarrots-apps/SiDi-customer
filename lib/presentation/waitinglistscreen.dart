@@ -507,7 +507,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
                   overflow: TextOverflow.ellipsis,
                   style: AppFonts.playfairDisplay(
                     fontSize: 28,
-                    fontStyle: FontStyle.italic,
+                    fontStyle: FontStyle.normal,
                     fontWeight: FontWeight.w400,
                     color: Colors.white,
                   ),
@@ -627,7 +627,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
             'Requested Services',
             style: AppFonts.playfairDisplay(
               fontSize: 24,
-              fontStyle: FontStyle.italic,
+              fontStyle: FontStyle.normal,
               color: kEspressoColor,
             ),
           ),
@@ -706,7 +706,7 @@ class _WaitingListScreenState extends State<WaitingListScreen>
                           : 'Assigning stylist...'),
                   style: AppFonts.playfairDisplay(
                     fontSize: 18,
-                    fontStyle: FontStyle.italic,
+                    fontStyle: FontStyle.normal,
                     fontWeight: FontWeight.w400,
                   ),
                 ),

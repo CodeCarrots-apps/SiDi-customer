@@ -652,7 +652,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
                           as String,
                       style: AppFonts.cormorantGaramond(
                         fontSize: 24,
-                        fontStyle: FontStyle.italic,
+                        fontStyle: FontStyle.normal,
                         height: 1.1,
                       ),
                       maxLines: 2,

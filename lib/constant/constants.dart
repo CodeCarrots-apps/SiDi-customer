@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:sidi/constant/app_fonts.dart';
 
@@ -23,7 +22,8 @@ const Color kSlate950 = Color(0xFF0F172A);
 const Color kAccentGold = Color(0xFFA89078);
 
 // Utility for opacity without using deprecated `withOpacity`
-Color opacity(Color color, double amount) => color.withAlpha((amount * 255).round());
+Color opacity(Color color, double amount) =>
+    color.withAlpha((amount * 255).round());
 
 // Text Styles
 final TextStyle kLabelTextStyle = TextStyle(
@@ -39,7 +39,7 @@ final TextStyle kInputHintStyle = TextStyle(
 );
 
 final TextStyle kHeaderStyle = AppFonts.cormorantGaramond(
-  fontStyle: FontStyle.italic,
+  fontStyle: FontStyle.normal,
   fontSize: 44,
   fontWeight: FontWeight.w500,
   color: kEspressoColor,

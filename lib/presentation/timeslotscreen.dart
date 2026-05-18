@@ -54,7 +54,9 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
     'December',
   ];
 
-  DateTime initialDate = DateTime.now().add(const Duration(days: 1));
+  // DateTime initialDate = DateTime.now().add(const Duration(days: 1));
+  DateTime initialDate = DateTime.now();
+
   late DateTime selectedDate = initialDate;
   String selectedTime = "10:30 AM";
   List<ServiceCartItem> selectedAddonServices = [];
@@ -102,11 +104,28 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
     );
   }
 
+  // bool _isSlotAvailable(DateTime date, String time) {
+  //   final selectedDay = DateTime(date.year, date.month, date.day);
+  //   // API rule: same-day bookings are not allowed — must be tomorrow or later
+  //   if (!selectedDay.isAfter(_today)) {
+  //     return false;
+  //   }
+  //   return true;
+  // }
+
   bool _isSlotAvailable(DateTime date, String time) {
     final selectedDay = DateTime(date.year, date.month, date.day);
-    // API rule: same-day bookings are not allowed — must be tomorrow or later
-    if (!selectedDay.isAfter(_today)) {
-      return false;
+    if (selectedDay.isBefore(_today)) return false;
+    // If today, only show future time slots
+    if (selectedDay == _today) {
+      final now = TimeOfDay.now();
+      final parts = time.split(RegExp(r'[: ]'));
+      var hour = int.parse(parts[0]);
+      final minute = int.parse(parts[1]);
+      final isPm = parts[2] == 'PM';
+      if (isPm && hour != 12) hour += 12;
+      if (!isPm && hour == 12) hour = 0;
+      return hour > now.hour || (hour == now.hour && minute > now.minute);
     }
     return true;
   }
@@ -160,7 +179,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
               "Select Time Slot",
               style: AppFonts.playfairDisplay(
                 fontSize: 24,
-                fontStyle: FontStyle.italic,
+                fontStyle: FontStyle.normal,
               ),
             ),
             actions: const [SizedBox(width: 48)],
@@ -487,7 +506,8 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
               }
 
               final day = days[index - firstWeekdayOffset];
-              final isPast = !day.isAfter(_today);
+              // final isPast = !day.isAfter(_today);
+              final isPast = day.isBefore(_today);
               final isSelected =
                   !isPast &&
                   selectedDate.day == day.day &&

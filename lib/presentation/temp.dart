@@ -216,7 +216,7 @@
 //                   widget.artistName,
 //                   style: AppFonts.cormorantGaramond(
 //                     fontSize: 44,
-//                     fontStyle: FontStyle.italic,
+//                     fontStyle: FontStyle.normal,
 //                     fontWeight: FontWeight.w300,
 //                     color: kEspressoColor,
 //                   ),
@@ -249,7 +249,7 @@
 //                       'The Services',
 //                       style: AppFonts.cormorantGaramond(
 //                         fontSize: 28,
-//                         fontStyle: FontStyle.italic,
+//                         fontStyle: FontStyle.normal,
 //                         color: kEspressoColor,
 //                       ),
 //                     ),
@@ -273,7 +273,7 @@
 //                   '“Simplicity is the ultimate sophistication.”',
 //                   style: AppFonts.cormorantGaramond(
 //                     fontSize: 16,
-//                     fontStyle: FontStyle.italic,
+//                     fontStyle: FontStyle.normal,
 //                     color: opacity(kEspressoColor, 0.6),
 //                   ),
 //                   textAlign: TextAlign.center,

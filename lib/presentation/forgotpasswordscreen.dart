@@ -184,7 +184,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           'Check Your Email',
           style: AppFonts.playfairDisplay(
             fontSize: 24,
-            fontStyle: FontStyle.italic,
+            fontStyle: FontStyle.normal,
             color: kCharcoalColor,
           ),
           textAlign: TextAlign.center,
@@ -192,11 +192,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         const SizedBox(height: 12),
         Text(
           'We\'ve sent a password reset link to ${_emailController.text}. Check your email and follow the link to reset your password.',
-          style: AppFonts.inter(
-            fontSize: 14,
-            color: kWarmGrey600,
-            height: 1.5,
-          ),
+          style: AppFonts.inter(fontSize: 14, color: kWarmGrey600, height: 1.5),
           textAlign: TextAlign.center,
         ),
       ],

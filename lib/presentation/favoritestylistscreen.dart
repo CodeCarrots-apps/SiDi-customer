@@ -395,7 +395,7 @@ class _FavoriteServiceCard extends StatelessWidget {
                           style: AppFonts.inter(
                             fontSize: 11,
                             color: kWarmGrey600,
-                            fontStyle: FontStyle.italic,
+                            fontStyle: FontStyle.normal,
                           ),
                         ),
                       ],

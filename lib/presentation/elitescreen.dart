@@ -50,7 +50,7 @@ class EliteArtistScreen extends StatelessWidget {
                             "Elena Rossi",
                             style: AppFonts.cormorantGaramond(
                               fontSize: 16,
-                              fontStyle: FontStyle.italic,
+                              fontStyle: FontStyle.normal,
                               color: kSlate950,
                             ),
                           ),
@@ -136,7 +136,7 @@ class EliteArtistScreen extends StatelessWidget {
                                           "+14.2%",
                                           style: AppFonts.cormorantGaramond(
                                             fontSize: 12,
-                                            fontStyle: FontStyle.italic,
+                                            fontStyle: FontStyle.normal,
                                             color: kAccentGold,
                                           ),
                                         ),
@@ -307,7 +307,7 @@ class EliteArtistScreen extends StatelessWidget {
                                     "Today's Appointments",
                                     style: AppFonts.cormorantGaramond(
                                       fontSize: 22,
-                                      fontStyle: FontStyle.italic,
+                                      fontStyle: FontStyle.normal,
                                       color: kSlate950,
                                     ),
                                   ),

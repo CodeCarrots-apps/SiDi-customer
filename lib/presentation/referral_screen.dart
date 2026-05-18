@@ -747,7 +747,7 @@ class _ReferralScreenState extends State<ReferralScreen>
                 style: AppFonts.playfairDisplay(
                   fontSize: 16 * scale,
                   color: kAccentGold,
-                  fontStyle: FontStyle.italic,
+                  fontStyle: FontStyle.normal,
                 ),
               ),
             ),
@@ -865,10 +865,7 @@ class _ReferralScreenState extends State<ReferralScreen>
           Text(
             _errorMessage!,
             textAlign: TextAlign.center,
-            style: AppFonts.inter(
-              fontSize: 14 * scale,
-              color: kCharcoalColor,
-            ),
+            style: AppFonts.inter(fontSize: 14 * scale, color: kCharcoalColor),
           ),
           SizedBox(height: 20 * scale),
           OutlinedButton(

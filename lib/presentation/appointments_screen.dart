@@ -378,7 +378,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                 'My Appointments',
                 style: AppFonts.cormorantGaramond(
                   fontSize: 22,
-                  fontStyle: FontStyle.italic,
+                  fontStyle: FontStyle.normal,
                   color: kCharcoalColor,
                 ),
               ),
@@ -431,7 +431,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                           'Appointments',
                           style: AppFonts.cormorantGaramond(
                             fontSize: 36 * scale,
-                            fontStyle: FontStyle.italic,
+                            fontStyle: FontStyle.normal,
                             color: kCharcoalColor,
                           ),
                         ),
@@ -627,7 +627,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                   overflow: TextOverflow.ellipsis,
                   style: AppFonts.cormorantGaramond(
                     fontSize: 24 * scale,
-                    fontStyle: FontStyle.italic,
+                    fontStyle: FontStyle.normal,
                     color: kCharcoalColor,
                   ),
                 ),
@@ -723,7 +723,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                     overflow: TextOverflow.ellipsis,
                     style: AppFonts.cormorantGaramond(
                       fontSize: 24 * scale,
-                      fontStyle: FontStyle.italic,
+                      fontStyle: FontStyle.normal,
                       color: kCharcoalColor,
                     ),
                   ),
@@ -971,7 +971,7 @@ class _AppointmentDetailPageState extends State<_AppointmentDetailPage> {
                     'Cancel Appointment?',
                     style: AppFonts.cormorantGaramond(
                       fontSize: 33,
-                      fontStyle: FontStyle.italic,
+                      fontStyle: FontStyle.normal,
                       height: 0.95,
                       color: kCharcoalColor,
                     ),
@@ -1219,7 +1219,7 @@ class _AppointmentDetailPageState extends State<_AppointmentDetailPage> {
                       overflow: TextOverflow.ellipsis,
                       style: AppFonts.cormorantGaramond(
                         fontSize: 36,
-                        fontStyle: FontStyle.italic,
+                        fontStyle: FontStyle.normal,
                         color: Colors.white,
                         height: 1,
                       ),

@@ -347,7 +347,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               'Confirm Booking',
               style: AppFonts.playfairDisplay(
                 fontSize: 26,
-                fontStyle: FontStyle.italic,
+                fontStyle: FontStyle.normal,
               ),
             ),
             const SizedBox(height: 20),
@@ -715,7 +715,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
           'Saved Addresses',
           style: AppFonts.playfairDisplay(
             fontSize: 34,
-            fontStyle: FontStyle.italic,
+            fontStyle: FontStyle.normal,
             fontWeight: FontWeight.w400,
           ),
         ),
@@ -1057,7 +1057,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
           'Payment Method',
           style: AppFonts.playfairDisplay(
             fontSize: 34,
-            fontStyle: FontStyle.italic,
+            fontStyle: FontStyle.normal,
             fontWeight: FontWeight.w400,
           ),
         ),
@@ -1312,7 +1312,7 @@ class _BookingProgressOverlay extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: AppFonts.playfairDisplay(
                     fontSize: 22,
-                    fontStyle: FontStyle.italic,
+                    fontStyle: FontStyle.normal,
                     fontWeight: FontWeight.w400,
                     color: kEspressoColor,
                     decoration: TextDecoration.none,

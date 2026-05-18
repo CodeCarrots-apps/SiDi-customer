@@ -128,7 +128,7 @@ class _EnhanceSessionScreenState extends State<EnhanceSessionScreen> {
                       'Elevate Your Experience',
                       style: AppFonts.playfairDisplay(
                         fontSize: 20,
-                        fontStyle: FontStyle.italic,
+                        fontStyle: FontStyle.normal,
                         height: 1.03,
                         fontWeight: FontWeight.w500,
                         color: const Color(0xFF17120E),
@@ -344,7 +344,7 @@ class _EnhanceSessionScreenState extends State<EnhanceSessionScreen> {
                                 _formatMoney(_totalInvestment),
                                 style: AppFonts.playfairDisplay(
                                   fontSize: isSmall ? 22 : 24,
-                                  fontStyle: FontStyle.italic,
+                                  fontStyle: FontStyle.normal,
                                   color: const Color(0xFF17120E),
                                 ),
                               ),

@@ -397,7 +397,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               style: AppFonts.cormorantGaramond(
                                 color: Colors.white,
                                 fontSize: 32,
-                                fontStyle: FontStyle.italic,
+                                fontStyle: FontStyle.normal,
                                 fontWeight: FontWeight.w300,
                                 height: 1.2,
                               ),
@@ -492,7 +492,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     "Our Services",
                     style: AppFonts.cormorantGaramond(
                       fontSize: 32,
-                      fontStyle: FontStyle.italic,
+                      fontStyle: FontStyle.normal,
                     ),
                   ),
                   Spacer(),
@@ -600,7 +600,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 "Curated for You",
                 style: AppFonts.cormorantGaramond(
                   fontSize: 32,
-                  fontStyle: FontStyle.italic,
+                  fontStyle: FontStyle.normal,
                 ),
               ),
             ),
@@ -700,7 +700,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 item["curatedServiceTitle"] ?? '',
                                 style: AppFonts.cormorantGaramond(
                                   fontSize: 20,
-                                  fontStyle: FontStyle.italic,
+                                  fontStyle: FontStyle.normal,
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,

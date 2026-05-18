@@ -242,7 +242,7 @@ class _DetailedArtistScreenState extends State<DetailedArtistScreen> {
                       widget.artistName,
                       style: AppFonts.cormorantGaramond(
                         fontSize: 32,
-                        fontStyle: FontStyle.italic,
+                        fontStyle: FontStyle.normal,
                         color: kEspressoColor,
                       ),
                     ),
@@ -257,19 +257,19 @@ class _DetailedArtistScreenState extends State<DetailedArtistScreen> {
                             ),
                           )
                         : Row(
-                            children: List.generate(5, (index) {
-                              final starIndex = index + 1;
-                              final isFilled =
-                                  (_userRating ?? widget.rating) >= starIndex;
-                              return GestureDetector(
-                                onTap: () => _showRatingDialog(starIndex),
-                                child: Icon(
-                                  isFilled ? Icons.star : Icons.star_border,
-                                  color: Colors.amber,
-                                  size: 22,
-                                ),
-                              );
-                            }),
+                            // children: List.generate(5, (index) {
+                            //   final starIndex = index + 1;
+                            //   final isFilled =
+                            //       (_userRating ?? widget.rating) >= starIndex;
+                            //   return GestureDetector(
+                            //     onTap: () => _showRatingDialog(starIndex),
+                            //     child: Icon(
+                            //       isFilled ? Icons.star : Icons.star_border,
+                            //       color: Colors.amber,
+                            //       size: 22,
+                            //     ),
+                            //   );
+                            // }),
                           ),
                   ],
                 ),
@@ -307,7 +307,7 @@ class _DetailedArtistScreenState extends State<DetailedArtistScreen> {
                       'Services',
                       style: AppFonts.cormorantGaramond(
                         fontSize: 28,
-                        fontStyle: FontStyle.italic,
+                        fontStyle: FontStyle.normal,
                         color: kEspressoColor,
                       ),
                     ),

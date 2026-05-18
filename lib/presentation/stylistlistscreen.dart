@@ -69,7 +69,7 @@ class StylistListScreen extends StatelessWidget {
                     'Find Your Nearby Artisans',
                     style: AppFonts.cormorantGaramond(
                       fontSize: 34 * scale,
-                      fontStyle: FontStyle.italic,
+                      fontStyle: FontStyle.normal,
                       color: kCharcoalColor,
                       height: 1,
                     ),

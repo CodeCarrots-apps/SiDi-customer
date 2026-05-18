@@ -402,56 +402,56 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen>
           widget.title,
           style: AppFonts.cormorantGaramond(
             fontSize: 40,
-            fontStyle: FontStyle.italic,
+            fontStyle: FontStyle.normal,
             fontWeight: FontWeight.w300,
             height: 1.1,
             color: kEspressoColor,
           ),
         ),
         const SizedBox(height: 14),
-        Row(
-          children: [
-            ...List.generate(5, (index) {
-              final starIndex = index + 1;
-              return GestureDetector(
-                onTap: () => _submitRating(starIndex),
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 4),
-                  child: Icon(
-                    selectedRating >= starIndex
-                        ? Icons.star_rounded
-                        : Icons.star_outline_rounded,
-                    color: selectedRating >= starIndex
-                        ? Colors.amber
-                        : Colors.grey[300],
-                    size: 28,
-                  ),
-                ),
-              );
-            }),
-            if (isSubmittingRating)
-              const Padding(
-                padding: EdgeInsets.only(left: 8),
-                child: SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              )
-            else if (selectedRating > 0)
-              Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: Text(
-                  'Thanks for rating!',
-                  style: AppFonts.inter(
-                    fontSize: 11,
-                    color: Colors.amber[700],
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-          ],
-        ),
+        // Row(
+        //   children: [
+        //     ...List.generate(5, (index) {
+        //       final starIndex = index + 1;
+        //       return GestureDetector(
+        //         onTap: () => _submitRating(starIndex),
+        //         child: Padding(
+        //           padding: const EdgeInsets.only(right: 4),
+        //           child: Icon(
+        //             selectedRating >= starIndex
+        //                 ? Icons.star_rounded
+        //                 : Icons.star_outline_rounded,
+        //             color: selectedRating >= starIndex
+        //                 ? Colors.amber
+        //                 : Colors.grey[300],
+        //             size: 28,
+        //           ),
+        //         ),
+        //       );
+        //     }),
+        //     if (isSubmittingRating)
+        //       const Padding(
+        //         padding: EdgeInsets.only(left: 8),
+        //         child: SizedBox(
+        //           width: 16,
+        //           height: 16,
+        //           child: CircularProgressIndicator(strokeWidth: 2),
+        //         ),
+        //       )
+        //     else if (selectedRating > 0)
+        //       Padding(
+        //         padding: const EdgeInsets.only(left: 8),
+        //         child: Text(
+        //           'Thanks for rating!',
+        //           style: AppFonts.inter(
+        //             fontSize: 11,
+        //             color: Colors.amber[700],
+        //             fontWeight: FontWeight.w600,
+        //           ),
+        //         ),
+        //       ),
+        //   ],
+        // ),
       ],
     );
   }

@@ -283,14 +283,14 @@ class _BookingScreenState extends State<BookingScreen> {
               },
               style: AppFonts.cormorantGaramond(
                 fontSize: 18 * scale,
-                fontStyle: FontStyle.italic,
+                fontStyle: FontStyle.normal,
                 color: kCharcoalColor,
               ),
               decoration: InputDecoration(
                 hintText: 'Search services or stylists',
                 hintStyle: AppFonts.cormorantGaramond(
                   fontSize: 18 * scale,
-                  fontStyle: FontStyle.italic,
+                  fontStyle: FontStyle.normal,
                   color: kWarmGrey600,
                 ),
                 border: InputBorder.none,
@@ -432,7 +432,7 @@ class _BookingScreenState extends State<BookingScreen> {
       text,
       style: AppFonts.cormorantGaramond(
         fontSize: 32 * scale,
-        fontStyle: FontStyle.italic,
+        fontStyle: FontStyle.normal,
         color: kCharcoalColor,
       ),
     );
@@ -681,7 +681,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   title,
                   style: AppFonts.cormorantGaramond(
                     fontSize: 22 * scale,
-                    fontStyle: FontStyle.italic,
+                    fontStyle: FontStyle.normal,
                     color: Colors.white,
                   ),
                 ),
@@ -817,7 +817,7 @@ class _BookingScreenState extends State<BookingScreen> {
             'Coming Soon: Personalized recommendations based on your style and past bookings.',
             style: AppFonts.cormorantGaramond(
               fontSize: 30 * scale,
-              fontStyle: FontStyle.italic,
+              fontStyle: FontStyle.normal,
               color: kCharcoalColor,
             ),
           ),

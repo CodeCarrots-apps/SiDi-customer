@@ -140,7 +140,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               'NOTIFICATIONS',
               style: AppFonts.cormorantGaramond(
                 fontSize: 22,
-                fontStyle: FontStyle.italic,
+                fontStyle: FontStyle.normal,
                 color: kCharcoalColor,
               ),
             ),
@@ -211,7 +211,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               _dayLabel(currentDay),
               style: AppFonts.cormorantGaramond(
                 fontSize: 18,
-                fontStyle: FontStyle.italic,
+                fontStyle: FontStyle.normal,
                 color: kWarmGrey600,
               ),
             ),
