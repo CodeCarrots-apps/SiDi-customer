@@ -23,6 +23,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   // Colors are provided by lib/constant/constants.dart
   String _selectedLocation = 'KOCHI';
+  final Dio _dio = Dio();
   late Future<List<Map<String, dynamic>>> _categoriesFuture;
   late Future<List<Map<String, dynamic>>> _bannersFuture;
   late Future<List<Map<String, dynamic>>> _curatedServicesFuture;
@@ -38,9 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<List<Map<String, dynamic>>> _fetchCategories() async {
     try {
-      await Future.delayed(const Duration(seconds: 3));
-      final dio = Dio();
-      final response = await dio.get(
+      final response = await _dio.get(
         'https://sidi.mobilegear.co.in/api/categories',
       );
 
@@ -50,7 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
         throw Exception('Failed to load categories');
       }
     } catch (e) {
-      print('Error fetching categories: $e');
+      debugPrint('Error fetching categories: $e');
       rethrow;
     }
   }
@@ -86,9 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<List<Map<String, dynamic>>> _fetchBanners() async {
     try {
-      await Future.delayed(const Duration(seconds: 3));
-      final dio = Dio();
-      final response = await dio.get(
+      final response = await _dio.get(
         'https://sidi.mobilegear.co.in/api/banners',
       );
 
@@ -100,7 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
         throw Exception('Failed to load banners');
       }
     } catch (e) {
-      print('Banner error: $e');
+      debugPrint('Banner error: $e');
       rethrow;
     }
   }
@@ -119,9 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<List<Map<String, dynamic>>> _fetchCuratedServices() async {
     try {
-      await Future.delayed(const Duration(seconds: 3));
-      final dio = Dio();
-      final response = await dio.get(
+      final response = await _dio.get(
         'https://sidi.mobilegear.co.in/api/curated-services',
       );
       if (response.statusCode == 200 &&
@@ -134,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
         throw Exception('Failed to load curated services');
       }
     } catch (e) {
-      print('Error fetching curated services: $e');
+      debugPrint('Error fetching curated services: $e');
       rethrow;
     }
   }
@@ -510,9 +505,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 scrollDirection: Axis.horizontal,
                 itemCount: services.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (context, index) {
-                  final service = services[index];
+                separatorBuilder: (context, index) => const SizedBox(width: 12),
+                itemBuilder: (context, idx) {
+                  final service = services[idx];
                   return InkWell(
                     borderRadius: BorderRadius.circular(6),
                     onTap: () =>
@@ -617,9 +612,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     scrollDirection: Axis.horizontal,
                     itemCount: curated.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 24),
-                    itemBuilder: (context, index) {
-                      final item = curated[index];
+                    separatorBuilder: (context, index) => const SizedBox(width: 24),
+                    itemBuilder: (context, idx) {
+                      final item = curated[idx];
                       final imageUrl =
                           item["image1"] != null &&
                               item["image1"].toString().isNotEmpty
@@ -813,8 +808,8 @@ class _HomeScreenState extends State<HomeScreen> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: 3,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (_, __) => Container(
+                separatorBuilder: (context, index) => const SizedBox(width: 12),
+                itemBuilder: (context, index) => Container(
                   width: 160,
                   decoration: BoxDecoration(
                     color: Colors.grey[300],
@@ -865,8 +860,8 @@ class _HomeScreenState extends State<HomeScreen> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: 2,
-                separatorBuilder: (_, __) => const SizedBox(width: 24),
-                itemBuilder: (_, __) => Container(
+                separatorBuilder: (context, index) => const SizedBox(width: 24),
+                itemBuilder: (context, index) => Container(
                   width: 260,
                   decoration: BoxDecoration(
                     color: Colors.grey[300],

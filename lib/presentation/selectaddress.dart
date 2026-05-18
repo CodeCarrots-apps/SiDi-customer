@@ -268,35 +268,46 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
     return '${hour.toString().padLeft(2, '0')}:$minute';
   }
 
+  // Future<void> _confirmAppointment() async {
+  //   if (_addresses.isEmpty) return;
+
+  //   final confirmed = await _showConfirmationSheet();
+  //   if (!confirmed) return;
+
+  //   // Validate that booking is not for today (API requirement)
+  //   final today = DateTime.now();
+  //   final todayDate = DateTime(today.year, today.month, today.day);
+  //   final selectedDateParts = widget.selectedDateIso.split('-');
+  //   final selectedDateOnly = DateTime(
+  //     int.parse(selectedDateParts[0]),
+  //     int.parse(selectedDateParts[1]),
+  //     int.parse(selectedDateParts[2]),
+  //   );
+
+  //   setState(() => _isBooking = true);
+
+  //   try {
+  //     await _runBookingFlow();
+  //   } catch (e) {
+  //     debugPrint('Unexpected booking error: $e');
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(
+  //           content: Text('Something went wrong. Please try again.'),
+  //           duration: Duration(seconds: 3),
+  //         ),
+  //       );
+  //     }
+  //   } finally {
+  //     if (mounted) setState(() => _isBooking = false);
+  //   }
+  // }
+
   Future<void> _confirmAppointment() async {
     if (_addresses.isEmpty) return;
 
     final confirmed = await _showConfirmationSheet();
     if (!confirmed) return;
-
-    // Validate that booking is not for today (API requirement)
-    final today = DateTime.now();
-    final todayDate = DateTime(today.year, today.month, today.day);
-    final selectedDateParts = widget.selectedDateIso.split('-');
-    final selectedDateOnly = DateTime(
-      int.parse(selectedDateParts[0]),
-      int.parse(selectedDateParts[1]),
-      int.parse(selectedDateParts[2]),
-    );
-
-    if (selectedDateOnly.isAtSameMomentAs(todayDate)) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Bookings must be made for the next day or later. Same-day bookings are not allowed.',
-            ),
-            duration: Duration(seconds: 4),
-          ),
-        );
-      }
-      return;
-    }
 
     setState(() => _isBooking = true);
 
@@ -320,6 +331,11 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
   Future<bool> _showConfirmationSheet() async {
     if (_addresses.isEmpty) return false;
     final address = _addresses[selectedAddressIndex];
+    final serviceLabel = <String>[
+      widget.serviceTitle,
+      ..._addonServices.map((item) => item.title),
+    ].join(', ');
+
     final result = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Colors.white,
@@ -351,7 +367,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            _confirmRow(Icons.spa_outlined, 'Service', widget.serviceTitle),
+            _confirmRow(Icons.spa_outlined, 'Service', serviceLabel),
             if (widget.servicePrice.isNotEmpty)
               _confirmRow(
                 Icons.payments_outlined,
@@ -383,7 +399,10 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
                     ),
                     child: Text(
                       'Cancel',
-                      style: AppFonts.inter(fontWeight: FontWeight.w600),
+                      style: AppFonts.inter(
+                        fontWeight: FontWeight.w600,
+                        color: kEspressoColor,
+                      ),
                     ),
                   ),
                 ),

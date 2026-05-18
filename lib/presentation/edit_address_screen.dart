@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:location/location.dart';
 import 'package:sidi/constant/app_fonts.dart';
+// import 'location_search_screen.dart'; // adjust path as needed
 
 import '../models/address_model.dart';
 import '../models/edit_result.dart';
@@ -64,6 +65,128 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
     Navigator.pop(context, const EditResult<AddressModel>(deleted: true));
   }
 
+  // Future<void> _fetchCurrentLocation() async {
+  //   debugPrint('Fetching current location...');
+  //   setState(() {
+  //     _isFetchingLocation = true;
+  //     _locationErrorText = null;
+  //   });
+
+  //   try {
+  //     var serviceEnabled = await _location.serviceEnabled();
+  //     if (!serviceEnabled) {
+  //       serviceEnabled = await _location.requestService();
+  //       if (!serviceEnabled) {
+  //         throw Exception('Location service is turned off on this device.');
+  //       }
+  //     }
+
+  //     var permissionStatus = await _location.hasPermission();
+  //     if (permissionStatus == PermissionStatus.denied) {
+  //       permissionStatus = await _location.requestPermission();
+  //     }
+
+  //     if (permissionStatus != PermissionStatus.granted &&
+  //         permissionStatus != PermissionStatus.grantedLimited) {
+  //       throw Exception(
+  //         permissionStatus == PermissionStatus.deniedForever
+  //             ? 'Location permission is permanently denied. Enable it from app settings.'
+  //             : 'Location permission denied. Please allow location access.',
+  //       );
+  //     }
+
+  //     await _location.changeSettings(
+  //       accuracy: LocationAccuracy.high,
+  //       interval: 1000,
+  //       distanceFilter: 0,
+  //     );
+
+  //     final currentLocation = await _location.getLocation().timeout(
+  //       const Duration(seconds: 30),
+  //     );
+
+  //     final lat = currentLocation.latitude;
+  //     final lon = currentLocation.longitude;
+  //     debugPrint('Current coordinates: lat=$lat, lon=$lon');
+  //     if (lat == null || lon == null) {
+  //       throw Exception('Unable to fetch current coordinates');
+  //     }
+
+  //     var address = '';
+
+  //     try {
+  //       final response = await _dio.get(
+  //         'https://sidi.mobilegear.co.in/api/mobileapp/services/location',
+  //         queryParameters: {'lat': lat, 'lng': lon},
+  //       );
+  //       debugPrint('Primary location API response: ${response.data}');
+
+  //       final data = response.data as Map<String, dynamic>;
+  //       if (data['success'] == true) {
+  //         final locationData = data['location'] as Map<String, dynamic>?;
+  //         address = (locationData?['address'] as String?)?.trim() ?? '';
+  //         if (address.isEmpty && locationData != null) {
+  //           final city = (locationData['city'] as String?)?.trim();
+  //           final state = (locationData['state'] as String?)?.trim();
+  //           final country = (locationData['country'] as String?)?.trim();
+  //           final postalCode = (locationData['postalCode'] as String?)?.trim();
+  //           address = [
+  //             city,
+  //             state,
+  //             country,
+  //             postalCode,
+  //           ].where((part) => part != null && part.isNotEmpty).join(', ');
+  //         }
+  //         debugPrint('Resolved address from primary API: $address');
+  //       }
+  //     } catch (error) {
+  //       debugPrint('Primary location API failed: $error');
+  //       // Fall back to reverse geocoding when the primary location API fails.
+  //     }
+
+  //     if (address.isEmpty) {
+  //       final reverseResponse = await _dio.get(
+  //         'https://nominatim.openstreetmap.org/reverse',
+  //         queryParameters: {'lat': lat, 'lon': lon, 'format': 'jsonv2'},
+  //         options: Options(
+  //           headers: {
+  //             'User-Agent': 'SiDiCustomerApp/1.0 (edit-address)',
+  //             'Accept-Language': 'en',
+  //           },
+  //         ),
+  //       );
+  //       debugPrint('Reverse geocode response: ${reverseResponse.data}');
+
+  //       final reverseData = reverseResponse.data as Map<String, dynamic>;
+  //       address = (reverseData['display_name'] as String?)?.trim() ?? '';
+  //     }
+
+  //     if (address.isEmpty) {
+  //       throw Exception(
+  //         'Could not resolve a readable address from your location.',
+  //       );
+  //     }
+
+  //     if (!mounted) {
+  //       return;
+  //     }
+
+  //     setState(() {
+  //       _isFetchingLocation = false;
+  //       _line2Controller.text = address;
+  //     });
+  //   } catch (error) {
+  //     debugPrint('Current location fetch failed: $error');
+  //     if (!mounted) {
+  //       return;
+  //     }
+  //     setState(() {
+  //       _isFetchingLocation = false;
+  //       _locationErrorText = error.toString().replaceFirst('Exception: ', '');
+  //     });
+  //   }
+  // }
+
   Future<void> _fetchCurrentLocation() async {
     setState(() {
       _isFetchingLocation = true;
@@ -93,48 +216,38 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
         );
       }
 
+      await _location.changeSettings(
+        accuracy: LocationAccuracy.balanced,
+        interval: 1000,
+        distanceFilter: 0,
+      );
+
       final currentLocation = await _location.getLocation().timeout(
-        const Duration(seconds: 12),
+        const Duration(seconds: 45),
+        onTimeout: () => throw Exception(
+          'Location timed out. Try enabling WiFi or moving to an open area.',
+        ),
       );
 
       final lat = currentLocation.latitude;
       final lon = currentLocation.longitude;
       if (lat == null || lon == null) {
-        throw Exception('Unable to fetch current coordinates');
+        throw Exception('Unable to fetch current coordinates.');
       }
 
-      var address = '';
+      final response = await _dio.get(
+        'https://nominatim.openstreetmap.org/reverse',
+        queryParameters: {'lat': lat, 'lon': lon, 'format': 'jsonv2'},
+        options: Options(
+          headers: {
+            'User-Agent': 'SiDiCustomerApp/1.0 (edit-address)',
+            'Accept-Language': 'en',
+          },
+        ),
+      );
 
-      try {
-        final response = await _dio.get(
-          'https://sidi.mobilegear.co.in/api/mobileapp/services/location',
-          queryParameters: {'lat': lat, 'lng': lon},
-        );
-
-        final data = response.data as Map<String, dynamic>;
-        if (data['success'] == true) {
-          final locationData = data['location'] as Map<String, dynamic>?;
-          address = (locationData?['address'] as String?)?.trim() ?? '';
-        }
-      } catch (_) {
-        // Fall back to reverse geocoding when the primary location API fails.
-      }
-
-      if (address.isEmpty) {
-        final reverseResponse = await _dio.get(
-          'https://nominatim.openstreetmap.org/reverse',
-          queryParameters: {'lat': lat, 'lon': lon, 'format': 'jsonv2'},
-          options: Options(
-            headers: {
-              'User-Agent': 'SiDiCustomerApp/1.0 (edit-address)',
-              'Accept-Language': 'en',
-            },
-          ),
-        );
-
-        final reverseData = reverseResponse.data as Map<String, dynamic>;
-        address = (reverseData['display_name'] as String?)?.trim() ?? '';
-      }
+      final data = response.data as Map<String, dynamic>;
+      final address = (data['display_name'] as String?)?.trim() ?? '';
 
       if (address.isEmpty) {
         throw Exception(
@@ -142,19 +255,14 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
         );
       }
 
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       setState(() {
         _isFetchingLocation = false;
         _line2Controller.text = address;
       });
     } catch (error) {
-      debugPrint('Current location fetch failed: $error');
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       setState(() {
         _isFetchingLocation = false;
         _locationErrorText = error.toString().replaceFirst('Exception: ', '');
@@ -238,7 +346,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Update where your service should reach',
+                      'Update where your beautician should reach',
                       style: AppFonts.inter(
                         fontSize: 13,
                         color: kWarmGrey600,
@@ -268,7 +376,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                             width: 36,
                             height: 36,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFF7A00),
+                              color: const Color(0xFFC3A76D),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Icon(
@@ -292,7 +400,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Your order will be delivered to this location',
+                                  'Your beautician will arrive at this location',
                                   style: AppFonts.inter(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
@@ -313,11 +421,15 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                             ? null
                             : _fetchCurrentLocation,
                         icon: _isFetchingLocation
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 16,
                                 height: 16,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
+                                  valueColor:
+                                      const AlwaysStoppedAnimation<Color>(
+                                        Color(0xFFC3A76D),
+                                      ),
                                 ),
                               )
                             : const Icon(Icons.my_location),
@@ -332,8 +444,8 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: kEspressoColor,
-                          side: BorderSide(color: opacity(kEspressoColor, 0.2)),
+                          foregroundColor: const Color(0xFFC3A76D),
+                          side: const BorderSide(color: Color(0xFFE8DFD0)),
                           padding: const EdgeInsets.symmetric(vertical: 13),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
@@ -425,8 +537,8 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                 child: ElevatedButton(
                   onPressed: _canSave ? _save : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF7A00),
-                    disabledBackgroundColor: const Color(0xFFF4C9A1),
+                    backgroundColor: const Color(0xFFC3A76D),
+                    disabledBackgroundColor: const Color(0xFFE8DFD0),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -463,17 +575,17 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFFFF2E5) : Colors.white,
+          color: selected ? const Color(0xFFFAF7F2) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: selected ? const Color(0xFFFF7A00) : const Color(0xFFE9E7E4),
+            color: selected ? const Color(0xFFC3A76D) : const Color(0xFFE8E5DF),
             width: selected ? 1.5 : 1,
           ),
         ),
         child: Text(
           label,
           style: AppFonts.inter(
-            color: selected ? const Color(0xFFFF7A00) : kWarmGrey600,
+            color: selected ? const Color(0xFFC3A76D) : kWarmGrey600,
             fontWeight: FontWeight.w700,
             fontSize: 12,
             letterSpacing: 0.6,
@@ -529,7 +641,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
-                color: Color(0xFFFF7A00),
+                color: Color(0xFFC3A76D),
                 width: 1.4,
               ),
             ),

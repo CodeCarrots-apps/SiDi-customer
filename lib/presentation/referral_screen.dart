@@ -76,80 +76,75 @@ class _ReferralScreenState extends State<ReferralScreen>
     });
 
     final token = await TokenStorage.getToken();
+
     if (token == null || token.isEmpty) {
-      if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Authentication token is missing.';
+        _errorMessage = 'Authentication token missing';
       });
       return;
     }
 
     try {
       final response = await _dio.get<Map<String, dynamic>>(
-        AppConstants.referralWallet,
+        'https://sidi.mobilegear.co.in/api/mobileapp/referral/details',
         options: Options(
-          headers: <String, dynamic>{
-            'Content-Type': 'application/json',
+          headers: {
             'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
           },
         ),
       );
 
-      final data = response.data ?? <String, dynamic>{};
-      if (response.statusCode == 200 && data['success'] == true) {
-        final wallet = ReferralWallet.fromJson(
-          data['data'] as Map<String, dynamic>? ?? data,
+      final responseData = response.data;
+
+      if (response.statusCode == 200 &&
+          responseData != null &&
+          responseData['success'] == true) {
+        final data = responseData['data'] as Map<String, dynamic>;
+
+        final stats = data['stats'] as Map<String, dynamic>? ?? {};
+
+        final wallet = ReferralWallet(
+          referralCode: data['referralCode'] ?? 'SIDIUSER',
+          pointsBalance: stats['walletPoints'] ?? 0,
+          pointsToRedeem: 100,
+          totalReferrals: stats['totalReferrals'] ?? 0,
+          history: (data['referrals'] as List<dynamic>? ?? [])
+              .map(
+                (e) => ReferralEntry(
+                  referredName:
+                      e['referredUsername'] ??
+                      'Unknown', // was referredUserName
+                  pointsEarned: e['rewardPoints'] ?? 0, // was pointsEarned
+                  date: e['createdAt'] ?? DateTime.now().toIso8601String(),
+                  status: e['rewardStatus'] ?? 'pending', // was status
+                ),
+              )
+              .toList(),
         );
+
         if (!mounted) return;
+
         setState(() {
           _wallet = wallet;
           _isLoading = false;
         });
+
         _runEntryAnimations(wallet.progressFraction);
       } else {
         _handleError(
-          (data['message'] as String?) ?? 'Unable to load referral data.',
+          responseData?['message'] ?? 'Failed to load referral details',
         );
       }
-    } on DioException catch (error) {
-      // ── Fallback: use demo data so the screen is still usable ──────────────
-      // Remove this block once the API is live and replace with _handleError().
-      final demoWallet = ReferralWallet(
-        referralCode: 'SIDI-DEMO',
-        pointsBalance: 180,
-        pointsToRedeem: 500,
-        totalReferrals: 3,
-        history: [
-          ReferralEntry(
-            referredName: 'Amara J.',
-            pointsEarned: 50,
-            date: '2026-05-01T00:00:00.000Z',
-            status: 'completed',
-          ),
-          ReferralEntry(
-            referredName: 'Priya M.',
-            pointsEarned: 50,
-            date: '2026-04-20T00:00:00.000Z',
-            status: 'completed',
-          ),
-          ReferralEntry(
-            referredName: 'Lena R.',
-            pointsEarned: 80,
-            date: '2026-05-10T00:00:00.000Z',
-            status: 'pending',
-          ),
-        ],
+    } on DioException catch (e) {
+      _handleError(
+        e.response?.data?['message'] ??
+            e.message ??
+            'Failed to fetch referral data',
       );
-      if (!mounted) return;
-      setState(() {
-        _wallet = demoWallet;
-        _isLoading = false;
-      });
-      _runEntryAnimations(demoWallet.progressFraction);
-      debugPrint('[ReferralScreen] API unavailable, using demo data: $error');
-    } catch (_) {
-      _handleError('Something went wrong. Please try again.');
+    } catch (e) {
+      _handleError(e.toString());
     }
   }
 
@@ -188,14 +183,51 @@ class _ReferralScreenState extends State<ReferralScreen>
   }
 
   Future<void> _shareCode() async {
-    final code = _wallet?.referralCode ?? '';
-    if (code.isEmpty) return;
-    await Share.share(
-      'Join SiDi and get premium beauty services! Use my referral code $code '
-      'when you sign up and we both earn reward points. '
-      'Download SiDi now! 💅',
-      subject: 'Join SiDi with my referral code',
-    );
+    final wallet = _wallet;
+
+    if (wallet == null) return;
+
+    final code = wallet.referralCode.trim();
+
+    if (code.isEmpty || code == '------') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Referral code unavailable',
+            style: AppFonts.inter(color: Colors.white),
+          ),
+        ),
+      );
+      return;
+    }
+
+    final message =
+        '''
+✨ Join SiDi Beauty ✨
+
+Use my referral code:
+
+$code
+
+Earn rewards when you sign up and book services.
+
+Download the app now!
+''';
+
+    try {
+      await Share.share(message, subject: 'Join SiDi with my referral code');
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Unable to open share dialog',
+            style: AppFonts.inter(color: Colors.white),
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _redeemPoints() async {

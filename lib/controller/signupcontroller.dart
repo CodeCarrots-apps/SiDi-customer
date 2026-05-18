@@ -110,6 +110,7 @@ class RegisterController extends GetxController {
   String phone = '';
   String password = '';
   String confirmPassword = '';
+  String referralCode = '';
 
   bool isLoading = false;
   String? errorMessage;
@@ -137,6 +138,8 @@ class RegisterController extends GetxController {
           'password': password,
           if (confirmPassword.trim().isNotEmpty)
             'confirmPassword': confirmPassword,
+          if (referralCode.trim().isNotEmpty)
+            'referralCode': referralCode.trim(),
         },
       );
 

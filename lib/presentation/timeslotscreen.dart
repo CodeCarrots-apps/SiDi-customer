@@ -115,9 +115,14 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
 
   bool _isSlotAvailable(DateTime date, String time) {
     final selectedDay = DateTime(date.year, date.month, date.day);
+
+    // Block strictly past days
     if (selectedDay.isBefore(_today)) return false;
-    // If today, only show future time slots
-    if (selectedDay == _today) {
+
+    // For today, only show time slots that haven't passed yet
+    if (selectedDay.year == _today.year &&
+        selectedDay.month == _today.month &&
+        selectedDay.day == _today.day) {
       final now = TimeOfDay.now();
       final parts = time.split(RegExp(r'[: ]'));
       var hour = int.parse(parts[0]);
@@ -127,6 +132,7 @@ class _SelectTimeSlotScreenState extends State<SelectTimeSlotScreen> {
       if (!isPm && hour == 12) hour = 0;
       return hour > now.hour || (hour == now.hour && minute > now.minute);
     }
+
     return true;
   }
 

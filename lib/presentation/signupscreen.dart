@@ -20,6 +20,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+  final TextEditingController _referralCodeController = TextEditingController();
 
   bool _isSubmitting = false;
 
@@ -30,6 +31,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _referralCodeController.dispose();
     super.dispose();
   }
 
@@ -39,6 +41,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final phone = _phoneController.text.trim();
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
+    final referralCode = _referralCodeController.text.trim();
 
     if (name.isEmpty ||
         email.isEmpty ||
@@ -68,6 +71,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _registerController.phone = _phoneController.text.trim();
     _registerController.password = password;
     _registerController.confirmPassword = confirmPassword;
+    _registerController.referralCode = referralCode;
 
     final result = await _registerController.register();
 
@@ -190,6 +194,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
           '••••••••',
           obscureText: true,
           controller: _confirmPasswordController,
+        ),
+        const SizedBox(height: 16),
+        _buildInputField(
+          'Referral Code',
+          'REFERRAL_CODE_HERE',
+          controller: _referralCodeController,
         ),
         const SizedBox(height: 22),
         SizedBox(
