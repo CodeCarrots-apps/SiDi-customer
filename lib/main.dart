@@ -8,7 +8,14 @@ import 'package:sidi/services/appointments_sync_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
+
+  try {
+    BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
+    debugPrint('[main] BackgroundFetch headless task registered');
+  } catch (e) {
+    debugPrint('[main] BackgroundFetch headless registration error: $e');
+  }
+
   await AppointmentsSyncService.initialize();
   runApp(const MainApp());
 }

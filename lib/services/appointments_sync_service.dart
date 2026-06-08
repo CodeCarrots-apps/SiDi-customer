@@ -46,18 +46,28 @@ class AppointmentsSyncService {
     await LocalNotificationsService.initialize();
     await _emitCachedState();
 
-    await BackgroundFetch.configure(
-      BackgroundFetchConfig(
-        minimumFetchInterval: 15,
-        stopOnTerminate: false,
-        enableHeadless: true,
-        startOnBoot: true,
-        requiresBatteryNotLow: false,
-        requiredNetworkType: NetworkType.ANY,
-      ),
-      _onBackgroundFetch,
-      _onBackgroundFetchTimeout,
-    );
+    try {
+      await BackgroundFetch.configure(
+        BackgroundFetchConfig(
+          minimumFetchInterval: 15,
+          stopOnTerminate: false,
+          enableHeadless: true,
+          startOnBoot: true,
+          requiresBatteryNotLow: false,
+          requiredNetworkType: NetworkType.ANY,
+        ),
+        _onBackgroundFetch,
+        _onBackgroundFetchTimeout,
+      );
+      debugPrint(
+        '[AppointmentsSyncService] BackgroundFetch configured successfully',
+      );
+    } catch (e) {
+      debugPrint(
+        '[AppointmentsSyncService] BackgroundFetch configure error: $e',
+      );
+      // Continue without background fetch - foreground polling will handle sync
+    }
 
     _startForegroundPolling();
     await syncBookings();
@@ -420,11 +430,18 @@ void backgroundFetchHeadlessTask(HeadlessEvent task) async {
   final taskId = task.taskId;
 
   if (task.timeout) {
+    debugPrint('[backgroundFetchHeadlessTask] Timeout for task $taskId');
     BackgroundFetch.finish(taskId);
     return;
   }
 
-  await AppointmentsSyncService.initialize();
-  await AppointmentsSyncService.syncBookings(fromBackground: true);
-  BackgroundFetch.finish(taskId);
+  try {
+    await AppointmentsSyncService.initialize();
+    await AppointmentsSyncService.syncBookings(fromBackground: true);
+    debugPrint('[backgroundFetchHeadlessTask] Completed sync for task $taskId');
+  } catch (e) {
+    debugPrint('[backgroundFetchHeadlessTask] Error during sync: $e');
+  } finally {
+    BackgroundFetch.finish(taskId);
+  }
 }
