@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:sidi/constant/app_fonts.dart';
 import 'package:location/location.dart';
 import 'package:sidi/constant/constants.dart';
@@ -14,10 +16,11 @@ import '../models/booking_models.dart';
 import '../models/edit_result.dart';
 import '../services/booking_service.dart';
 import '../services/appointments_sync_service.dart';
-import '../models/payment_method_model.dart';
 import '../services/local_storage_service.dart';
 import 'edit_address_screen.dart';
-import 'edit_payment_method_screen.dart';
+import '../controller/payment_controller.dart';
+import '../controller/wallet_controller.dart';
+import '../services/payment_service.dart';
 
 class SelectAddressScreen extends StatefulWidget {
   const SelectAddressScreen({
@@ -50,13 +53,13 @@ class SelectAddressScreen extends StatefulWidget {
 }
 
 class _SelectAddressScreenState extends State<SelectAddressScreen> {
+  final PaymentController paymentController = Get.put(PaymentController());
+
   int selectedAddressIndex = 0;
-  int selectedPaymentIndex = 0;
   bool _isLoading = true;
   bool _isBooking = false;
 
   List<AddressModel> _addresses = [];
-  List<PaymentMethodModel> _paymentMethods = [];
 
   @override
   Widget build(BuildContext context) {
@@ -103,16 +106,11 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
                               _buildPaymentHeader(),
                               const SizedBox(height: 18),
                               ...List.generate(
-                                _paymentMethods.length,
+                                paymentController.options.length,
                                 (index) => Padding(
                                   padding: const EdgeInsets.only(bottom: 16),
                                   child: _buildPaymentCard(index),
                                 ),
-                              ),
-                              _buildAddTile(
-                                icon: Icons.add,
-                                label: 'Add New Payment',
-                                onTap: () => _openPaymentEditor(),
                               ),
                               const SizedBox(height: 32),
                             ],
@@ -158,13 +156,9 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
 
   Future<void> _loadSavedData() async {
     final addresses = await LocalStorageService.loadAddresses();
-    final payments = await LocalStorageService.loadPaymentMethods();
 
     setState(() {
-      _addresses = addresses.isNotEmpty ? addresses : _defaultAddresses();
-      _paymentMethods = payments.isNotEmpty
-          ? payments
-          : _defaultPaymentMethods();
+      _addresses = addresses;
       _isLoading = false;
     });
   }
@@ -173,9 +167,6 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
     await LocalStorageService.saveAddresses(_addresses);
   }
 
-  Future<void> _savePaymentMethods() async {
-    await LocalStorageService.savePaymentMethods(_paymentMethods);
-  }
 
   // ── Add-on helpers ──────────────────────────────────────────────────────────
 
@@ -306,6 +297,40 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
   Future<void> _confirmAppointment() async {
     if (_addresses.isEmpty) return;
 
+    final totalStr = _displayTotalPrice;
+
+    if (totalStr.isNotEmpty &&
+        paymentController.selected.type == PaymentOptionType.wallet) {
+      final walletCtrl = Get.find<WalletController>();
+      final balance = walletCtrl.wallet.value?.balance ?? 0;
+      final total = _parsePrice(totalStr);
+
+      if (balance < total) {
+        if (!mounted) return;
+        final splitConfirmed = await _showSplitPaymentSheet(balance, total);
+        if (!splitConfirmed) return;
+        final confirmed = await _showConfirmationSheet();
+        if (!confirmed) return;
+        setState(() => _isBooking = true);
+        try {
+          await _runBookingFlow();
+        } catch (e) {
+          debugPrint('Unexpected booking error: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Something went wrong. Please try again.'),
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        } finally {
+          if (mounted) setState(() => _isBooking = false);
+        }
+        return;
+      }
+    }
+
     final confirmed = await _showConfirmationSheet();
     if (!confirmed) return;
 
@@ -385,6 +410,13 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
               widget.selectedTime,
             ),
             _confirmRow(Icons.location_on_outlined, 'Address', address.line1),
+            _confirmRow(
+              Icons.payment_outlined,
+              'Payment',
+              paymentController.isSplitPayment.value
+                  ? 'Wallet + ${paymentController.splitOption.label.replaceAll('Pay Using ', '')}'
+                  : paymentController.selected.label,
+            ),
             const SizedBox(height: 24),
             Row(
               children: [
@@ -494,6 +526,42 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
       return;
     }
 
+    final totalStr = _displayTotalPrice;
+    if (totalStr.isNotEmpty) {
+      final total = _parsePrice(totalStr);
+      final bookingId = response.booking?.id ?? 'booking-${DateTime.now().millisecondsSinceEpoch}';
+      final WalletController? walletCtrl;
+      if (paymentController.selected.type == PaymentOptionType.wallet) {
+        walletCtrl = Get.find<WalletController>();
+      } else {
+        walletCtrl = null;
+      }
+      final paymentResult = await PaymentService.processPayment(
+        paymentCtrl: paymentController,
+        walletCtrl: walletCtrl,
+        totalAmount: total,
+        bookingId: bookingId,
+        serviceName: widget.serviceTitle,
+        context: context,
+      );
+
+      if (paymentResult != PaymentResult.success) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFFD32F2F),
+            content: Text(
+              paymentResult == PaymentResult.cancelled
+                  ? 'UPI payment was cancelled.'
+                  : 'Payment failed. Please try again.',
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+    }
+
     final status = (response.booking?.status ?? '').toLowerCase().trim();
     final isWaitingList = <String>{
       'pending',
@@ -586,45 +654,6 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
     );
   }
 
-  List<AddressModel> _defaultAddresses() {
-    return [
-      AddressModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        label: 'HOME',
-        line1: '123 Elegant Ave, Penthouse 4B',
-        line2: 'New York, NY 10012',
-      ),
-      AddressModel(
-        id: (DateTime.now().millisecondsSinceEpoch + 1).toString(),
-        label: 'OFFICE',
-        line1: '456 Corporate Plaza, Suite 200',
-        line2: 'Manhattan, NY 10001',
-      ),
-    ];
-  }
-
-  List<PaymentMethodModel> _defaultPaymentMethods() {
-    return [
-      PaymentMethodModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        label: 'Apple Pay',
-        details: '',
-        brand: 'apple',
-      ),
-      PaymentMethodModel(
-        id: (DateTime.now().millisecondsSinceEpoch + 1).toString(),
-        label: 'Visa ending in 4242',
-        details: '',
-        brand: 'visa',
-      ),
-      PaymentMethodModel(
-        id: (DateTime.now().millisecondsSinceEpoch + 2).toString(),
-        label: 'Cash Onsite',
-        details: 'Pay cash at appointment',
-        brand: 'cash',
-      ),
-    ];
-  }
 
   Future<void> _openAddressEditor({AddressModel? address, int? index}) async {
     final result = await Navigator.push<EditResult<AddressModel>>(
@@ -658,41 +687,320 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
     await _saveAddresses();
   }
 
-  Future<void> _openPaymentEditor({
-    PaymentMethodModel? paymentMethod,
-    int? index,
-  }) async {
-    final result = await Navigator.push<EditResult<PaymentMethodModel>>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => EditPaymentMethodScreen(paymentMethod: paymentMethod),
+  Future<bool> _showSplitPaymentSheet(double balance, double total) async {
+    final f = NumberFormat.currency(symbol: '\u20B9', decimalDigits: 0);
+    final remainder = total - balance;
+
+    paymentController.enableSplit(balance, total);
+
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetCtx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Center(
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: kAccentGold.withAlpha(25),
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                  child: const Icon(
+                    Icons.account_balance_wallet_rounded,
+                    size: 28,
+                    color: kAccentGold,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Center(
+                child: Text(
+                  'Split Payment',
+                  style: AppFonts.playfairDisplay(
+                    fontSize: 24,
+                    fontStyle: FontStyle.normal,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Center(
+                child: Text(
+                  'Your wallet balance covers part of the total.',
+                  textAlign: TextAlign.center,
+                  style: AppFonts.inter(
+                    fontSize: 13,
+                    color: kWarmGrey600,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: kWarmGrey50,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: kEspressoColor,
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      child: const Icon(
+                        Icons.account_balance_wallet_rounded,
+                        size: 18,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Pay from Wallet',
+                            style: AppFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: kEspressoColor,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            f.format(balance),
+                            style: AppFonts.inter(
+                              fontSize: 13,
+                              color: kWarmGrey600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      '-${f.format(balance)}',
+                      style: AppFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: kEspressoColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: kWarmGrey100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.add_rounded,
+                    size: 16,
+                    color: kWarmGrey600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: kWarmGrey50,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: kAccentGold.withAlpha(25),
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      child: Icon(
+                        paymentController.options[
+                                paymentController.splitIndex.value]
+                            .icon,
+                        size: 18,
+                        color: kAccentGold,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Remaining via',
+                            style: AppFonts.inter(
+                              fontSize: 11,
+                              color: kWarmGrey600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: List.generate(
+                              paymentController.options.length,
+                              (i) {
+                                if (i == 0) return const SizedBox.shrink();
+                                final active =
+                                    paymentController.splitIndex.value == i;
+                                return Padding(
+                                  padding: EdgeInsets.only(right: 8),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      paymentController.selectSplitMethod(i);
+                                      setSheetState(() {});
+                                    },
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: active
+                                            ? kEspressoColor
+                                            : Colors.transparent,
+                                        borderRadius:
+                                            BorderRadius.circular(100),
+                                        border: Border.all(
+                                          color: active
+                                              ? kEspressoColor
+                                              : kWarmGrey200,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        paymentController.options[i].label
+                                            .replaceAll('Pay Using ', ''),
+                                        style: AppFonts.inter(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w500,
+                                          color: active
+                                              ? Colors.white
+                                              : kCharcoalColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      '+${f.format(remainder)}',
+                      style: AppFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: kAccentGold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 4),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Total',
+                      style: AppFonts.inter(
+                        fontSize: 13,
+                        color: kWarmGrey600,
+                      ),
+                    ),
+                    Text(
+                      f.format(total),
+                      style: AppFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: kCharcoalColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(52),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: AppFonts.inter(
+                          fontWeight: FontWeight.w600,
+                          color: kEspressoColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: kEspressoColor,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size.fromHeight(52),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                      ),
+                      child: Text(
+                        'Confirm Split',
+                        style: AppFonts.inter(
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
-
-    if (result == null) return;
-    if (result.deleted) {
-      if (index != null) {
-        setState(() {
-          _paymentMethods.removeAt(index);
-          selectedPaymentIndex = _paymentMethods.isEmpty
-              ? 0
-              : selectedPaymentIndex.clamp(0, _paymentMethods.length - 1);
-        });
-        await _savePaymentMethods();
-      }
-      return;
-    }
-
-    final savedMethod = result.item!;
-    setState(() {
-      if (index != null) {
-        _paymentMethods[index] = savedMethod;
-      } else {
-        _paymentMethods.add(savedMethod);
-        selectedPaymentIndex = _paymentMethods.length - 1;
-      }
-    });
-    await _savePaymentMethods();
+    return result ?? false;
   }
 
   Widget _buildHeader(BuildContext context) {
@@ -1090,11 +1398,14 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
   }
 
   Widget _buildPaymentCard(int index) {
-    final payment = _paymentMethods[index];
-    final selected = selectedPaymentIndex == index;
+    final option = paymentController.options[index];
+    final selected = paymentController.selectedIndex.value == index;
 
     return GestureDetector(
-      onTap: () => setState(() => selectedPaymentIndex = index),
+      onTap: () {
+        paymentController.selectPayment(index);
+        setState(() {});
+      },
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -1122,44 +1433,46 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
                   color: kWarmGrey50,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(payment.icon, size: 24, color: kEspressoColor),
+                child: Icon(option.icon, size: 24, color: kEspressoColor),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: Text(
-                  payment.label,
-                  style: AppFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      option.label,
+                      style: AppFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: kEspressoColor,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      option.subtitle,
+                      style: AppFonts.inter(
+                        fontSize: 12,
+                        color: kWarmGrey600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (selected)
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
                     color: kEspressoColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    size: 14,
+                    color: Colors.white,
                   ),
                 ),
-              ),
-              const Spacer(),
-              IconButton(
-                onPressed: () =>
-                    _openPaymentEditor(paymentMethod: payment, index: index),
-                icon: const Icon(Icons.edit, size: 18, color: kEspressoColor),
-              ),
-              IconButton(
-                onPressed: () async {
-                  setState(() {
-                    _paymentMethods.removeAt(index);
-                    selectedPaymentIndex = _paymentMethods.isEmpty
-                        ? 0
-                        : selectedPaymentIndex.clamp(
-                            0,
-                            _paymentMethods.length - 1,
-                          );
-                  });
-                  await _savePaymentMethods();
-                },
-                icon: const Icon(
-                  Icons.delete_outline,
-                  size: 18,
-                  color: kEspressoColor,
-                ),
-              ),
             ],
           ),
         ),

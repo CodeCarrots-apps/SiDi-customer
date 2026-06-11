@@ -47,6 +47,14 @@
 	<array>
 		<string>fetch</string>
 	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>upi</string>
+		<string>googlepay</string>
+		<string>phonepe</string>
+		<string>paytm</string>
+		<string>gpay</string>
+	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

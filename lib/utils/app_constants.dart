@@ -25,4 +25,7 @@ class AppConstants {
       '${baseUrl}api/mobileapp/user/referral/wallet';
   static const String referralRedeem =
       '${baseUrl}api/mobileapp/user/referral/redeem';
+
+  // Payment Gateway
+  static const String upiMerchantId = 'akshaits4@okicici';
 }

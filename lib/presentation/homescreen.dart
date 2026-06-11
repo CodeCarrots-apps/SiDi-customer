@@ -12,6 +12,7 @@ import 'servicedetailscreen.dart';
 import 'widgets/premium_route.dart';
 import 'locationsearchscreen.dart';
 import 'notificationsscreen.dart';
+import 'wallet_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -80,6 +81,13 @@ class _HomeScreenState extends State<HomeScreen> {
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+    );
+  }
+
+  Future<void> _openWallet() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => WalletScreen()),
     );
   }
 
@@ -206,6 +214,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               actions: [
+                IconButton(
+                  onPressed: _openWallet,
+                  icon: const Icon(Icons.wallet_outlined),
+                ),
                 IconButton(
                   onPressed: _openNotifications,
                   icon: const Icon(Icons.notifications),

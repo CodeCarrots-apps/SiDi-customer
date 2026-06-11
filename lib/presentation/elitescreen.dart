@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/constant/app_fonts.dart';
 import 'package:sidi/presentation/widgets/appointmentcard.dart';
+import 'wallet_screen.dart';
 
 class EliteArtistScreen extends StatelessWidget {
   const EliteArtistScreen({super.key});
@@ -62,6 +63,18 @@ class EliteArtistScreen extends StatelessWidget {
                     IconButton(
                       onPressed: () {},
                       icon: Icon(Icons.search, size: 24),
+                      color: kSlate950,
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => WalletScreen(),
+                          ),
+                        );
+                      },
+                      icon: Icon(Icons.wallet_outlined, size: 24),
                       color: kSlate950,
                     ),
                     Stack(
