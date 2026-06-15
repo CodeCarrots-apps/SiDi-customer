@@ -10,6 +10,14 @@ class Booking {
   final String image;
   final String status;
   final String jobId;
+  final String? createdAt;
+  final int? totalAmount;
+  final int? finalAmount;
+  final int? addonsAmount;
+  final int? travelFee;
+  final String? startTime;
+  final String? endTime;
+  final String? razorpayOrderId;
 
   const Booking({
     required this.id,
@@ -21,6 +29,14 @@ class Booking {
     required this.image,
     required this.status,
     required this.jobId,
+    this.createdAt,
+    this.totalAmount,
+    this.finalAmount,
+    this.addonsAmount,
+    this.travelFee,
+    this.startTime,
+    this.endTime,
+    this.razorpayOrderId,
   });
 
   factory Booking.fromJson(Map<String, dynamic> json) {
@@ -101,6 +117,26 @@ class Booking {
       ),
       status: _asString(json['status']),
       jobId: _asString(json['jobId'] ?? json['job_id']),
+      createdAt: json['createdAt'] is String ? json['createdAt'] as String : null,
+      totalAmount: json['totalAmount'] is int
+          ? json['totalAmount'] as int
+          : int.tryParse('${json['totalAmount'] ?? ''}'),
+      finalAmount: json['finalAmount'] is int
+          ? json['finalAmount'] as int
+          : int.tryParse('${json['finalAmount'] ?? ''}'),
+      addonsAmount: json['addonsAmount'] is int
+          ? json['addonsAmount'] as int
+          : int.tryParse('${json['addonsAmount'] ?? ''}'),
+      travelFee: json['travelFee'] is int
+          ? json['travelFee'] as int
+          : int.tryParse('${json['travelFee'] ?? ''}'),
+      razorpayOrderId: json['razorpayOrderId'] as String?,
+      startTime: timeSlot?['startTime'] is String
+          ? timeSlot!['startTime'] as String
+          : null,
+      endTime: timeSlot?['endTime'] is String
+          ? timeSlot!['endTime'] as String
+          : null,
     );
   }
 
@@ -132,6 +168,13 @@ class Booking {
       'image': image,
       'status': status,
       'jobId': jobId,
+      'createdAt': createdAt,
+      'totalAmount': totalAmount,
+      'finalAmount': finalAmount,
+      'addonsAmount': addonsAmount,
+      'travelFee': travelFee,
+      'startTime': startTime,
+      'endTime': endTime,
     };
   }
 
@@ -165,6 +208,13 @@ class Booking {
     String? image,
     String? status,
     String? jobId,
+    String? createdAt,
+    int? totalAmount,
+    int? finalAmount,
+    int? addonsAmount,
+    int? travelFee,
+    String? startTime,
+    String? endTime,
   }) {
     return Booking(
       id: id ?? this.id,
@@ -176,12 +226,19 @@ class Booking {
       image: image ?? this.image,
       status: status ?? this.status,
       jobId: jobId ?? this.jobId,
+      createdAt: createdAt ?? this.createdAt,
+      totalAmount: totalAmount ?? this.totalAmount,
+      finalAmount: finalAmount ?? this.finalAmount,
+      addonsAmount: addonsAmount ?? this.addonsAmount,
+      travelFee: travelFee ?? this.travelFee,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
     );
   }
 
   @override
   String toString() {
-    return 'Booking(id: $id, title: $title, time: $time)';
+    return 'Booking(id: $id, title: $title, time: $time, status: $status)';
   }
 
   @override
@@ -197,7 +254,10 @@ class Booking {
         other.stylist == stylist &&
         other.image == image &&
         other.status == status &&
-        other.jobId == jobId;
+        other.jobId == jobId &&
+        other.createdAt == createdAt &&
+        other.totalAmount == totalAmount &&
+        other.finalAmount == finalAmount;
   }
 
   @override
@@ -212,6 +272,9 @@ class Booking {
       image,
       status,
       jobId,
+      createdAt,
+      totalAmount,
+      finalAmount,
     );
   }
 }

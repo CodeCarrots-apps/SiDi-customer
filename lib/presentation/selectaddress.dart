@@ -54,6 +54,7 @@ class SelectAddressScreen extends StatefulWidget {
 
 class _SelectAddressScreenState extends State<SelectAddressScreen> {
   final PaymentController paymentController = Get.put(PaymentController());
+  final WalletController _walletCtrl = Get.find<WalletController>();
 
   int selectedAddressIndex = 0;
   bool _isLoading = true;
@@ -301,8 +302,7 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
 
     if (totalStr.isNotEmpty &&
         paymentController.selected.type == PaymentOptionType.wallet) {
-      final walletCtrl = Get.find<WalletController>();
-      final balance = walletCtrl.wallet.value?.balance ?? 0;
+      final balance = _walletCtrl.wallet.value?.balance ?? 0;
       final total = _parsePrice(totalStr);
 
       if (balance < total) {
@@ -504,14 +504,35 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
     final addonIds = _addonServices.map((s) => s.serviceId).toList();
     final serviceIds = [widget.serviceId, ...addonIds];
 
+    String? paymentMethod;
+    double? walletAmount;
+    if (paymentController.isSplitPayment.value) {
+      paymentMethod = 'wallet';
+      walletAmount = paymentController.walletAmount.value;
+    } else {
+      switch (paymentController.selected.type) {
+        case PaymentOptionType.wallet:
+          paymentMethod = 'wallet';
+          walletAmount = _parsePrice(_displayTotalPrice);
+          break;
+        case PaymentOptionType.upi:
+          paymentMethod = 'upi';
+          break;
+        case PaymentOptionType.onsite:
+          paymentMethod = 'payOnSite';
+          break;
+      }
+    }
+
     final response = await BookingService.createBooking(
       serviceIds: serviceIds,
-      beauticianId: widget.beauticianId,
       bookingDate: widget.selectedDateIso,
       bookingTime: _to24Hour(widget.selectedTime),
       locationType: 'home',
       address: bookingAddress,
       addonIds: addonIds.isEmpty ? null : addonIds,
+      paymentMethod: paymentMethod,
+      walletAmount: walletAmount,
     );
 
     if (!mounted) return;
@@ -530,35 +551,128 @@ class _SelectAddressScreenState extends State<SelectAddressScreen> {
     if (totalStr.isNotEmpty) {
       final total = _parsePrice(totalStr);
       final bookingId = response.booking?.id ?? 'booking-${DateTime.now().millisecondsSinceEpoch}';
-      final WalletController? walletCtrl;
-      if (paymentController.selected.type == PaymentOptionType.wallet) {
-        walletCtrl = Get.find<WalletController>();
-      } else {
-        walletCtrl = null;
-      }
-      final paymentResult = await PaymentService.processPayment(
-        paymentCtrl: paymentController,
-        walletCtrl: walletCtrl,
-        totalAmount: total,
-        bookingId: bookingId,
-        serviceName: widget.serviceTitle,
-        context: context,
-      );
 
-      if (paymentResult != PaymentResult.success) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: const Color(0xFFD32F2F),
-            content: Text(
-              paymentResult == PaymentResult.cancelled
-                  ? 'UPI payment was cancelled.'
-                  : 'Payment failed. Please try again.',
+      debugPrint('BOOKING FLOW: paymentMethod=$paymentMethod isSplitPayment=${paymentController.isSplitPayment.value}');
+
+      if (paymentController.isSplitPayment.value) {
+        final remainingMethod = paymentController.splitOption.type;
+
+        if (remainingMethod == PaymentOptionType.upi) {
+          String? orderId = response.razorpayOrderId;
+          debugPrint('SPLIT UPI: orderId from create response = $orderId');
+
+          if (orderId == null) {
+            debugPrint('SPLIT UPI: calling updatePartialPayment for UPI');
+            final partialResponse = await BookingService.updatePartialPayment(
+              bookingId: bookingId,
+              remainingPaymentMethod: 'upi',
+            );
+
+            if (!partialResponse.success) {
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(partialResponse.message),
+                  duration: const Duration(seconds: 4),
+                ),
+              );
+              return;
+            }
+
+            orderId = partialResponse.razorpayOrderId ??
+                partialResponse.booking?.razorpayOrderId ??
+                partialResponse.partialPayment?['razorpayOrderId'] as String?;
+            debugPrint('SPLIT UPI: orderId from updatePartialPayment = $orderId partialPayment=${partialResponse.partialPayment}');
+          }
+
+          if (orderId == null) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Failed to get payment order ID. Please try again.'),
+                duration: Duration(seconds: 4),
+              ),
+            );
+            return;
+          }
+
+          final paymentResult = await PaymentService.processPayment(
+            paymentCtrl: paymentController,
+            walletCtrl: _walletCtrl,
+            totalAmount: total,
+            bookingId: bookingId,
+            serviceName: widget.serviceTitle,
+            razorpayOrderId: orderId,
+            context: context,
+          );
+
+          if (paymentResult != PaymentResult.success) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: const Color(0xFFD32F2F),
+                content: Text(
+                  paymentResult == PaymentResult.cancelled
+                      ? 'UPI payment was cancelled.'
+                      : 'Payment failed. Please try again.',
+                ),
+                duration: const Duration(seconds: 3),
+              ),
+            );
+            return;
+          }
+
+          _walletCtrl.fetchWallet();
+        } else {
+          debugPrint('SPLIT ONSITE: calling updatePartialPayment for payOnSite');
+          await BookingService.updatePartialPayment(
+            bookingId: bookingId,
+            remainingPaymentMethod: 'payOnSite',
+          );
+          _walletCtrl.fetchWallet();
+        }
+      } else if (paymentMethod == 'upi') {
+        final orderId = response.razorpayOrderId;
+        debugPrint('FULL UPI: orderId from create response = $orderId');
+
+        if (orderId == null) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Missing payment order ID from server.'),
+              duration: Duration(seconds: 4),
             ),
-            duration: const Duration(seconds: 3),
-          ),
+          );
+          return;
+        }
+
+        final paymentResult = await PaymentService.processPayment(
+          paymentCtrl: paymentController,
+          walletCtrl: null,
+          totalAmount: total,
+          bookingId: bookingId,
+          serviceName: widget.serviceTitle,
+          razorpayOrderId: orderId,
+          context: context,
         );
-        return;
+
+        if (paymentResult != PaymentResult.success) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: const Color(0xFFD32F2F),
+              content: Text(
+                paymentResult == PaymentResult.cancelled
+                    ? 'UPI payment was cancelled.'
+                    : 'Payment failed. Please try again.',
+              ),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+          return;
+        }
+      } else if (paymentMethod == 'wallet') {
+        _walletCtrl.fetchWallet();
       }
     }
 

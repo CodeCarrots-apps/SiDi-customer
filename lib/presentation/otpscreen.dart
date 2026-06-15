@@ -1,10 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
+import 'package:sidi/controller/otpcontroller.dart';
+import 'package:sidi/utils/token_storage.dart';
 
 import '../constant/constants.dart';
+import 'mainscreen.dart';
 
 class OtpScreen extends StatefulWidget {
-  const OtpScreen({Key? key}) : super(key: key);
+  const OtpScreen({
+    Key? key,
+    required this.userId,
+    this.contact = '',
+    this.contactType = 'phone',
+  }) : super(key: key);
+
+  final String userId;
+  final String contact;
+  final String contactType;
 
   @override
   State<OtpScreen> createState() => _OtpScreenState();
@@ -16,9 +29,17 @@ class _OtpScreenState extends State<OtpScreen> {
     (_) => TextEditingController(),
   );
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
+  final OtpController _otpController = Get.put(OtpController());
   bool _isSubmitting = false;
 
   String get _otpCode => _codeControllers.map((c) => c.text).join();
+
+  @override
+  void initState() {
+    super.initState();
+    _otpController.userId = widget.userId;
+    _otpController.type = widget.contactType == 'phone' ? 'phone' : 'email';
+  }
 
   @override
   void dispose() {
@@ -70,21 +91,35 @@ class _OtpScreenState extends State<OtpScreen> {
       _isSubmitting = true;
     });
 
-    await Future.delayed(const Duration(milliseconds: 600));
+    _otpController.otp = _otpCode;
+    final result = await _otpController.verifyOtp();
+
+    if (!mounted) return;
 
     setState(() {
       _isSubmitting = false;
     });
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('OTP verified successfully.')));
+    if (result.isSuccess) {
+      await TokenStorage.saveToken(result.token);
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result.message)));
+    }
   }
 
-  void _resendCode() {
+  Future<void> _resendCode() async {
+    final result = await _otpController.resendOtp();
+    if (!mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('A new code has been sent.')));
+    ).showSnackBar(SnackBar(content: Text(result.message)));
   }
 
   Widget _buildOtpBox(int index) {
@@ -143,6 +178,10 @@ class _OtpScreenState extends State<OtpScreen> {
       fontWeight: FontWeight.w400,
     );
 
+    final displayContact = widget.contact.isNotEmpty
+        ? widget.contact
+        : (widget.contactType == 'phone' ? 'your phone' : 'your email');
+
     return Scaffold(
       backgroundColor: kIvoryColor,
       body: SafeArea(
@@ -187,7 +226,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     Text('Verify Identity', style: headerStyle),
                     const SizedBox(height: 16),
                     Text(
-                      'Enter the 6-digit code sent to +1 (555) 0123',
+                      'Enter the 6-digit code sent to $displayContact',
                       style: subtitleStyle,
                     ),
                     const SizedBox(height: 44),
@@ -203,7 +242,10 @@ class _OtpScreenState extends State<OtpScreen> {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: _isSubmitting ? null : _verifyCode,
+                        onPressed:
+                            (_isSubmitting || _otpController.isLoading)
+                                ? null
+                                : _verifyCode,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kEspressoColor,
                           foregroundColor: kIvoryColor,
@@ -215,7 +257,7 @@ class _OtpScreenState extends State<OtpScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        child: _isSubmitting
+                        child: (_isSubmitting || _otpController.isLoading)
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
@@ -241,7 +283,8 @@ class _OtpScreenState extends State<OtpScreen> {
                             ),
                           ),
                           TextButton(
-                            onPressed: _resendCode,
+                            onPressed:
+                                _otpController.isLoading ? null : _resendCode,
                             child: const Text(
                               'Resend Code',
                               style: TextStyle(

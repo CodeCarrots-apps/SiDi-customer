@@ -35,6 +35,12 @@ class BookingService {
       'travelFee': result.travelFee,
       'assignedBeautician': result.assignedBeautician,
       'broadcastedCount': result.broadcastedCount,
+      'paymentMethod': result.paymentMethod,
+      'razorpayOrderId': result.razorpayOrderId,
+      'walletDeducted': result.walletDeducted,
+      'walletAmount': result.walletAmount,
+      'remainingAmount': result.remainingAmount,
+      'estimatedTotalAmount': result.estimatedTotalAmount,
     };
 
     debugPrint('CREATE BOOKING RESPONSE MODEL: ${jsonEncode(payload)}');
@@ -90,14 +96,14 @@ class BookingService {
   /// ---------------------------
   static Future<BookingCreateResponse> createBooking({
     required List<String> serviceIds,
-    String? beauticianId,
     required String bookingDate,
     required String bookingTime,
     required String locationType,
     required BookingAddress address,
     String? notes,
-    String? preferredGender,
     List<String>? addonIds,
+    String? paymentMethod,
+    double? walletAmount,
   }) async {
     final sanitizedServiceIds = serviceIds
         .map((id) => id.trim())
@@ -111,7 +117,6 @@ class BookingService {
       );
     }
 
-    final primaryServiceId = sanitizedServiceIds.first;
     final token = await TokenStorage.getToken();
 
     if (token == null || token.isEmpty) {
@@ -123,17 +128,19 @@ class BookingService {
 
     final dio = _dio(token);
 
+    final primaryServiceId = sanitizedServiceIds.first;
+
     final payload = {
       "serviceId": primaryServiceId,
       "serviceIds": sanitizedServiceIds,
-      "beauticianId": beauticianId,
       "bookingDate": bookingDate,
       "bookingTime": bookingTime,
       "locationType": locationType,
       "address": address.toJson(),
       "notes": notes,
-      "preferredGender": preferredGender,
       "addonIds": addonIds,
+      "paymentMethod": paymentMethod,
+      "walletAmount": walletAmount,
     }..removeWhere((key, value) => value == null);
 
     try {
@@ -382,6 +389,175 @@ class BookingService {
       return GenericBookingActionResponse(
         success: false,
         message: e.response?.data?['message'] ?? e.message ?? 'Complete failed',
+      );
+    }
+  }
+
+  /// ---------------------------
+  /// VERIFY UPI PAYMENT
+  /// ---------------------------
+  static Future<GenericBookingActionResponse> verifyUpiPayment({
+    required String bookingId,
+    required String razorpayOrderId,
+    required String razorpayPaymentId,
+    required String razorpaySignature,
+  }) async {
+    final token = await TokenStorage.getToken();
+
+    if (token == null || token.isEmpty) {
+      return GenericBookingActionResponse(
+        success: false,
+        message: 'Authentication required',
+      );
+    }
+
+    final dio = _dio(token);
+
+    try {
+      final response = await dio.post(
+        '/payment/verify-upi',
+        data: {
+          "bookingId": bookingId,
+          "razorpayOrderId": razorpayOrderId,
+          "razorpayPaymentId": razorpayPaymentId,
+          "razorpaySignature": razorpaySignature,
+        },
+      );
+
+      return _parseGenericActionResponse(
+        response.data,
+        fallbackMessage: 'Payment verification failed',
+      );
+    } on DioException catch (e) {
+      return GenericBookingActionResponse(
+        success: false,
+        message: e.response?.data?['message'] ?? e.message ?? 'Payment verification failed',
+      );
+    }
+  }
+
+  /// ---------------------------
+  /// UPDATE PARTIAL PAYMENT METHOD
+  /// ---------------------------
+  static Future<GenericBookingActionResponse> updatePartialPayment({
+    required String bookingId,
+    required String remainingPaymentMethod,
+    String? razorpayOrderId,
+  }) async {
+    final token = await TokenStorage.getToken();
+
+    if (token == null || token.isEmpty) {
+      return GenericBookingActionResponse(
+        success: false,
+        message: 'Authentication required',
+      );
+    }
+
+    final dio = _dio(token);
+
+    try {
+      final response = await dio.post(
+        '/payment/update-partial',
+        data: {
+          "bookingId": bookingId,
+          "remainingPaymentMethod": remainingPaymentMethod,
+          if (razorpayOrderId != null) "razorpayOrderId": razorpayOrderId,
+        },
+      );
+
+      return _parseGenericActionResponse(
+        response.data,
+        fallbackMessage: 'Failed to update payment method',
+      );
+    } on DioException catch (e) {
+      return GenericBookingActionResponse(
+        success: false,
+        message: e.response?.data?['message'] ?? e.message ?? 'Failed to update payment method',
+      );
+    }
+  }
+
+  /// ---------------------------
+  /// VERIFY PARTIAL UPI PAYMENT
+  /// ---------------------------
+  static Future<GenericBookingActionResponse> verifyPartialUpiPayment({
+    required String bookingId,
+    required String razorpayPaymentId,
+    required String razorpaySignature,
+  }) async {
+    final token = await TokenStorage.getToken();
+
+    if (token == null || token.isEmpty) {
+      return GenericBookingActionResponse(
+        success: false,
+        message: 'Authentication required',
+      );
+    }
+
+    final dio = _dio(token);
+
+    try {
+      final response = await dio.post(
+        '/payment/verify-partial-upi',
+        data: {
+          "bookingId": bookingId,
+          "razorpayPaymentId": razorpayPaymentId,
+          "razorpaySignature": razorpaySignature,
+        },
+      );
+
+      return _parseGenericActionResponse(
+        response.data,
+        fallbackMessage: 'Partial payment verification failed',
+      );
+    } on DioException catch (e) {
+      return GenericBookingActionResponse(
+        success: false,
+        message: e.response?.data?['message'] ?? e.message ?? 'Partial payment verification failed',
+      );
+    }
+  }
+
+  /// ---------------------------
+  /// AVAILABLE SLOTS
+  /// ---------------------------
+  static Future<AvailableSlotsResponse> getAvailableSlots({
+    required List<String> serviceIds,
+    required String date,
+    String? beauticianId,
+  }) async {
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: _baseUrl,
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 20),
+      ),
+    );
+
+    try {
+      final response = await dio.get(
+        '/available-slots',
+        queryParameters: {
+          "serviceIds": serviceIds,
+          "date": date,
+          if (beauticianId != null) "beauticianId": beauticianId,
+        },
+      );
+
+      if (response.data is Map<String, dynamic>) {
+        return AvailableSlotsResponse.fromJson(response.data);
+      }
+
+      return AvailableSlotsResponse(
+        success: false,
+        message: 'Invalid server response',
+        availableSlots: [],
+      );
+    } on DioException catch (e) {
+      return AvailableSlotsResponse(
+        success: false,
+        message: e.response?.data?['message'] ?? e.message ?? 'Failed to load slots',
+        availableSlots: [],
       );
     }
   }

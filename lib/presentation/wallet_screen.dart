@@ -44,12 +44,16 @@ class _WalletScreenState extends State<WalletScreen>
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final scale = (screenWidth / 390).clamp(0.82, 1.0);
+    final contentWidth = screenWidth > 600 ? 600.0 : screenWidth;
+    final scale = (contentWidth / 390).clamp(0.82, 1.0);
 
     return Scaffold(
       backgroundColor: kWarmGrey50,
-      body: CustomScrollView(
-        slivers: [
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: CustomScrollView(
+            slivers: [
           SliverAppBar(
             pinned: true,
             floating: true,
@@ -148,7 +152,9 @@ class _WalletScreenState extends State<WalletScreen>
           }),
         ],
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildBalanceCard(Wallet wallet, double scale) {
@@ -385,7 +391,12 @@ class _WalletScreenState extends State<WalletScreen>
   Widget _buildQuickActions(double scale) {
     return Row(
       children: [
-        Expanded(child: _actionCard(Icons.add_circle_outline, 'ADD MONEY', scale)),
+        Expanded(
+          child: GestureDetector(
+            onTap: () => _showAddMoneyDialog(scale),
+            child: _actionCard(Icons.add_circle_outline, 'ADD MONEY', scale),
+          ),
+        ),
         SizedBox(width: 10 * scale),
         Expanded(child: _actionCard(Icons.send_rounded, 'SEND', scale)),
         SizedBox(width: 10 * scale),
@@ -393,6 +404,180 @@ class _WalletScreenState extends State<WalletScreen>
           child: _actionCard(Icons.receipt_long_outlined, 'HISTORY', scale),
         ),
       ],
+    );
+  }
+
+  void _showAddMoneyDialog(double scale) {
+    final amountController = TextEditingController();
+    final List<int> quickAmounts = [500, 1000, 2000, 5000];
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.symmetric(horizontal: 24 * scale),
+          child: Container(
+            padding: EdgeInsets.all(24 * scale),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Top Up Wallet',
+                      style: AppFonts.playfairDisplay(
+                        fontSize: 22 * scale,
+                        fontWeight: FontWeight.w600,
+                        color: kCharcoalColor,
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close, color: kCharcoalColor, size: 20 * scale),
+                      onPressed: () => Navigator.pop(ctx),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 8 * scale),
+                Text(
+                  'Enter the amount you wish to add to your wallet balance.',
+                  style: AppFonts.inter(
+                    fontSize: 11 * scale,
+                    color: kWarmGrey600,
+                  ),
+                ),
+                SizedBox(height: 24 * scale),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
+                  decoration: BoxDecoration(
+                    color: kWarmGrey50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: kWarmGrey200),
+                  ),
+                  child: TextField(
+                    controller: amountController,
+                    keyboardType: TextInputType.number,
+                    style: AppFonts.inter(
+                      fontSize: 24 * scale,
+                      fontWeight: FontWeight.w600,
+                      color: kCharcoalColor,
+                    ),
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      prefixIconConstraints: BoxConstraints(minWidth: 0, minHeight: 0),
+                      prefixIcon: Padding(
+                        padding: EdgeInsets.only(right: 8 * scale),
+                        child: Text(
+                          '₹',
+                          style: AppFonts.inter(
+                            fontSize: 24 * scale,
+                            fontWeight: FontWeight.w600,
+                            color: kCharcoalColor,
+                          ),
+                        ),
+                      ),
+                      hintText: '0',
+                      hintStyle: AppFonts.inter(
+                        fontSize: 24 * scale,
+                        fontWeight: FontWeight.w600,
+                        color: opacity(kWarmGrey600, 0.5),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20 * scale),
+                Wrap(
+                  spacing: 10 * scale,
+                  runSpacing: 10 * scale,
+                  children: quickAmounts.map((amount) {
+                    return InkWell(
+                      onTap: () {
+                        amountController.text = amount.toString();
+                        amountController.selection = TextSelection.fromPosition(
+                          TextPosition(offset: amountController.text.length),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(100),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16 * scale,
+                          vertical: 10 * scale,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: kAccentGold.withOpacity(0.3)),
+                          borderRadius: BorderRadius.circular(100),
+                          color: kAccentGold.withOpacity(0.05),
+                        ),
+                        child: Text(
+                          '+ ₹$amount',
+                          style: AppFonts.inter(
+                            fontSize: 11 * scale,
+                            fontWeight: FontWeight.w500,
+                            color: kAccentGold,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                SizedBox(height: 32 * scale),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50 * scale,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final amount = double.tryParse(amountController.text);
+                      if (amount == null || amount <= 0) {
+                        Get.snackbar(
+                          'Invalid Amount',
+                          'Please enter a valid amount to top up.',
+                          backgroundColor: Colors.redAccent,
+                          colorText: Colors.white,
+                        );
+                        return;
+                      }
+                      Navigator.pop(ctx);
+                      final success = await controller.addMoney(amount);
+                      if (success) {
+                        Get.snackbar(
+                          'Success',
+                          '₹$amount successfully added to your wallet!',
+                          backgroundColor: const Color(0xFF2B8C4D),
+                          colorText: Colors.white,
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kEspressoColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      'PROCEED TO PAY',
+                      style: AppFonts.inter(
+                        fontSize: 12 * scale,
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

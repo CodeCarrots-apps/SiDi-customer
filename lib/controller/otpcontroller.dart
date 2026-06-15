@@ -85,7 +85,7 @@ class OtpController extends GetxController {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         resendUrl,
-        data: <String, dynamic>{'userId': userId, 'type': type},
+        data: <String, dynamic>{'userId': userId},
         options: Options(
           headers: <String, dynamic>{'Content-Type': 'application/json'},
         ),

@@ -29,7 +29,7 @@ class PaymentController extends GetxController {
     PaymentOption(
       type: PaymentOptionType.wallet,
       label: 'Pay Using Wallet',
-      subtitle: 'Balance: \u20B91,250.00',
+      subtitle: 'Pay from your wallet balance',
       icon: Icons.account_balance_wallet_rounded,
     ),
     PaymentOption(

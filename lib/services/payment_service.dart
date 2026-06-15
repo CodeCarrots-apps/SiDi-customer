@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sidi/controller/payment_controller.dart';
 import 'package:sidi/controller/wallet_controller.dart';
+import 'package:sidi/services/booking_service.dart';
 import 'package:sidi/utils/app_constants.dart';
+import 'package:sidi/models/booking_models.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 enum PaymentResult { success, failed, cancelled }
 
@@ -15,6 +18,7 @@ class PaymentService {
     required double totalAmount,
     required String bookingId,
     required String serviceName,
+    String? razorpayOrderId,
     BuildContext? context,
   }) async {
     final selected = paymentCtrl.selected.type;
@@ -26,6 +30,7 @@ class PaymentService {
         paymentCtrl: paymentCtrl,
         totalAmount: totalAmount,
         bookingId: bookingId,
+        razorpayOrderId: razorpayOrderId,
         context: context,
       );
     }
@@ -35,6 +40,7 @@ class PaymentService {
         totalAmount: totalAmount,
         bookingId: bookingId,
         serviceName: serviceName,
+        razorpayOrderId: razorpayOrderId,
         context: context,
       );
     }
@@ -47,12 +53,10 @@ class PaymentService {
     required PaymentController paymentCtrl,
     required double totalAmount,
     required String bookingId,
+    String? razorpayOrderId,
     BuildContext? context,
   }) async {
-    final balance = walletCtrl.wallet.value?.balance ?? 0;
-
     if (paymentCtrl.isSplitPayment.value) {
-      final walletPart = paymentCtrl.walletAmount.value;
       final remainderPart = paymentCtrl.remainderAmount.value;
       final secondMethod = paymentCtrl.splitOption.type;
 
@@ -61,20 +65,16 @@ class PaymentService {
           totalAmount: remainderPart,
           bookingId: bookingId,
           serviceName: 'Split payment remainder',
+          razorpayOrderId: razorpayOrderId,
+          isPartial: true,
           context: context,
         );
         if (upiResult != PaymentResult.success) return upiResult;
       }
 
-      walletCtrl.deductBalance(walletPart);
       return PaymentResult.success;
     }
 
-    if (balance < totalAmount) {
-      return PaymentResult.failed;
-    }
-
-    walletCtrl.deductBalance(totalAmount);
     return PaymentResult.success;
   }
 
@@ -82,100 +82,86 @@ class PaymentService {
     required double totalAmount,
     required String bookingId,
     required String serviceName,
+    String? razorpayOrderId,
+    bool isPartial = false,
     BuildContext? context,
   }) async {
-    final tr = 'SIDI${DateTime.now().millisecondsSinceEpoch}';
-
-    final upiUrl = _buildUpiUrl(
-      pa: AppConstants.upiMerchantId,
-      pn: 'SiDi Beauty',
-      am: totalAmount.toStringAsFixed(2),
-      tn: 'Booking $bookingId - $serviceName',
-      cu: 'INR',
-      tr: tr,
-    );
-
-    final uri = Uri.parse(upiUrl);
-    try {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (_) {
+    if (razorpayOrderId == null) {
+      if (context != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Missing order ID from server. Cannot process payment.',
+            ),
+          ),
+        );
+      }
       return PaymentResult.failed;
     }
 
-    if (context != null) {
-      await _waitForAppForeground();
-      if (!context.mounted) return PaymentResult.cancelled;
+    final completer = Completer<PaymentResult>();
+    final razorpay = Razorpay();
 
-      return (await showDialog<PaymentResult>(
-            context: context,
-            barrierDismissible: false,
-            builder: (ctx) => AlertDialog(
-              title: const Text('UPI Payment'),
-              content: const Text(
-                'Did you complete the payment in the UPI app?',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () =>
-                      Navigator.pop(ctx, PaymentResult.cancelled),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () =>
-                      Navigator.pop(ctx, PaymentResult.failed),
-                  child: const Text('Payment Failed'),
-                ),
-                ElevatedButton(
-                  onPressed: () =>
-                      Navigator.pop(ctx, PaymentResult.success),
-                  child: const Text('Payment Completed'),
-                ),
-              ],
-            ),
-          )) ??
-          PaymentResult.failed;
+    void handlePaymentSuccess(PaymentSuccessResponse response) async {
+      GenericBookingActionResponse verifyResult;
+
+      if (isPartial) {
+        verifyResult = await BookingService.verifyPartialUpiPayment(
+          bookingId: bookingId,
+          razorpayPaymentId: response.paymentId ?? '',
+          razorpaySignature: response.signature ?? '',
+        );
+      } else {
+        verifyResult = await BookingService.verifyUpiPayment(
+          bookingId: bookingId,
+          razorpayOrderId: razorpayOrderId,
+          razorpayPaymentId: response.paymentId ?? '',
+          razorpaySignature: response.signature ?? '',
+        );
+      }
+
+      if (verifyResult.success) {
+        completer.complete(PaymentResult.success);
+      } else {
+        if (context != null && context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(verifyResult.message)));
+        }
+        completer.complete(PaymentResult.failed);
+      }
     }
 
-    return PaymentResult.success;
-  }
-
-  static Future<void> _waitForAppForeground() async {
-    if (WidgetsBinding.instance.lifecycleState ==
-        AppLifecycleState.resumed) {
-      return;
+    void handlePaymentError(PaymentFailureResponse response) {
+      completer.complete(PaymentResult.failed);
     }
-    final completer = Completer<void>();
-    final observer = _AppLifecycleObserver(completer);
-    WidgetsBinding.instance.addObserver(observer);
-    await completer.future;
-    WidgetsBinding.instance.removeObserver(observer);
-  }
 
-  static String _buildUpiUrl({
-    required String pa,
-    required String pn,
-    required String am,
-    required String tn,
-    required String cu,
-    String? tr,
-  }) {
-    return 'upi://pay?pa=${Uri.encodeComponent(pa)}'
-        '&pn=${Uri.encodeComponent(pn)}'
-        '&am=$am'
-        '&tn=${Uri.encodeComponent(tn)}'
-        '&cu=$cu'
-        '${tr != null ? '&tr=${Uri.encodeComponent(tr)}' : ''}';
-  }
-}
-
-class _AppLifecycleObserver with WidgetsBindingObserver {
-  final Completer<void> completer;
-  _AppLifecycleObserver(this.completer);
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      completer.complete();
+    void handleExternalWallet(ExternalWalletResponse response) {
+      completer.complete(PaymentResult.failed);
     }
+
+    razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, handlePaymentSuccess);
+    razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, handlePaymentError);
+    razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, handleExternalWallet);
+
+    final options = {
+      'key': AppConstants.razorpayKey,
+      'amount': (totalAmount * 100).toInt(),
+      'name': 'SiDi Beauty',
+      'description': 'Booking $bookingId - $serviceName',
+      'order_id': razorpayOrderId,
+      'timeout': 300,
+    };
+
+    try {
+      razorpay.open(options);
+    } catch (e) {
+      completer.complete(PaymentResult.failed);
+    }
+
+    final result = await completer.future;
+    razorpay.clear();
+
+    return result;
   }
 }

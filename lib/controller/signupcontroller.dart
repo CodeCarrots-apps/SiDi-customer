@@ -151,6 +151,8 @@ class RegisterController extends GetxController {
         final result = RegisterResult(
           isSuccess: data['success'] == true,
           message: data['message'] ?? 'Registration successful',
+          userId: (data['userId'] as String?) ?? '',
+          requiresOtp: data['requiresOTP'] == true,
         );
 
         if (!result.isSuccess) {
@@ -217,8 +219,15 @@ class RegisterController extends GetxController {
 }
 
 class RegisterResult {
-  const RegisterResult({required this.isSuccess, required this.message});
+  const RegisterResult({
+    required this.isSuccess,
+    required this.message,
+    this.userId = '',
+    this.requiresOtp = false,
+  });
 
   final bool isSuccess;
   final String message;
+  final String userId;
+  final bool requiresOtp;
 }

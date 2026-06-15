@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:sidi/presentation/splashscreen.dart';
 import 'package:background_fetch/background_fetch.dart';
 import 'package:sidi/services/appointments_sync_service.dart';
+import 'package:sidi/controller/wallet_controller.dart';
 // import 'package:sidi/presentation/mainscreen.dart';
 // import 'package:sidi/view/splashscreen.dart';
 
@@ -25,9 +26,12 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const GetMaterialApp(
+    return GetMaterialApp(
+      initialBinding: BindingsBuilder(() {
+        Get.lazyPut<WalletController>(() => WalletController());
+      }),
       debugShowCheckedModeBanner: false,
-      home: SplashScreen(),
+      home: const SplashScreen(),
     );
   }
 }

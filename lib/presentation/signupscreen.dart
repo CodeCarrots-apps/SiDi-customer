@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/controller/signupcontroller.dart';
 import 'package:sidi/presentation/loginscreen.dart';
+import 'package:sidi/presentation/otpscreen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -88,10 +89,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
     ).showSnackBar(SnackBar(content: Text(result.message)));
 
     if (result.isSuccess) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
+      if (result.requiresOtp) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OtpScreen(
+              userId: result.userId,
+              contact: email,
+              contactType: 'email',
+            ),
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
     }
   }
 

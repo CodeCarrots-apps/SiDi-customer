@@ -27,5 +27,7 @@ class AppConstants {
       '${baseUrl}api/mobileapp/user/referral/redeem';
 
   // Payment Gateway
-  static const String upiMerchantId = 'akshaits4@okicici';
+  // static const String upiMerchantId = 'akshaits4@okicici'; // Legacy intent
+  static const String razorpayKey =
+      'rzp_test_T0bSPR2njcK8IY'; // TODO: replace with your actual key
 }
