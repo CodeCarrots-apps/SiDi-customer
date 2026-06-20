@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/controller/signupcontroller.dart';
@@ -23,7 +24,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
       TextEditingController();
   final TextEditingController _referralCodeController = TextEditingController();
 
+  static const String _phonePrefix = '+91 ';
+
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _phoneController.value = TextEditingValue(
+      text: _phonePrefix,
+      selection: TextSelection.collapsed(offset: _phonePrefix.length),
+    );
+  }
 
   @override
   void dispose() {
@@ -39,7 +51,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Future<void> _handleSignUpTap() async {
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
-    final phone = _phoneController.text.trim();
+    final phone = _phoneController.text.replaceAll(_phonePrefix, '').trim();
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
     final referralCode = _referralCodeController.text.trim();
@@ -95,8 +107,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
           MaterialPageRoute(
             builder: (context) => OtpScreen(
               userId: result.userId,
-              contact: email,
-              contactType: 'email',
+              contact: phone,
+              contactType: 'phone',
             ),
           ),
         );
@@ -191,9 +203,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
         const SizedBox(height: 16),
         _buildInputField(
           'Phone',
-          '123-456-7890',
+          '9876543210',
           inputType: TextInputType.phone,
           controller: _phoneController,
+          inputFormatters: [
+            PrefixTextInputFormatter(_phonePrefix),
+          ],
         ),
         const SizedBox(height: 16),
         _buildInputField(
@@ -266,6 +281,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     TextInputType inputType = TextInputType.text,
     bool obscureText = false,
     TextEditingController? controller,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -276,6 +292,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           controller: controller,
           keyboardType: inputType,
           obscureText: obscureText,
+          inputFormatters: inputFormatters,
           decoration: InputDecoration(
             hintText: placeholder,
             hintStyle: kInputHintStyle,
@@ -320,6 +337,45 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ],
         ),
       ],
+    );
+  }
+}
+
+class PrefixTextInputFormatter extends TextInputFormatter {
+  const PrefixTextInputFormatter(this.prefix);
+
+  final String prefix;
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (!newValue.text.startsWith(prefix)) {
+      return TextEditingValue(
+        text: prefix,
+        selection: TextSelection.collapsed(offset: prefix.length),
+      );
+    }
+
+    final newText = newValue.text;
+    final prefixEnd = prefix.length;
+    final rawSuffix = newText.substring(prefixEnd);
+    final stripped = rawSuffix.replaceAll(RegExp(r'[^0-9]'), '');
+    final finalText = prefix + stripped;
+
+    final rawCursor = (newValue.selection.baseOffset - prefixEnd)
+        .clamp(0, rawSuffix.length);
+    final digitsBeforeCursor = rawSuffix
+        .substring(0, rawCursor)
+        .replaceAll(RegExp(r'[^0-9]'), '')
+        .length;
+
+    return TextEditingValue(
+      text: finalText,
+      selection: TextSelection.collapsed(
+        offset: prefixEnd + digitsBeforeCursor,
+      ),
     );
   }
 }

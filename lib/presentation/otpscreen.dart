@@ -34,6 +34,8 @@ class _OtpScreenState extends State<OtpScreen> {
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
   final OtpController _otpController = Get.put(OtpController());
   final SmsAutoFill _smsAutoFill = SmsAutoFill();
+  final TextEditingController _hiddenOtpController = TextEditingController();
+  final FocusNode _hiddenFocusNode = FocusNode();
   StreamSubscription<String>? _smsSubscription;
   bool _isSubmitting = false;
 
@@ -50,10 +52,43 @@ class _OtpScreenState extends State<OtpScreen> {
     _otpController.type = widget.contactType == 'phone' ? 'phone' : 'email';
     _startResendTimer();
     _listenForSms();
+    _hiddenOtpController.addListener(_onHiddenOtpChanged);
+    for (final node in _focusNodes) {
+      node.addListener(_onFocusChanged);
+    }
+  }
+
+  void _onFocusChanged() {
+    final anyFocused = _focusNodes.any((n) => n.hasFocus);
+    if (anyFocused) {
+      _hiddenFocusNode.requestFocus();
+    }
+  }
+
+  void _onHiddenOtpChanged() {
+    final code = _hiddenOtpController.text;
+    if (code.isEmpty) return;
+    final digits = code.replaceAll(RegExp(r'\D'), '');
+    for (var i = 0; i < 6 && i < digits.length; i++) {
+      _codeControllers[i].text = digits[i];
+    }
+    if (digits.length >= 6) {
+      _hiddenFocusNode.unfocus();
+      for (final node in _focusNodes) {
+        node.unfocus();
+      }
+      _verifyCode();
+    }
   }
 
   @override
   void dispose() {
+    _hiddenOtpController.removeListener(_onHiddenOtpChanged);
+    _hiddenOtpController.dispose();
+    _hiddenFocusNode.dispose();
+    for (final node in _focusNodes) {
+      node.removeListener(_onFocusChanged);
+    }
     _smsSubscription?.cancel();
     _smsAutoFill.unregisterListener();
     _resendTimer?.cancel();
@@ -68,14 +103,17 @@ class _OtpScreenState extends State<OtpScreen> {
 
   void _fillCode(String code) {
     final digits = code.replaceAll(RegExp(r'\D'), '');
+    _hiddenOtpController.text = digits;
     for (var i = 0; i < 6 && i < digits.length; i++) {
       _codeControllers[i].text = digits[i];
     }
     if (digits.length >= 6) {
       _focusNodes.last.unfocus();
+      _hiddenFocusNode.unfocus();
       _verifyCode();
     } else if (digits.isNotEmpty) {
       _focusNodes[digits.length.clamp(0, 5)].requestFocus();
+      _hiddenFocusNode.requestFocus();
     }
   }
 
@@ -131,7 +169,7 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   Future<void> _verifyCode() async {
-    if (_otpCode.length != 6 || _otpCode.contains('')) {
+    if (_otpCode.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter the full 6-digit code.')),
       );
@@ -283,11 +321,36 @@ class _OtpScreenState extends State<OtpScreen> {
                       style: subtitleStyle,
                     ),
                     const SizedBox(height: 44),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: List.generate(
-                        6,
-                        (index) => _buildOtpBox(index),
+                    SizedBox(
+                      height: 64,
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: Opacity(
+                              opacity: 0,
+                              child: TextField(
+                                controller: _hiddenOtpController,
+                                focusNode: _hiddenFocusNode,
+                                autofillHints: const [
+                                  AutofillHints.oneTimeCode,
+                                ],
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  LengthLimitingTextInputFormatter(6),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Row(
+                            mainAxisAlignment:
+                                MainAxisAlignment.spaceBetween,
+                            children: List.generate(
+                              6,
+                              (index) => _buildOtpBox(index),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 60),
