@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -32,6 +34,10 @@ class _OtpScreenState extends State<OtpScreen> {
   final OtpController _otpController = Get.put(OtpController());
   bool _isSubmitting = false;
 
+  static const int _resendDuration = 30;
+  int _resendRemaining = 0;
+  Timer? _resendTimer;
+
   String get _otpCode => _codeControllers.map((c) => c.text).join();
 
   @override
@@ -39,10 +45,12 @@ class _OtpScreenState extends State<OtpScreen> {
     super.initState();
     _otpController.userId = widget.userId;
     _otpController.type = widget.contactType == 'phone' ? 'phone' : 'email';
+    _startResendTimer();
   }
 
   @override
   void dispose() {
+    _resendTimer?.cancel();
     for (final controller in _codeControllers) {
       controller.dispose();
     }
@@ -50,6 +58,18 @@ class _OtpScreenState extends State<OtpScreen> {
       focusNode.dispose();
     }
     super.dispose();
+  }
+
+  void _startResendTimer() {
+    _resendRemaining = _resendDuration;
+    _resendTimer?.cancel();
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (_resendRemaining > 0) {
+        setState(() => _resendRemaining--);
+      } else {
+        _resendTimer?.cancel();
+      }
+    });
   }
 
   void _onDigitChanged(String value, int index) {
@@ -117,6 +137,7 @@ class _OtpScreenState extends State<OtpScreen> {
   Future<void> _resendCode() async {
     final result = await _otpController.resendOtp();
     if (!mounted) return;
+    _startResendTimer();
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(result.message)));
@@ -283,12 +304,18 @@ class _OtpScreenState extends State<OtpScreen> {
                             ),
                           ),
                           TextButton(
-                            onPressed:
-                                _otpController.isLoading ? null : _resendCode,
-                            child: const Text(
-                              'Resend Code',
+                            onPressed: (_otpController.isLoading ||
+                                    _resendRemaining > 0)
+                                ? null
+                                : _resendCode,
+                            child: Text(
+                              _resendRemaining > 0
+                                  ? 'Resend code in 0:${_resendRemaining.toString().padLeft(2, '0')}'
+                                  : 'Resend Code',
                               style: TextStyle(
-                                color: kPrimaryColor,
+                                color: _resendRemaining > 0
+                                    ? opacity(kEspressoColor, 0.3)
+                                    : kPrimaryColor,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
                               ),
