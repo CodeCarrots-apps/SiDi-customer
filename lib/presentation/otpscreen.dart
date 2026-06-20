@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:sidi/controller/otpcontroller.dart';
 import 'package:sidi/utils/token_storage.dart';
+import 'package:sms_autofill/sms_autofill.dart';
 
 import '../constant/constants.dart';
 import 'mainscreen.dart';
@@ -32,6 +33,8 @@ class _OtpScreenState extends State<OtpScreen> {
   );
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
   final OtpController _otpController = Get.put(OtpController());
+  final SmsAutoFill _smsAutoFill = SmsAutoFill();
+  StreamSubscription<String>? _smsSubscription;
   bool _isSubmitting = false;
 
   static const int _resendDuration = 30;
@@ -46,10 +49,13 @@ class _OtpScreenState extends State<OtpScreen> {
     _otpController.userId = widget.userId;
     _otpController.type = widget.contactType == 'phone' ? 'phone' : 'email';
     _startResendTimer();
+    _listenForSms();
   }
 
   @override
   void dispose() {
+    _smsSubscription?.cancel();
+    _smsAutoFill.unregisterListener();
     _resendTimer?.cancel();
     for (final controller in _codeControllers) {
       controller.dispose();
@@ -58,6 +64,31 @@ class _OtpScreenState extends State<OtpScreen> {
       focusNode.dispose();
     }
     super.dispose();
+  }
+
+  void _fillCode(String code) {
+    final digits = code.replaceAll(RegExp(r'\D'), '');
+    for (var i = 0; i < 6 && i < digits.length; i++) {
+      _codeControllers[i].text = digits[i];
+    }
+    if (digits.length >= 6) {
+      _focusNodes.last.unfocus();
+      _verifyCode();
+    } else if (digits.isNotEmpty) {
+      _focusNodes[digits.length.clamp(0, 5)].requestFocus();
+    }
+  }
+
+  Future<void> _listenForSms() async {
+    try {
+      _smsSubscription?.cancel();
+      await _smsAutoFill.listenForCode();
+      _smsSubscription = _smsAutoFill.code.listen((String code) {
+        if (code.isNotEmpty && mounted) {
+          _fillCode(code);
+        }
+      });
+    } catch (_) {}
   }
 
   void _startResendTimer() {
@@ -81,7 +112,7 @@ class _OtpScreenState extends State<OtpScreen> {
     }
 
     if (value.length > 1) {
-      final digits = value.replaceAll(RegExp(r'\\D'), '');
+      final digits = value.replaceAll(RegExp(r'\D'), '');
       if (digits.length == 6) {
         for (var i = 0; i < 6; i++) {
           _codeControllers[i].text = digits[i];
@@ -138,6 +169,7 @@ class _OtpScreenState extends State<OtpScreen> {
     final result = await _otpController.resendOtp();
     if (!mounted) return;
     _startResendTimer();
+    _listenForSms();
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(result.message)));
