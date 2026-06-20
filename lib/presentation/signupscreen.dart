@@ -5,6 +5,7 @@ import 'package:sidi/constant/constants.dart';
 import 'package:sidi/controller/signupcontroller.dart';
 import 'package:sidi/presentation/loginscreen.dart';
 import 'package:sidi/presentation/otpscreen.dart';
+import 'package:sidi/presentation/widgets/animationtilke.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -341,41 +342,4 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 }
 
-class PrefixTextInputFormatter extends TextInputFormatter {
-  const PrefixTextInputFormatter(this.prefix);
 
-  final String prefix;
-
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    if (!newValue.text.startsWith(prefix)) {
-      return TextEditingValue(
-        text: prefix,
-        selection: TextSelection.collapsed(offset: prefix.length),
-      );
-    }
-
-    final newText = newValue.text;
-    final prefixEnd = prefix.length;
-    final rawSuffix = newText.substring(prefixEnd);
-    final stripped = rawSuffix.replaceAll(RegExp(r'[^0-9]'), '');
-    final finalText = prefix + stripped;
-
-    final rawCursor = (newValue.selection.baseOffset - prefixEnd)
-        .clamp(0, rawSuffix.length);
-    final digitsBeforeCursor = rawSuffix
-        .substring(0, rawCursor)
-        .replaceAll(RegExp(r'[^0-9]'), '')
-        .length;
-
-    return TextEditingValue(
-      text: finalText,
-      selection: TextSelection.collapsed(
-        offset: prefixEnd + digitsBeforeCursor,
-      ),
-    );
-  }
-}

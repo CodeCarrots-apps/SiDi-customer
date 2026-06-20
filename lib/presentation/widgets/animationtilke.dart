@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:sidi/constant/constants.dart';
 
 class AnimatedInputField extends StatefulWidget {
@@ -8,6 +9,7 @@ class AnimatedInputField extends StatefulWidget {
   final TextInputType inputType;
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
+  final List<TextInputFormatter>? inputFormatters;
 
   const AnimatedInputField(
     String s,
@@ -19,6 +21,7 @@ class AnimatedInputField extends StatefulWidget {
     this.inputType = TextInputType.text,
     this.controller,
     this.onChanged,
+    this.inputFormatters,
   });
 
   @override
@@ -69,6 +72,7 @@ class _AnimatedInputFieldState extends State<AnimatedInputField> {
             focusNode: _focusNode,
             keyboardType: widget.inputType,
             obscureText: widget.obscureText,
+            inputFormatters: widget.inputFormatters,
             onChanged: widget.onChanged,
             decoration: InputDecoration(
               hintText: widget.placeholder,
@@ -79,6 +83,45 @@ class _AnimatedInputFieldState extends State<AnimatedInputField> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class PrefixTextInputFormatter extends TextInputFormatter {
+  const PrefixTextInputFormatter(this.prefix);
+
+  final String prefix;
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (!newValue.text.startsWith(prefix)) {
+      return TextEditingValue(
+        text: prefix,
+        selection: TextSelection.collapsed(offset: prefix.length),
+      );
+    }
+
+    final newText = newValue.text;
+    final prefixEnd = prefix.length;
+    final rawSuffix = newText.substring(prefixEnd);
+    final stripped = rawSuffix.replaceAll(RegExp(r'[^0-9]'), '');
+    final finalText = prefix + stripped;
+
+    final rawCursor = (newValue.selection.baseOffset - prefixEnd)
+        .clamp(0, rawSuffix.length);
+    final digitsBeforeCursor = rawSuffix
+        .substring(0, rawCursor)
+        .replaceAll(RegExp(r'[^0-9]'), '')
+        .length;
+
+    return TextEditingValue(
+      text: finalText,
+      selection: TextSelection.collapsed(
+        offset: prefixEnd + digitsBeforeCursor,
+      ),
     );
   }
 }

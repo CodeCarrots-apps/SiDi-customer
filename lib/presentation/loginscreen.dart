@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:sidi/constant/constants.dart';
 import 'package:sidi/controller/logincontroller.dart';
 import 'package:sidi/presentation/mainscreen.dart';
@@ -16,13 +17,24 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final LoginController _loginController = LoginController();
-  final TextEditingController _identifierController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
+  static const String _phonePrefix = '+91 ';
+
+  @override
+  void initState() {
+    super.initState();
+    _phoneController.value = TextEditingValue(
+      text: _phonePrefix,
+      selection: TextSelection.collapsed(offset: _phonePrefix.length),
+    );
+  }
+
   @override
   void dispose() {
-    _identifierController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -96,15 +108,15 @@ class _LoginScreenState extends State<LoginScreen> {
   // }
 
   Future<void> _handleLoginTap() async {
-    final identifier = _identifierController.text.trim();
+    final phone = _phoneController.text.trim();
     final password = _passwordController.text;
 
-    if (identifier.isEmpty || password.isEmpty) {
+    if (phone.length <= _phonePrefix.trim().length || password.isEmpty) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Enter both email/username/phone and password.'),
+          content: Text('Enter both phone number and password.'),
         ),
       );
       return;
@@ -113,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
     // ⏳ delay handled by button loading state
     await Future.delayed(const Duration(seconds: 3));
 
-    _loginController.identifier = identifier;
+    _loginController.identifier = phone;
     _loginController.password = password;
 
     final result = await _loginController.login();
@@ -200,14 +212,16 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       children: [
         AnimatedInputField(
-          'Email, Username or Phone',
-          'your@email.com / +1 555 0123',
-          label: 'Email, Username or Phone',
-          placeholder: 'your@email.com or +15550123',
-          controller: _identifierController,
+          'Phone',
+          '9876543210',
+          label: 'Phone',
+          placeholder: 'Enter your phone number',
+          controller: _phoneController,
+          inputType: TextInputType.phone,
+          inputFormatters: [PrefixTextInputFormatter(_phonePrefix)],
           onChanged: (value) {
             debugPrint(
-              '[Login] Identifier field changed: ${value.trim().isEmpty ? '<empty>' : value.trim()}',
+              '[Login] Phone field changed: ${value.trim().isEmpty ? '<empty>' : value.trim()}',
             );
           },
         ),
