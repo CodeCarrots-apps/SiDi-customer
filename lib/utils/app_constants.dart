@@ -12,6 +12,8 @@ class AppConstants {
       '${baseUrl}api/mobileapp/auth/customer/upload-documents';
   static const String forgotpass =
       '${baseUrl}api/mobileapp/auth/forgot-password';
+  static const String verifyResetOtp =
+      '${baseUrl}api/mobileapp/auth/verify-reset-otp';
   static const String resetpass = '${baseUrl}api/mobileapp/auth/reset-password';
   static const String profile = '${baseUrl}api/mobileapp/user/profile';
   static const String availabilty = '${baseUrl}customer/availability';

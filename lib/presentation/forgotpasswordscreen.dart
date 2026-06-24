@@ -1,7 +1,10 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:sidi/constant/app_fonts.dart';
 import 'package:sidi/constant/constants.dart';
+import 'package:sidi/presentation/forgotpasswordotpscreen.dart';
 import 'package:sidi/presentation/widgets/animationtilke.dart';
+import 'package:sidi/utils/app_constants.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -12,8 +15,15 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final TextEditingController _emailController = TextEditingController();
+  final Dio _dio = Dio(BaseOptions(
+    connectTimeout: const Duration(seconds: 15),
+    receiveTimeout: const Duration(seconds: 20),
+    headers: {'Content-Type': 'application/json'},
+  ));
   bool _isSubmitting = false;
   bool _isSuccess = false;
+  String _responseMessage = '';
+  String _userId = '';
 
   @override
   void dispose() {
@@ -42,19 +52,59 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _isSubmitting = true;
     });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
+    debugPrint('[ForgotPassword] Sending forgot-password request');
+    debugPrint('[ForgotPassword] URL: ${AppConstants.forgotpass}');
+    debugPrint('[ForgotPassword] Body: {email: $email}');
 
-    if (mounted) {
-      setState(() {
-        _isSubmitting = false;
-        _isSuccess = true;
-      });
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        AppConstants.forgotpass,
+        data: {'email': email},
+      );
 
-      // After showing success, go back after 2 seconds
-      await Future.delayed(const Duration(seconds: 2));
+      final data = response.data ?? {};
+      debugPrint('[ForgotPassword] Response status: ${response.statusCode}');
+      debugPrint('[ForgotPassword] Response body: $data');
+
+      final message = (data['message'] as String?) ?? 'OTP sent successfully';
+      final userId = (data['userId'] as String?) ?? '';
+
       if (mounted) {
-        Navigator.pop(context);
+        setState(() {
+          _isSubmitting = false;
+          _isSuccess = true;
+          _responseMessage = message;
+          _userId = userId;
+        });
+
+        debugPrint('[ForgotPassword] Navigation to ForgotPasswordOtpScreen, userId: $userId');
+        await Future.delayed(const Duration(seconds: 1));
+        if (mounted && _userId.isNotEmpty) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ForgotPasswordOtpScreen(userId: _userId),
+            ),
+          );
+        }
+      }
+    } on DioException catch (e) {
+      debugPrint('[ForgotPassword] DioException: ${e.message}');
+      debugPrint('[ForgotPassword] Response data: ${e.response?.data}');
+      debugPrint('[ForgotPassword] Response status: ${e.response?.statusCode}');
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+        String msg = 'Failed to send reset link';
+        if (e.response?.data is Map) {
+          msg = (e.response!.data as Map)['message'] as String? ?? msg;
+        } else if (e.message != null) {
+          msg = e.message!;
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg)),
+        );
       }
     }
   }
@@ -119,7 +169,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
         const SizedBox(height: 12),
         Text(
-          'Enter your email to receive a password reset link',
+          'Enter your email to receive a password reset OTP',
           style: kSubHeaderStyle,
           textAlign: TextAlign.center,
         ),
@@ -190,6 +240,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 12),
+        Text(
+          _responseMessage,
+          style: AppFonts.inter(fontSize: 14, color: kWarmGrey600, height: 1.5),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 24),
         Text(
           'We\'ve sent a password reset link to ${_emailController.text}. Check your email and follow the link to reset your password.',
           style: AppFonts.inter(fontSize: 14, color: kWarmGrey600, height: 1.5),
