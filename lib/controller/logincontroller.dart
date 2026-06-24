@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get_state_manager/get_state_manager.dart';
+import 'package:sidi/services/credential_service.dart';
 import 'package:sidi/utils/app_constants.dart';
 import 'package:sidi/utils/token_storage.dart';
 
@@ -74,6 +75,11 @@ class LoginController extends GetxController {
         );
         // Save token using shared_preferences
         await TokenStorage.saveToken(result.token);
+        // Save to Google Password Manager / iCloud Keychain
+        await CredentialService.saveCredential(
+          phoneNumber: phoneNumber,
+          password: password,
+        );
       }
 
       return result;

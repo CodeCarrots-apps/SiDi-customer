@@ -88,6 +88,7 @@
 
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
+import 'package:sidi/services/credential_service.dart';
 import 'package:sidi/utils/app_constants.dart';
 
 class RegisterController extends GetxController {
@@ -157,6 +158,12 @@ class RegisterController extends GetxController {
 
         if (!result.isSuccess) {
           errorMessage = result.message;
+        } else {
+          // Save to Google Password Manager / iCloud Keychain
+          await CredentialService.saveCredential(
+            phoneNumber: phone.trim(),
+            password: password,
+          );
         }
 
         return result;

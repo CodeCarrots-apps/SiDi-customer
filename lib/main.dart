@@ -3,9 +3,8 @@ import 'package:get/get.dart';
 import 'package:sidi/presentation/splashscreen.dart';
 import 'package:background_fetch/background_fetch.dart';
 import 'package:sidi/services/appointments_sync_service.dart';
+import 'package:sidi/services/credential_service.dart';
 import 'package:sidi/controller/wallet_controller.dart';
-// import 'package:sidi/presentation/mainscreen.dart';
-// import 'package:sidi/view/splashscreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +17,7 @@ void main() async {
   }
 
   await AppointmentsSyncService.initialize();
+  await CredentialService.init();
   runApp(const MainApp());
 }
 

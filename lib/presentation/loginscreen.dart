@@ -7,6 +7,7 @@ import 'package:sidi/presentation/signupscreen.dart';
 import 'package:sidi/presentation/widgets/animationtilke.dart';
 import 'package:sidi/presentation/forgotpasswordscreen.dart';
 import 'package:sidi/presentation/widgets/loginbutton.dart';
+import 'package:sidi/services/credential_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -30,6 +31,21 @@ class _LoginScreenState extends State<LoginScreen> {
       text: _phonePrefix,
       selection: TextSelection.collapsed(offset: _phonePrefix.length),
     );
+    _trySavedCredential();
+  }
+
+  Future<void> _trySavedCredential() async {
+    final credential = await CredentialService.getCredential();
+    if (credential == null || !mounted) return;
+    final username = credential.username ?? '';
+    if (username.isNotEmpty) {
+      _phoneController.text = username.startsWith('+91 ')
+          ? username
+          : '$_phonePrefix$username';
+    }
+    if (credential.password != null && credential.password!.isNotEmpty) {
+      _passwordController.text = credential.password!;
+    }
   }
 
   @override
