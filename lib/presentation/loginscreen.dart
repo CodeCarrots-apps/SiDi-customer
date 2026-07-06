@@ -22,7 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
-  static const String _phonePrefix = '+91 ';
+  static const String _phonePrefix = '+91';
 
   @override
   void initState() {
@@ -31,7 +31,9 @@ class _LoginScreenState extends State<LoginScreen> {
       text: _phonePrefix,
       selection: TextSelection.collapsed(offset: _phonePrefix.length),
     );
-    _trySavedCredential();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _trySavedCredential();
+    });
   }
 
   Future<void> _trySavedCredential() async {
@@ -39,9 +41,12 @@ class _LoginScreenState extends State<LoginScreen> {
     if (credential == null || !mounted) return;
     final username = credential.username ?? '';
     if (username.isNotEmpty) {
-      _phoneController.text = username.startsWith('+91 ')
-          ? username
-          : '$_phonePrefix$username';
+      final normalized = username.startsWith('+91 ')
+          ? '+91${username.substring(4)}'
+          : username;
+      _phoneController.text = normalized.startsWith('+91')
+          ? normalized
+          : '$_phonePrefix$normalized';
     }
     if (credential.password != null && credential.password!.isNotEmpty) {
       _passwordController.text = credential.password!;
@@ -149,6 +154,8 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (result.isSuccess) {
+      TextInput.finishAutofillContext();
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const MainScreen()),
@@ -225,68 +232,72 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildForm(BuildContext context) {
-    return Column(
-      children: [
-        AnimatedInputField(
-          'Phone',
-          '9876543210',
-          label: 'Phone',
-          placeholder: 'Enter your phone number',
-          controller: _phoneController,
-          inputType: TextInputType.phone,
-          inputFormatters: [PrefixTextInputFormatter(_phonePrefix)],
-          onChanged: (value) {
-            debugPrint(
-              '[Login] Phone field changed: ${value.trim().isEmpty ? '<empty>' : value.trim()}',
-            );
-          },
-        ),
-        const SizedBox(height: 24),
-        AnimatedInputField(
-          'Password',
-          '••••••••',
-          label: 'Password',
-          placeholder: 'Enter your password',
-          obscureText: true,
-          controller: _passwordController,
-          onChanged: (value) {
-            debugPrint(
-              '[Login] Password field changed: ${value.isEmpty ? 'empty' : 'updated'}',
-            );
-          },
-        ),
-        const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ForgotPasswordScreen(),
-                ),
+    return AutofillGroup(
+      child: Column(
+        children: [
+          AnimatedInputField(
+            'Phone',
+            '9876543210',
+            label: 'Phone',
+            placeholder: 'Enter your phone number',
+            controller: _phoneController,
+            inputType: TextInputType.phone,
+            inputFormatters: [PrefixTextInputFormatter(_phonePrefix)],
+            autofillHints: const [AutofillHints.username, AutofillHints.telephoneNumber],
+            onChanged: (value) {
+              debugPrint(
+                '[Login] Phone field changed: ${value.trim().isEmpty ? '<empty>' : value.trim()}',
               );
             },
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
-              minimumSize: const Size(0, 0),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: Text(
-              'Forgot Password?',
-              style: kFooterTextStyle.copyWith(fontSize: 11),
+          ),
+          const SizedBox(height: 24),
+          AnimatedInputField(
+            'Password',
+            '••••••••',
+            label: 'Password',
+            placeholder: 'Enter your password',
+            obscureText: true,
+            controller: _passwordController,
+            autofillHints: const [AutofillHints.password],
+            onChanged: (value) {
+              debugPrint(
+                '[Login] Password field changed: ${value.isEmpty ? 'empty' : 'updated'}',
+              );
+            },
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ForgotPasswordScreen(),
+                  ),
+                );
+              },
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 0),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                'Forgot Password?',
+                style: kFooterTextStyle.copyWith(fontSize: 11),
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 24),
-        LoadingButton(
-          text: 'LOG IN',
-          color: kEspressoColor,
-          onPressed: () async {
-            await _handleLoginTap();
-          },
-        ),
-      ],
+          const SizedBox(height: 24),
+          LoadingButton(
+            text: 'LOG IN',
+            color: kEspressoColor,
+            onPressed: () async {
+              await _handleLoginTap();
+            },
+          ),
+        ],
+      ),
     );
   }
 

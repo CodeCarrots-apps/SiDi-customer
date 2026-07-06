@@ -9,6 +9,7 @@ class Stylist {
   final bool isVerified;
   final String status;
   final double rating;
+  final String verificationStatus;
 
   /// 🔥 NEW (IMPORTANT)
   final String profileImage;
@@ -25,6 +26,7 @@ class Stylist {
     required this.isVerified,
     required this.status,
     required this.rating,
+    this.verificationStatus = '',
     required this.profileImage,
     required this.city,
   });
@@ -43,6 +45,7 @@ class Stylist {
       isVerified: json['isVerified'] ?? false,
       status: json['status'] ?? '',
       rating: (json['rating'] ?? 0).toDouble(),
+      verificationStatus: json['verificationStatus'] ?? '',
 
       /// ✅ FIXED IMAGE
       profileImage: (rawImage != null && rawImage.toString().isNotEmpty)

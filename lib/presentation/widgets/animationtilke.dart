@@ -10,6 +10,7 @@ class AnimatedInputField extends StatefulWidget {
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
   final List<TextInputFormatter>? inputFormatters;
+  final Iterable<String>? autofillHints;
 
   const AnimatedInputField(
     String s,
@@ -22,6 +23,7 @@ class AnimatedInputField extends StatefulWidget {
     this.controller,
     this.onChanged,
     this.inputFormatters,
+    this.autofillHints,
   });
 
   @override
@@ -73,6 +75,7 @@ class _AnimatedInputFieldState extends State<AnimatedInputField> {
             keyboardType: widget.inputType,
             obscureText: widget.obscureText,
             inputFormatters: widget.inputFormatters,
+            autofillHints: widget.autofillHints,
             onChanged: widget.onChanged,
             decoration: InputDecoration(
               hintText: widget.placeholder,

@@ -12,10 +12,18 @@ class NearbyBeauticiansResponse {
   });
 
   factory NearbyBeauticiansResponse.fromJson(Map<String, dynamic> json) {
+    final rawBeauticians = json['beauticians'] != null
+        ? List<Map<String, dynamic>>.from(json['beauticians'])
+        : <Map<String, dynamic>>[];
+
+    final filteredBeauticians = rawBeauticians.where((e) {
+      final verificationStatus = e['verificationStatus']?.toString().trim();
+      final status = e['status']?.toString().trim();
+      return !(verificationStatus == 'Pending' && status == 'Inactive');
+    }).toList();
+
     return NearbyBeauticiansResponse(
-      beauticians: json['beauticians'] != null
-          ? List<Map<String, dynamic>>.from(json['beauticians'])
-          : [],
+      beauticians: filteredBeauticians,
       total: json['total'] ?? 0,
       page: json['page'] ?? 1,
       totalPages: json['totalPages'] ?? 1,

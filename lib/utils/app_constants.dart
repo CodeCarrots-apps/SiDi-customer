@@ -28,6 +28,10 @@ class AppConstants {
   static const String referralRedeem =
       '${baseUrl}api/mobileapp/user/referral/redeem';
 
+  // App Update
+  static const String appVersion =
+      '${baseUrl}api/mobileapp/app/version';
+
   // Payment Gateway
   // static const String upiMerchantId = 'akshaits4@okicici'; // Legacy intent
   static const String razorpayKey =

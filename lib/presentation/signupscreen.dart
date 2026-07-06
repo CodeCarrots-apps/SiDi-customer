@@ -25,7 +25,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       TextEditingController();
   final TextEditingController _referralCodeController = TextEditingController();
 
-  static const String _phonePrefix = '+91 ';
+  static const String _phonePrefix = '+91';
 
   bool _isSubmitting = false;
 
@@ -102,6 +102,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     ).showSnackBar(SnackBar(content: Text(result.message)));
 
     if (result.isSuccess) {
+      TextInput.finishAutofillContext();
+      if (!mounted) return;
       if (result.requiresOtp) {
         Navigator.pushReplacement(
           context,
@@ -187,50 +189,56 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Widget _buildForm() {
-    return Column(
-      children: [
-        _buildInputField(
-          'Full Name',
-          'Julianne Moore',
-          controller: _nameController,
-        ),
-        const SizedBox(height: 16),
-        _buildInputField(
-          'Email',
-          'name@domain.com',
-          inputType: TextInputType.emailAddress,
-          controller: _emailController,
-        ),
-        const SizedBox(height: 16),
-        _buildInputField(
-          'Phone',
-          '9876543210',
-          inputType: TextInputType.phone,
-          controller: _phoneController,
-          inputFormatters: [
-            PrefixTextInputFormatter(_phonePrefix),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildInputField(
-          'Password',
-          '••••••••',
-          obscureText: true,
-          controller: _passwordController,
-        ),
-        const SizedBox(height: 16),
-        _buildInputField(
-          'Confirm Password',
-          '••••••••',
-          obscureText: true,
-          controller: _confirmPasswordController,
-        ),
-        const SizedBox(height: 16),
-        _buildInputField(
-          'Referral Code',
-          'REFERRAL_CODE_HERE',
-          controller: _referralCodeController,
-        ),
+    return AutofillGroup(
+      child: Column(
+        children: [
+          _buildInputField(
+            'Full Name',
+            'Julianne Moore',
+            controller: _nameController,
+            autofillHints: const [AutofillHints.name],
+          ),
+          const SizedBox(height: 16),
+          _buildInputField(
+            'Email',
+            'name@domain.com',
+            inputType: TextInputType.emailAddress,
+            controller: _emailController,
+            autofillHints: const [AutofillHints.email],
+          ),
+          const SizedBox(height: 16),
+          _buildInputField(
+            'Phone',
+            '9876543210',
+            inputType: TextInputType.phone,
+            controller: _phoneController,
+            inputFormatters: [
+              PrefixTextInputFormatter(_phonePrefix),
+            ],
+            autofillHints: const [AutofillHints.newUsername, AutofillHints.telephoneNumber],
+          ),
+          const SizedBox(height: 16),
+          _buildInputField(
+            'Password',
+            '••••••••',
+            obscureText: true,
+            controller: _passwordController,
+            autofillHints: const [AutofillHints.newPassword],
+          ),
+          const SizedBox(height: 16),
+          _buildInputField(
+            'Confirm Password',
+            '••••••••',
+            obscureText: true,
+            controller: _confirmPasswordController,
+            autofillHints: const [AutofillHints.password],
+          ),
+          const SizedBox(height: 16),
+          _buildInputField(
+            'Referral Code',
+            'REFERRAL_CODE_HERE',
+            controller: _referralCodeController,
+          ),
         const SizedBox(height: 22),
         SizedBox(
           width: double.infinity,
@@ -273,7 +281,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ),
         ),
       ],
-    );
+    ),);
   }
 
   Widget _buildInputField(
@@ -283,6 +291,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     bool obscureText = false,
     TextEditingController? controller,
     List<TextInputFormatter>? inputFormatters,
+    Iterable<String>? autofillHints,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -294,6 +303,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           keyboardType: inputType,
           obscureText: obscureText,
           inputFormatters: inputFormatters,
+          autofillHints: autofillHints,
           decoration: InputDecoration(
             hintText: placeholder,
             hintStyle: kInputHintStyle,

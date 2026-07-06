@@ -215,6 +215,11 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
     if (service['beauticians'] is List) {
       stylists = (service['beauticians'] as List)
           .whereType<Map<String, dynamic>>()
+          .where((beauticianMap) {
+            final verificationStatus = beauticianMap['verificationStatus']?.toString().trim();
+            final status = beauticianMap['status']?.toString().trim();
+            return !(verificationStatus == 'Pending' && status == 'Inactive');
+          })
           .map(
             (beauticianMap) => Stylist(
               id: beauticianMap['_id'] ?? '',
@@ -229,6 +234,7 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
               isVerified: beauticianMap['isVerified'] ?? false,
               status: beauticianMap['status'] ?? '',
               rating: (beauticianMap['rating'] ?? 0).toDouble(),
+              verificationStatus: beauticianMap['verificationStatus'] ?? '',
               profileImage:
                   (beauticianMap['profileImage'] != null &&
                       beauticianMap['profileImage'].toString().isNotEmpty)
@@ -240,28 +246,33 @@ class _DetailedServiceScreenState extends State<DetailedServiceScreen> {
           .toList();
     } else if (service['beautician'] is Map<String, dynamic>) {
       final beauticianMap = service['beautician'] as Map<String, dynamic>;
-      stylists.add(
-        Stylist(
-          id: beauticianMap['_id'] ?? '',
-          fullName: beauticianMap['fullName'] ?? '',
-          phoneNumber: beauticianMap['phoneNumber'] ?? '',
-          bio: beauticianMap['bio'] ?? '',
-          skills: beauticianMap['skills'] != null
-              ? List<String>.from(beauticianMap['skills'])
-              : <String>[],
-          experience: beauticianMap['experience'] ?? 0,
-          tier: beauticianMap['tier'] ?? '',
-          isVerified: beauticianMap['isVerified'] ?? false,
-          status: beauticianMap['status'] ?? '',
-          rating: (beauticianMap['rating'] ?? 0).toDouble(),
-          profileImage:
-              (beauticianMap['profileImage'] != null &&
-                  beauticianMap['profileImage'].toString().isNotEmpty)
-              ? 'https://sidi.mobilegear.co.in${beauticianMap['profileImage']}'
-              : '',
-          city: beauticianMap['city'] ?? '',
-        ),
-      );
+      final verificationStatus = beauticianMap['verificationStatus']?.toString().trim();
+      final status = beauticianMap['status']?.toString().trim();
+      if (!(verificationStatus == 'Pending' && status == 'Inactive')) {
+        stylists.add(
+          Stylist(
+            id: beauticianMap['_id'] ?? '',
+            fullName: beauticianMap['fullName'] ?? '',
+            phoneNumber: beauticianMap['phoneNumber'] ?? '',
+            bio: beauticianMap['bio'] ?? '',
+            skills: beauticianMap['skills'] != null
+                ? List<String>.from(beauticianMap['skills'])
+                : <String>[],
+            experience: beauticianMap['experience'] ?? 0,
+            tier: beauticianMap['tier'] ?? '',
+            isVerified: beauticianMap['isVerified'] ?? false,
+            status: beauticianMap['status'] ?? '',
+            rating: (beauticianMap['rating'] ?? 0).toDouble(),
+            verificationStatus: beauticianMap['verificationStatus'] ?? '',
+            profileImage:
+                (beauticianMap['profileImage'] != null &&
+                    beauticianMap['profileImage'].toString().isNotEmpty)
+                ? 'https://sidi.mobilegear.co.in${beauticianMap['profileImage']}'
+                : '',
+            city: beauticianMap['city'] ?? '',
+          ),
+        );
+      }
     }
     Navigator.push(
       context,

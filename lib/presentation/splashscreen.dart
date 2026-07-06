@@ -195,6 +195,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:sidi/presentation/loginscreen.dart';
 import 'package:sidi/presentation/mainscreen.dart';
+import 'package:sidi/presentation/widgets/update_dialog.dart';
+import 'package:sidi/services/app_update_service.dart';
 import 'package:sidi/utils/app_constants.dart';
 import 'package:sidi/utils/token_storage.dart';
 
@@ -340,6 +342,24 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _navigateFromSplash() async {
+    if (!mounted) return;
+
+    final updateInfo = await AppUpdateService.checkForUpdate();
+
+    if (updateInfo.updateAvailable && mounted) {
+      await showDialog(
+        context: context,
+        barrierDismissible: !updateInfo.forceUpdate,
+        builder: (_) => AppUpdateDialog(
+          storeUrl: updateInfo.storeUrl,
+          forceUpdate: updateInfo.forceUpdate,
+          whatsNew: updateInfo.whatsNew,
+          latestVersion: updateInfo.latestVersion,
+        ),
+      );
+      if (updateInfo.forceUpdate) return;
+    }
+
     if (!mounted) return;
 
     final token = await TokenStorage.getToken();

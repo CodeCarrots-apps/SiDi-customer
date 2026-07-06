@@ -191,6 +191,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
     if (result.isSuccess) {
       await TokenStorage.saveToken(result.token);
+      TextInput.finishAutofillContext();
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
